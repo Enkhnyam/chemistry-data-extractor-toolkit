@@ -13,7 +13,7 @@ from . import llm
 from .dynschema import build_response_model
 
 
-def run_extraction(model: str, prompt: str, schema_fields: list[dict], few_shot: list[dict],
+def run_extraction(params: dict, prompt: str, schema_fields: list[dict], few_shot: list[dict],
                     paper_text: str, with_source: bool) -> tuple[list[dict], dict]:
     response_model = build_response_model(schema_fields, with_source)
 
@@ -26,7 +26,7 @@ def run_extraction(model: str, prompt: str, schema_fields: list[dict], few_shot:
         messages.append({"role": "assistant", "content": json.dumps({"records": example["records"]})})
     messages.append({"role": "user", "content": paper_text})
 
-    resp = llm.complete(model, messages, response_format=response_model)
+    resp = llm.complete(params, messages, response_format=response_model)
     content = resp.choices[0].message.content
     try:
         parsed = response_model.model_validate_json(content)

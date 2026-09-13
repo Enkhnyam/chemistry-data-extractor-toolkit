@@ -750,8 +750,10 @@ async function openExamplesEditor(onSaved) {
         <li><span class="step">3</span> the <b>records</b> that paper should produce</li>
         <li><span class="step">4</span> then the real paper, and it answers in the same shape</li>
       </ol>
-      <p>Steps 2 and 3 are what you are editing here. Each example is re-sent with every paper,
-         so two or three is the practical ceiling.</p>
+      <p><b>One good example is usually worth more than another paragraph of prompt.</b> It is
+         the difference between describing your conventions and showing them &mdash; how you name a
+         catalyst, which table rows count, what to do when a value is only in a footnote. Even a
+         single example helps; each is re-sent with every paper, so two or three is the ceiling.</p>
     </div>
 
     <div class="field">
@@ -827,8 +829,10 @@ async function openExamplesEditor(onSaved) {
               <b>your schema</b>
               ${fields.map(f => `<div><code>${esc(f.name)}</code> <span class="muted">${f.type}</span></div>`).join('')
                 || '<span class="muted">no fields defined</span>'}
-              <button class="ex-fill" data-i="${i}" title="start from an empty record with every field">use blank record</button>
-              <button class="ex-format" data-i="${i}">tidy JSON</button>
+              <button class="ex-fill" data-i="${i}"
+                title="Replace the box with one empty record containing every field in your schema, ready to fill in">start from a blank record</button>
+              <button class="ex-format" data-i="${i}"
+                title="Re-indent what is in the box so it is readable. Changes only the spacing, never the values.">re-indent</button>
             </div>
           </div>
           <div class="jsonnote muted"></div>
@@ -1553,9 +1557,9 @@ function statCard(n, label, sub, tone = '') {
 // ---------- Settings ----------
 
 async function renderSettings(gen) {
-  const [settings, schema, prompts, fewShot, envKeys, papers] = await Promise.all([
+  const [settings, schema, prompts, fewShot, modelCfg] = await Promise.all([
     get('/api/settings'), get('/api/schema'), get('/api/prompts'), get('/api/few-shot'),
-    get('/api/env-keys'), get('/api/papers'),
+    get('/api/models'),
   ]);
   if (stale(gen)) return;
   const ph = settings.placeholders;
@@ -1563,78 +1567,65 @@ async function renderSettings(gen) {
 
   view.innerHTML = `
     <section>
-      <div class="settingshead">
+      <div class="row" style="margin-bottom:16px">
         <div>
           <h2 style="margin:0">Settings</h2>
-          <p class="lede" style="margin:2px 0 0">The model, the schema and the prompts are all
-            that decide what gets extracted. Nothing here is filled in for you.</p>
+          <p class="lede" style="margin:2px 0 0">Nothing here is filled in for you. Grey text is
+            an example from a PET corpus, never a value.</p>
         </div>
-        <span class="grow"></span>
-        <span class="muted" id="save-all-status"></span>
-        <button class="primary" id="save-all">${icon('check')}Save changes</button>
       </div>
 
       <div class="panel">
         <h2>Behaviour</h2>
         <label class="switch">
           <input type="checkbox" id="src-default" ${settings.source_tracking_default ? 'checked' : ''}>
-          <span><b>Source tracking</b>${help('Tags every parsed chunk with a stable id, and asks ' +
+          <span><b>Source tracking</b>${help('Tags every parsed chunk with a stable id and asks ' +
             'the model to cite the chunks each record came from. That is what lets the review pane ' +
-            'shade the exact passage behind a value. Turn it off only if your model struggles with ' +
-            'the extra field.')}
+            'shade the exact passage behind a value.')}
           <span class="muted">new papers are parsed with chunk ids so records can cite their source</span></span>
         </label>
       </div>
 
       <div class="panel">
-        <h2>Model${help('Any litellm model string. The API key for its provider must also be set ' +
-          'below, or runs are blocked.')}</h2>
-        <div class="field">
-          <input id="model-input" value="${esc(settings.model)}" placeholder="${esc(ph.model)}" style="width:100%">
-          <p class="muted"><code>gpt-4o-mini</code> &middot; <code>anthropic/claude-sonnet-4-5</code>
-            &middot; <code>ollama/llama3</code> &middot; <code>azure/your-deployment</code> &middot;
-            <a href="https://docs.litellm.ai/docs/providers" target="_blank">full list</a></p>
-        </div>
-        <div class="row">
-          <button id="test-model">Test connection</button>
-          <span class="muted" id="settings-status"></span>
-        </div>
+        <h2>Models${help('One entry per endpoint you call. Extraction and judging pick ' +
+          'separately, so you can extract with a strong model and audit with a cheaper or ' +
+          'deliberately different one.')}</h2>
+        <p class="lede">Each entry is a model string, a key and, if the provider needs one, an
+          endpoint. Keys are written to this project's local <code>.env</code> and never shown again.</p>
+        <div id="model-list"></div>
+        <button id="add-model" style="margin-top:8px">${icon('plus')}Add a model</button>
 
-        <h3 style="margin-top:20px">Keys${help('Written to this project\'s local .env and never ' +
-          'sent anywhere else. Azure needs all three rows; other providers need one.')}</h3>
-        <table class="keys"><tbody id="key-rows"></tbody></table>
-        <div class="row" style="margin-top:10px">
-          <input id="new-key-name" placeholder="ANOTHER_VARIABLE_NAME" style="width:230px">
-          <input id="new-key-value" type="password" placeholder="value" style="flex:1">
-          <button id="add-key">${icon('plus')}Add</button>
-          <span class="muted" id="key-status"></span>
+        <h3 style="margin-top:22px">Which model each stage uses</h3>
+        <div class="stageselect">
+          <label><span>Extraction</span>
+            <select id="extract-model"></select></label>
+          <label><span>Judging</span>
+            <select id="judge-model"></select></label>
         </div>
       </div>
 
       <div class="panel">
-        <h2>Schema${help('The fields one record has. The extraction prompt, the review pane and ' +
-          'the report are all built from this list, so it is the first thing to define.')}
+        <h2>Schema${help('The fields one record has. The prompt, the review pane and the report ' +
+          'are all built from this list, so it is the first thing to define.')}
           ${schema.set ? '' : '<span class="tag no">not defined yet</span>'}</h2>
-        <p class="lede">Grey rows are an example from a PET corpus &mdash; an illustration of the
-          shape, never your data. Type over them, or press <b>Use the example</b>.</p>
+        <p class="lede">Grey rows are an example. Type over them, delete them, or press
+          <b>Use the example</b> to keep them.</p>
         <table class="schema-table"><thead><tr>
           <th style="width:26%">Field name</th><th style="width:15%">Type</th>
           <th>Description <span class="muted" style="text-transform:none">the model reads this</span></th><th></th>
         </tr></thead><tbody id="schema-rows"></tbody></table>
         <div class="row" style="margin-top:10px">
           <button id="add-field">${icon('plus')}Add field</button>
-          ${schema.set ? '' : '<button id="use-example-schema">Use the example</button>'}
-          <span class="muted" id="schema-status"></span>
+          <button id="use-example-schema">Use the example</button>
+          <button id="clear-schema">Clear all</button>
         </div>
       </div>
 
       <div class="panel">
-        <h2>Extraction prompt${help('What to pull out of each paper, and what to skip. Written ' +
-          'once, used for every paper.')}
+        <h2>Extraction prompt${help('What to pull out of each paper, and what to skip.')}
           ${prompts.extract_set ? '' : '<span class="tag no">required before extracting</span>'}</h2>
         <div class="row" style="margin-bottom:8px">
-          <span class="muted">Grey text is a real prompt from a PET corpus, shown as an
-            illustration. It is never used as yours.</span>
+          <span class="muted">Grey text is a real prompt from a PET corpus, shown as an illustration.</span>
           <span class="grow"></span>
           <button data-copy-example="extract">Use the example</button>
         </div>
@@ -1643,8 +1634,7 @@ async function renderSettings(gen) {
       </div>
 
       <div class="panel">
-        <h2>Judge rubric${help('What makes an extracted record right or wrong. The judge re-reads ' +
-          'each paper and checks every record against this.')}
+        <h2>Judge rubric${help('What makes an extracted record right or wrong.')}
           ${prompts.judge_set ? '' : '<span class="tag no">required before judging</span>'}</h2>
         <div class="row" style="margin-bottom:8px">
           <span class="grow"></span>
@@ -1655,68 +1645,107 @@ async function renderSettings(gen) {
       </div>
 
       <div class="panel">
-        <h2>Worked examples <span class="muted" style="font-weight:400">optional</span>
-          ${help('One paper\'s text paired with the records it should produce. Edited in the same ' +
-          'dialog the Extract page opens, because an example only makes sense next to the prompt ' +
-          'it follows.')}</h2>
+        <h2>Worked examples <span class="muted" style="font-weight:400">optional</span></h2>
         <div class="row">
           <span id="fs-summary" class="muted">&hellip;</span>
           <span class="grow"></span>
           <button id="fs-open">${icon('edit')}Open examples editor</button>
         </div>
       </div>
+
+      <div class="savebar" id="savebar" hidden>
+        <span>Unsaved changes</span>
+        <span class="grow"></span>
+        <span class="muted" id="save-all-status"></span>
+        <button id="discard">Discard</button>
+        <button class="primary" id="save-all">${icon('check')}Save changes</button>
+      </div>
     </section>`;
 
   paintRun();
 
-  // ---- one save button: collect every dirty field, write them, report once
-  const dirty = () => {
-    const rows = [...document.querySelectorAll('#schema-rows tr')].map(tr => ({
-      name: tr.querySelector('.f-name').value.trim(),
-      type: tr.querySelector('.f-type').value,
-      description: tr.querySelector('.f-desc').value.trim(),
-    })).filter(f => f.name);
-    return {
-      settings: { model: document.getElementById('model-input').value.trim(),
-                  source_tracking_default: document.getElementById('src-default').checked },
-      fields: rows,
-      extract: document.getElementById('extract-prompt').value,
-      judge: document.getElementById('judge-prompt').value,
-    };
-  };
+  // ---- models: a row each, added and removed freely
+  let profiles = modelCfg.profiles.map(p => ({ ...p }));
+  const modelList = document.getElementById('model-list');
 
-  document.getElementById('save-all').addEventListener('click', async () => {
-    const status = document.getElementById('save-all-status');
-    const d = dirty();
-    status.className = 'muted';
-    status.textContent = 'Saving…';
-    try {
-      await put('/api/settings', d.settings);
-      if (d.fields.length) await put('/api/schema', { fields: d.fields });
-      await put('/api/prompts', { extract: d.extract, judge: d.judge });
-      status.className = 'ok-text';
-      status.textContent = 'Saved.';
-      document.getElementById('model-badge').textContent = 'model: ' + (d.settings.model || 'not set');
-      setTimeout(() => router(), 700);
-    } catch (e) {
-      status.className = 'error';
-      status.textContent = e.message;
+  function paintModels() {
+    modelList.innerHTML = profiles.length ? profiles.map((m, i) => `
+      <div class="modelcard" data-i="${i}">
+        <div class="row" style="margin-bottom:8px">
+          <input class="m-name" value="${esc(m.name || '')}" placeholder="a name for this endpoint"
+            style="flex:1;min-width:160px;font-weight:600">
+          ${m.id ? `<span class="tag ${m.key_set ? 'yes' : 'no'}">${m.key_set ? 'key set' : 'no key'}</span>` : '<span class="tag no">unsaved</span>'}
+          <button class="m-remove iconly" data-i="${i}" title="remove this model">${icon('trash')}</button>
+        </div>
+        <div class="modelgrid">
+          <label>Model string${help('litellm format: gpt-4o-mini, anthropic/claude-sonnet-4-5, ' +
+            'ollama/llama3, azure/your-deployment-name.')}
+            <input class="m-model" value="${esc(m.model || '')}" placeholder="${esc(ph.model)}"></label>
+          <label>API key${help('Stored in .env under this entry\'s own variable, so two ' +
+            'providers never fight over one OPENAI_API_KEY.')}
+            <input class="m-key" type="password" placeholder="${m.key_set ? '•••••••• saved — type to replace' : 'paste the key'}"></label>
+          <label>Endpoint <span class="muted">optional</span>${help('Only for providers that need ' +
+            'an explicit base URL — Azure, a local server, a proxy. Leave empty otherwise.')}
+            <input class="m-base" value="${esc(m.api_base || '')}" placeholder="https://your-resource.openai.azure.com"></label>
+          <label>API version <span class="muted">optional</span>${help('Azure requires this; ' +
+            'almost nothing else does.')}
+            <input class="m-version" value="${esc(m.api_version || '')}" placeholder="2024-12-01-preview"></label>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button class="m-test" data-i="${i}" ${m.id ? '' : 'disabled'}>Test connection</button>
+          <span class="muted m-status">${m.id ? '' : 'save first, then test'}</span>
+        </div>
+      </div>`).join('') : '<p class="muted">No models yet. Add one to get started.</p>';
+
+    modelList.querySelectorAll('input').forEach(inp => inp.addEventListener('input', markDirty));
+    modelList.querySelectorAll('.m-remove').forEach(b => b.addEventListener('click', () => {
+      collectModels();
+      profiles.splice(Number(b.dataset.i), 1);
+      paintModels(); paintStageSelects(); markDirty();
+    }));
+    modelList.querySelectorAll('.m-test').forEach(b => b.addEventListener('click', async () => {
+      const card = b.closest('.modelcard');
+      const status = card.querySelector('.m-status');
+      status.className = 'muted m-status';
+      status.textContent = 'Calling…';
+      try {
+        const r = await post(`/api/models/${profiles[Number(b.dataset.i)].id}/test`, {});
+        status.className = (r.ok ? 'ok-text' : 'error') + ' m-status';
+        status.textContent = r.ok ? `${r.model} replied in ${r.seconds}s` : r.error;
+      } catch (e) { status.className = 'error m-status'; status.textContent = e.message; }
+    }));
+  }
+
+  function collectModels() {
+    [...modelList.querySelectorAll('.modelcard')].forEach((card, i) => {
+      profiles[i] = { ...profiles[i],
+        name: card.querySelector('.m-name').value,
+        model: card.querySelector('.m-model').value,
+        api_base: card.querySelector('.m-base').value,
+        api_version: card.querySelector('.m-version').value,
+        newKey: card.querySelector('.m-key').value,
+      };
+    });
+  }
+
+  function paintStageSelects() {
+    for (const [stage, el2] of [['extract', document.getElementById('extract-model')],
+                                ['judge', document.getElementById('judge-model')]]) {
+      const chosen = el2.value || modelCfg[stage];
+      el2.innerHTML = '<option value="">choose a model&hellip;</option>' + profiles
+        .filter(m => m.id)
+        .map(m => `<option value="${m.id}" ${chosen === m.id ? 'selected' : ''}>${esc(m.name || m.model)}</option>`)
+        .join('');
     }
+  }
+  paintModels(); paintStageSelects();
+  document.getElementById('add-model').addEventListener('click', () => {
+    collectModels();
+    profiles.push({ id: '', name: '', model: '', api_base: '', api_version: '', key_set: false });
+    paintModels(); paintStageSelects(); markDirty();
   });
 
-  document.getElementById('test-model').addEventListener('click', async () => {
-    const status = document.getElementById('settings-status');
-    status.className = 'muted';
-    status.textContent = 'Calling the model…';
-    try {
-      await put('/api/settings', { model: document.getElementById('model-input').value.trim() });
-      const r = await post('/api/test-model', {});
-      status.className = r.ok ? 'ok-text' : 'error';
-      status.textContent = r.ok ? `${r.model} replied in ${r.seconds}s` : r.error;
-    } catch (e) { status.className = 'error'; status.textContent = e.message; }
-  });
-
-  // ---- schema table, empty by default with the example shown in grey
+  // ---- schema rows, all deletable including the grey examples
   const rows = document.getElementById('schema-rows');
   const addRow = (f = null, grey = false) => rows.append(el(`
     <tr${grey ? ' class="ghost"' : ''}>
@@ -1725,25 +1754,31 @@ async function renderSettings(gen) {
         `<option ${f && f.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select></td>
       <td><input class="f-desc" value="${f && !grey ? esc(f.description || '') : ''}"
           placeholder="${grey && f ? esc(f.description || '') : 'what the model should put here'}"></td>
-      <td><button class="f-del iconly" title="remove">${icon('trash')}</button></td>
+      <td><button class="f-del iconly" title="remove this field">${icon('trash')}</button></td>
     </tr>`));
-
-  if (schema.set) schema.fields.forEach(f => addRow(f));
-  else schema.placeholder.slice(0, 6).forEach(f => addRow(f, true));
-
+  const paintSchema = () => {
+    rows.innerHTML = '';
+    if (schema.set) schema.fields.forEach(f => addRow(f));
+    else schema.placeholder.slice(0, 6).forEach(f => addRow(f, true));
+  };
+  paintSchema();
   rows.addEventListener('click', e => {
     const del = e.target.closest('.f-del');
-    if (del) del.closest('tr').remove();
+    if (del) { del.closest('tr').remove(); markDirty(); }
   });
   rows.addEventListener('input', e => {
     const tr = e.target.closest('tr');
-    if (tr) tr.classList.remove('ghost');   // typing in a ghost row makes it real
+    if (tr) tr.classList.remove('ghost');
+    markDirty();
   });
-  document.getElementById('add-field').addEventListener('click', () => addRow());
-  const useExample = document.getElementById('use-example-schema');
-  if (useExample) useExample.addEventListener('click', () => {
+  document.getElementById('add-field').addEventListener('click', () => { addRow(); markDirty(); });
+  document.getElementById('use-example-schema').addEventListener('click', () => {
     rows.innerHTML = '';
     schema.placeholder.forEach(f => addRow(f));
+    markDirty();
+  });
+  document.getElementById('clear-schema').addEventListener('click', () => {
+    rows.innerHTML = ''; markDirty();
   });
 
   document.querySelectorAll('[data-copy-example]').forEach(btn => btn.addEventListener('click', () => {
@@ -1751,87 +1786,61 @@ async function renderSettings(gen) {
     const box = document.getElementById(kind + '-prompt');
     if (box.value.trim() && !confirm('Replace what is in the box with the example?')) return;
     box.value = prompts.placeholders[kind];
-    box.focus();
+    box.focus(); markDirty();
   }));
 
-  // ---- keys: one row each, edited in place
-  const keyRows = document.getElementById('key-rows');
-  const keyState = { ...envKeys };
-  let editingKey = null;
+  // ---- one save, and a bar that only appears once something has changed
+  const savebar = document.getElementById('savebar');
+  function markDirty() { savebar.hidden = false; }
+  view.querySelectorAll('input, select, textarea').forEach(elm => {
+    elm.addEventListener('input', markDirty);
+    elm.addEventListener('change', markDirty);
+  });
+  document.getElementById('discard').addEventListener('click', () => router());
 
-  function paintKeys() {
-    keyRows.innerHTML = Object.entries(keyState).map(([name, info]) => {
-      if (editingKey === name) {
-        return `<tr><td><code>${esc(name)}</code></td>
-          <td colspan="2"><input class="key-input" type="text" value="${esc(info.draft ?? '')}"
-             placeholder="paste the value" style="width:100%"></td>
-          <td class="nowrap"><button class="primary" data-save-key="${esc(name)}">Save</button>
-            <button data-cancel-key="${esc(name)}">Cancel</button></td></tr>`;
-      }
-      return `<tr><td><code>${esc(name)}</code></td>
-        <td><span class="tag ${info.set ? 'yes' : 'no'}">${info.set ? 'set' : 'not set'}</span></td>
-        <td class="keyprev">${info.set ? esc(info.preview) : '<span class="muted">&mdash;</span>'}</td>
-        <td class="nowrap"><button data-edit-key="${esc(name)}">${icon('edit')}${info.set ? 'Edit' : 'Set'}</button></td></tr>`;
-    }).join('');
-
-    const say = async (fn) => {
-      const status = document.getElementById('key-status');
-      status.className = 'muted';
-      try { status.textContent = await fn() || ''; }
-      catch (e) { status.className = 'error'; status.textContent = e.message; }
-    };
-    keyRows.querySelectorAll('[data-edit-key]').forEach(b => b.addEventListener('click', () => say(async () => {
-      const name = b.dataset.editKey;
-      const r = await get('/api/api-key/' + encodeURIComponent(name));
-      keyState[name] = { ...keyState[name], draft: r.value };
-      editingKey = name;
-      paintKeys();
-      const box = keyRows.querySelector('.key-input');
-      if (box) box.focus();
-      return r.value ? 'Editing ' + name : name + ' is empty, paste a value.';
-    })));
-    keyRows.querySelectorAll('[data-cancel-key]').forEach(b => b.addEventListener('click', () => {
-      delete keyState[b.dataset.cancelKey].draft;
-      editingKey = null;
-      paintKeys();
-    }));
-    keyRows.querySelectorAll('[data-save-key]').forEach(b => b.addEventListener('click', () => say(async () => {
-      const name = b.dataset.saveKey;
-      const value = keyRows.querySelector('.key-input').value;
-      if (!value) throw new Error('paste a value, or press Cancel');
-      await put('/api/api-key', { name, value });
-      editingKey = null;
-      Object.assign(keyState, await get('/api/env-keys'));
-      paintKeys();
-      return name + ' saved.';
-    })));
-  }
-  paintKeys();
-
-  document.getElementById('add-key').addEventListener('click', async () => {
-    const status = document.getElementById('key-status');
-    const name = document.getElementById('new-key-name').value.trim().toUpperCase();
-    const value = document.getElementById('new-key-value').value;
+  document.getElementById('save-all').addEventListener('click', async () => {
+    const status = document.getElementById('save-all-status');
     status.className = 'muted';
+    status.textContent = 'Saving…';
     try {
-      if (!name) throw new Error('name the variable first');
-      if (!value) throw new Error('paste the value first');
-      await put('/api/api-key', { name, value });
-      document.getElementById('new-key-name').value = '';
-      document.getElementById('new-key-value').value = '';
-      Object.assign(keyState, await get('/api/env-keys'));
-      paintKeys();
-      status.textContent = name + ' added.';
-    } catch (e) { status.className = 'error'; status.textContent = e.message; }
+      collectModels();
+      const saved = await put('/api/models', profiles.map(m => ({
+        id: m.id || null, name: m.name, model: m.model,
+        api_base: m.api_base, api_version: m.api_version })));
+      // ids come back in the order sent, so a brand new row learns its id here
+      saved.ids.forEach((id, i) => { profiles[i].id = id; });
+      for (const m of profiles) {
+        if (m.newKey) await put(`/api/models/${m.id}/key`, { value: m.newKey });
+      }
+      const fields = [...rows.querySelectorAll('tr')].map(tr => ({
+        name: tr.querySelector('.f-name').value.trim(),
+        type: tr.querySelector('.f-type').value,
+        description: tr.querySelector('.f-desc').value.trim(),
+      })).filter(f => f.name);
+      await put('/api/schema', { fields });
+      await put('/api/prompts', { extract: document.getElementById('extract-prompt').value,
+                                  judge: document.getElementById('judge-prompt').value });
+      await put('/api/settings', {
+        source_tracking_default: document.getElementById('src-default').checked,
+        extract_model: document.getElementById('extract-model').value,
+        judge_model: document.getElementById('judge-model').value,
+      });
+      status.className = 'ok-text';
+      status.textContent = 'Saved.';
+      setTimeout(() => router(), 600);
+    } catch (e) {
+      status.className = 'error';
+      status.textContent = e.message;
+    }
   });
 
-  // ---- worked examples: summary here, editing in the one dialog
+  // ---- worked examples summary
   const summary = document.getElementById('fs-summary');
   const tokensOf = (ex) => Math.round((ex.text.length + JSON.stringify(ex.records).length) / 4 / 100) / 10;
   const paintSummary = (list) => {
     summary.textContent = list.length
       ? `${list.length} example(s) · roughly ${list.reduce((n, e) => n + tokensOf(e), 0).toFixed(1)}k tokens added to every extraction call`
-      : 'None — extraction works from the prompt alone, which is often fine.';
+      : 'None yet — even one usually improves the result.';
   };
   paintSummary(fewShot);
   document.getElementById('fs-open').addEventListener('click', () =>

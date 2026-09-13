@@ -365,9 +365,6 @@ button.iconly .ic{margin:0}
 td .row-actions{display:flex;gap:5px;justify-content:flex-end}
 
 /* ---- settings: one save, ghost rows, switches ---- */
-.settingshead{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px;
-  position:sticky;top:0;z-index:5;background:var(--bg);padding:4px 0 10px}
-.settingshead h2{font-size:1.0625rem}
 label.switch{display:flex;gap:10px;align-items:flex-start;margin:0;color:var(--ink);
   font-size:.8125rem;cursor:pointer}
 label.switch input{margin:2px 0 0;accent-color:var(--accent);flex-shrink:0}
@@ -383,3 +380,22 @@ label.switch .muted{display:block;margin-top:1px}
 .setup-row.missing .dot{background:var(--no-soft)}
 .setup-row .dot.optional{background:var(--line-2)}
 .setup-row.optional b{font-weight:600}
+
+/* ---- settings: models, and a save bar that only shows up when it is needed ---- */
+.modelcard{border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;
+  margin-bottom:10px;background:var(--sunk)}
+.modelgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.modelgrid label{display:flex;flex-direction:column;gap:3px;margin:0;font-size:.75rem;
+  color:var(--dim)}
+.modelgrid input{width:100%}
+.m-status{font-size:.78rem}
+.stageselect{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.stageselect label{display:flex;flex-direction:column;gap:4px;margin:0}
+.stageselect span{font-size:.75rem;color:var(--dim);font-weight:600;text-transform:uppercase;
+  letter-spacing:.04em}
+.savebar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:30;
+  display:flex;gap:12px;align-items:center;padding:10px 14px;border-radius:99px;
+  background:var(--panel);border:1px solid var(--accent);font-size:.8125rem;
+  box-shadow:0 6px 24px rgba(16,24,32,.16);min-width:340px}
+.savebar[hidden]{display:none}
+.savebar > span:first-child{font-weight:600}

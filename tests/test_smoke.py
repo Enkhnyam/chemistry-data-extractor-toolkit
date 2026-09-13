@@ -25,18 +25,22 @@ client = TestClient(app)
 
 @contextmanager
 def configured():
-    """A workspace with everything a run needs, torn back down afterwards. Stages now refuse
-    until a model, a key, a schema and a prompt are all present, so most tests need this."""
-    from server import config
-    os.environ["OPENAI_API_KEY"] = "sk-test-not-a-real-key"
-    config.save_settings({"model": "gpt-4o-mini"})
+    """A workspace with everything a run needs, torn back down afterwards. Stages refuse until a
+    model with a key, a schema and a prompt are all present, so most tests need this."""
+    from server import config, models
+    saved = client.put("/api/models", json=[{"name": "test", "model": "gpt-4o-mini"}]).json()
+    pid = saved["ids"][0]
+    os.environ[models.key_var(pid)] = "sk-test-not-a-real-key"
+    config.save_settings({"extract_model": pid, "judge_model": pid})
     config.save_schema([{"name": "compound", "type": "string", "description": "what it is"}])
     config.save_extract_prompt("Extract every reaction this paper reports.")
     config.save_judge_prompt("Check each record against the paper.")
     try:
-        yield
+        yield pid
     finally:
-        config.save_settings({"model": ""})
+        os.environ.pop(models.key_var(pid), None)
+        client.put("/api/models", json=[])
+        config.save_settings({"extract_model": "", "judge_model": ""})
         config.save_schema([])
         config.EXTRACT_PROMPT_FILE.unlink(missing_ok=True)
         config.JUDGE_PROMPT_FILE.unlink(missing_ok=True)
@@ -47,8 +51,11 @@ class ConfigTests(unittest.TestCase):
         """Nothing is filled in for you. Someone who downloads this finds no schema, no model
         and no prompts -- only examples of each, shown as placeholder text."""
         settings = client.get("/api/settings").json()
-        self.assertEqual(settings["model"], "", "a model was prefilled")
         self.assertEqual(settings["source_tracking_default"], True, "a real default, not a leftover")
+        cfg = client.get("/api/models").json()
+        self.assertEqual(cfg["profiles"], [], "a model was prefilled")
+        self.assertEqual(cfg["extract"], "")
+        self.assertEqual(cfg["judge"], "")
 
         schema = client.get("/api/schema").json()
         self.assertEqual(schema["fields"], [], "a schema was prefilled")
@@ -59,9 +66,8 @@ class ConfigTests(unittest.TestCase):
 
     def test_nothing_leaks_from_the_example_into_the_values(self):
         # the placeholders are PET chemistry; the values must not be
-        settings = client.get("/api/settings").json()
         prompts = client.get("/api/prompts").json()
-        blob = (settings["model"] + prompts["extract"] + prompts["judge"]).lower()
+        blob = (prompts["extract"] + prompts["judge"]).lower()
         for word in ("pet", "glycolysis", "bhet", "ionic liquid"):
             self.assertNotIn(word, blob, f"{word!r} leaked from the example into a real value")
 
@@ -76,15 +82,13 @@ class ConfigTests(unittest.TestCase):
 
     def test_stages_refuse_to_run_without_a_prompt(self):
         from server import config
-        config.save_settings({"model": "gpt-4o-mini"})
-        config.save_schema([{"name": "x", "type": "string", "description": ""}])
-        config.EXTRACT_PROMPT_FILE.unlink(missing_ok=True)
-        config.JUDGE_PROMPT_FILE.unlink(missing_ok=True)
-        os.environ["OPENAI_API_KEY"] = "sk-test"
-        for endpoint, word in (("/api/extract", "extraction prompt"), ("/api/judge", "judge rubric")):
-            r = client.post(endpoint, json={"paper_ids": ["anything"]})
-            self.assertEqual(r.status_code, 400, endpoint)
-            self.assertIn(word, r.json()["detail"])
+        with configured():
+            config.EXTRACT_PROMPT_FILE.unlink(missing_ok=True)
+            config.JUDGE_PROMPT_FILE.unlink(missing_ok=True)
+            for endpoint, word in (("/api/extract", "extraction prompt"), ("/api/judge", "judge rubric")):
+                r = client.post(endpoint, json={"paper_ids": ["anything"]})
+                self.assertEqual(r.status_code, 400, endpoint)
+                self.assertIn(word, r.json()["detail"])
 
     def test_a_fully_configured_workspace_unblocks_the_stages(self):
         """Every blocker must clear before a run is possible: model, key, schema, prompt."""
@@ -97,13 +101,61 @@ class ConfigTests(unittest.TestCase):
 
     def test_readiness_names_each_missing_piece(self):
         from server import config
-        config.save_settings({"model": ""})
+        config.save_settings({"extract_model": "", "judge_model": ""})
         config.save_schema([])
         config.EXTRACT_PROMPT_FILE.unlink(missing_ok=True)
         blockers = " ".join(client.get("/api/readiness").json()["extract"])
         self.assertIn("model", blockers)
         self.assertIn("fields", blockers)
         self.assertIn("extraction prompt", blockers)
+
+    def test_a_model_without_a_key_is_named_as_the_blocker(self):
+        from server import config
+        pid = client.put("/api/models", json=[{"name": "Keyless", "model": "gpt-4o-mini"}]).json()["ids"][0]
+        config.save_settings({"extract_model": pid})
+        blockers = " ".join(client.get("/api/readiness").json()["extract"])
+        self.assertIn("Keyless", blockers)
+        self.assertIn("API key", blockers)
+        client.put("/api/models", json=[])
+
+    def test_extraction_and_judging_can_use_different_models(self):
+        """The reason profiles exist: a strong extractor and a separate auditor, each with its
+        own endpoint and key, in one workspace."""
+        from server import config, models
+        saved = client.put("/api/models", json=[
+            {"name": "Extractor", "model": "azure/deploy", "api_base": "https://x.azure.com",
+             "api_version": "2024-12-01-preview"},
+            {"name": "Auditor", "model": "gpt-4o-mini"}]).json()
+        ext, jud = saved["ids"]
+        self.assertNotEqual(ext, jud)
+        os.environ[models.key_var(ext)] = "azure-key"
+        os.environ[models.key_var(jud)] = "openai-key"
+        try:
+            config.save_settings({"extract_model": ext, "judge_model": jud})
+            ep, jp = models.call_params(ext), models.call_params(jud)
+            self.assertEqual(ep["model"], "azure/deploy")
+            self.assertEqual(ep["api_base"], "https://x.azure.com")
+            self.assertEqual(ep["api_version"], "2024-12-01-preview")
+            self.assertEqual(ep["api_key"], "azure-key")
+            # the auditor carries neither the other one's endpoint nor its key
+            self.assertEqual(jp["model"], "gpt-4o-mini")
+            self.assertNotIn("api_base", jp)
+            self.assertEqual(jp["api_key"], "openai-key")
+        finally:
+            for pid in (ext, jud):
+                os.environ.pop(models.key_var(pid), None)
+            client.put("/api/models", json=[])
+            config.save_settings({"extract_model": "", "judge_model": ""})
+
+    def test_a_model_key_never_comes_back_in_a_listing(self):
+        from server import models
+        pid = client.put("/api/models", json=[{"name": "Secret", "model": "m"}]).json()["ids"][0]
+        client.put(f"/api/models/{pid}/key", json={"value": "sk-do-not-leak-this"})
+        blob = client.get("/api/models").text
+        self.assertNotIn("sk-do-not-leak-this", blob)
+        self.assertTrue(client.get("/api/models").json()["profiles"][0]["key_set"])
+        os.environ.pop(models.key_var(pid), None)
+        client.put("/api/models", json=[])
 
     def test_schema_rejects_bad_field_names_and_types(self):
         bad_name = client.put("/api/schema", json={"fields": [{"name": "has space", "type": "string"}]})
@@ -142,52 +194,6 @@ class ConfigTests(unittest.TestCase):
         self.assertTrue(body["OPENAI_API_KEY"]["set"])
         self.assertNotIn("secretsecret", body["OPENAI_API_KEY"]["preview"])
         self.assertTrue(body["OPENAI_API_KEY"]["preview"].endswith("1234"))
-
-
-class CredentialTests(unittest.TestCase):
-    """The very first thing a new install does is fail for want of a key. What it says then is
-    the whole of the onboarding experience."""
-
-    def test_a_missing_key_is_named_plainly(self):
-        import os
-        from server import llm
-        saved = os.environ.pop("OPENAI_API_KEY", None)
-        try:
-            message = llm.missing_credentials("gpt-4o-mini")
-            self.assertIsNotNone(message)
-            self.assertIn("OPENAI_API_KEY", message)
-            self.assertNotIn("workload_identity", message)   # the provider's wording, not ours
-        finally:
-            if saved is not None:
-                os.environ["OPENAI_API_KEY"] = saved
-
-    def test_an_empty_key_counts_as_missing(self):
-        # `OPENAI_API_KEY=` in a copied .env.example is not a key, though litellm's own check
-        # counts the empty string as present
-        import os
-        from server import llm
-        saved = os.environ.get("OPENAI_API_KEY")
-        os.environ["OPENAI_API_KEY"] = ""
-        try:
-            self.assertIsNotNone(llm.missing_credentials("gpt-4o-mini"))
-        finally:
-            if saved is None:
-                os.environ.pop("OPENAI_API_KEY", None)
-            else:
-                os.environ["OPENAI_API_KEY"] = saved
-
-    def test_a_present_key_is_not_reported_missing(self):
-        import os
-        from server import llm
-        saved = os.environ.get("OPENAI_API_KEY")
-        os.environ["OPENAI_API_KEY"] = "sk-something"
-        try:
-            self.assertIsNone(llm.missing_credentials("gpt-4o-mini"))
-        finally:
-            if saved is None:
-                os.environ.pop("OPENAI_API_KEY", None)
-            else:
-                os.environ["OPENAI_API_KEY"] = saved
 
 
 class PaperTests(unittest.TestCase):

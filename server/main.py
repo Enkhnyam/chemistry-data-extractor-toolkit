@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ENV_FILE = ROOT / ".env"
 load_dotenv(ENV_FILE)
 
-from . import config, extraction, judge, parsing, report, timings  # noqa: E402  (after load_dotenv)
+from . import config, extraction, judge, llm, models, parsing, report, timings  # noqa: E402  (after load_dotenv)
 from .storage import (EXTRACTED, JUDGED, PARSED, PDFS, list_papers, paper_id_for, read_json,  # noqa: E402
                       require, version_of, write_json)
 
@@ -59,6 +59,64 @@ def get_settings():
 @app.put("/api/settings")
 def put_settings(patch: dict):
     return config.save_settings(patch)
+
+
+class ModelProfile(BaseModel):
+    id: str | None = None
+    name: str = ""
+    model: str = ""
+    api_base: str = ""
+    api_version: str = ""
+
+
+def _key_is_set(var: str) -> bool:
+    import os
+    return bool(os.environ.get(var))
+
+
+@app.get("/api/models")
+def get_models():
+    """The configured endpoints, plus which stage uses which. Never the secrets."""
+    settings = config.get_settings()
+    return {"profiles": models.listing(_key_is_set),
+            "extract": settings.get("extract_model", ""),
+            "judge": settings.get("judge_model", "")}
+
+
+@app.put("/api/models")
+def put_models(profiles: list[ModelProfile]):
+    saved = models.save_all([p.model_dump() for p in profiles])
+    return {"profiles": models.listing(_key_is_set),
+            "ids": [p["id"] for p in saved]}
+
+
+class ModelKey(BaseModel):
+    value: str = Field(min_length=1)
+
+
+@app.put("/api/models/{profile_id}/key")
+def put_model_key(profile_id: str, body: ModelKey):
+    if not models.get(profile_id):
+        raise HTTPException(404, "no such model configuration")
+    return put_api_key(ApiKey(name=models.key_var(profile_id), value=body.value))
+
+
+@app.post("/api/models/{profile_id}/test")
+def test_model_profile(profile_id: str):
+    """One tiny completion against this exact configuration -- the only way to find out whether
+    a model string, an endpoint and a key actually work together before a batch depends on it."""
+    blocked = models.blockers(profile_id, "this model")
+    if blocked:
+        return {"ok": False, "error": " ".join(blocked)}
+    params = models.call_params(profile_id)
+    started = time.monotonic()
+    try:
+        resp = llm.complete(params, [{"role": "user", "content": "Reply with OK."}], max_tokens=5)
+    except Exception as e:
+        return {"ok": False, "error": f"{type(e).__name__}: {e}"}
+    return {"ok": True, "model": params["model"],
+            "reply": (resp.choices[0].message.content or "").strip()[:40],
+            "seconds": round(time.monotonic() - started, 1)}
 
 
 class SchemaField(BaseModel):
@@ -201,42 +259,14 @@ def reveal_api_key(name: str):
     return {"name": name, "value": os.environ.get(name, "")}
 
 
-@app.post("/api/test-model")
-def test_model():
-    """One tiny completion against the configured model. Answers "is my model string plus my
-    keys actually going to work" in two seconds and for a fraction of a cent -- instead of
-    that question being answered twenty minutes into a batch run, by a failure."""
-    import litellm
-    from . import llm
-    model = config.get_settings()["model"]
-    gap = llm.missing_credentials(model)
-    if gap:
-        return {"ok": False, "model": model, "error": gap}
-    started = time.monotonic()
-    try:
-        resp = litellm.completion(model=model, messages=[{"role": "user", "content": "Reply with OK."}],
-                                  max_tokens=5, timeout=30)
-    except Exception as e:
-        return {"ok": False, "model": model, "error": f"{type(e).__name__}: {e}"}
-    return {"ok": True, "model": model,
-            "reply": (resp.choices[0].message.content or "").strip()[:40],
-            "seconds": round(time.monotonic() - started, 1)}
-
-
 def _blockers(stage: str) -> list[str]:
     """What is still missing before this stage can run, in the order a person would fix it.
 
     The UI shows the same list as a checklist; both call this so they can never disagree about
     whether a run is possible."""
     settings = config.get_settings()
-    missing = []
-    if not settings.get("model", "").strip():
-        missing.append("Choose a model in Settings.")
-    else:
-        from . import llm
-        gap = llm.missing_credentials(settings["model"])
-        if gap:
-            missing.append(gap)
+    missing = list(models.blockers(settings.get(f"{stage}_model", ""),
+                                   "extraction" if stage == "extract" else "judging"))
     if not config.get_schema():
         missing.append("Define the fields a record has, in Settings.")
     if stage == "extract" and not config.get_extract_prompt().strip():
@@ -378,6 +408,7 @@ def _extract(body: PaperIds):
     prompt = config.get_extract_prompt()
     schema_fields = config.get_schema()
     few_shot = config.get_few_shot()
+    params = models.call_params(settings.get("extract_model", ""))
 
     results = []
     for pid in body.paper_ids:
@@ -390,7 +421,7 @@ def _extract(body: PaperIds):
         text = parsing.chunks_to_text(paper["chunks"], with_source)
         started = time.monotonic()
         try:
-            records, usage = extraction.run_extraction(settings["model"], prompt, schema_fields,
+            records, usage = extraction.run_extraction(params, prompt, schema_fields,
                                                        few_shot, text, with_source)
         except Exception as e:
             results.append({"id": pid, "error": f"{type(e).__name__}: {e}"})
@@ -398,7 +429,7 @@ def _extract(body: PaperIds):
         seconds = time.monotonic() - started
         timings.record("extract", seconds, len(paper["chunks"]), unit="chunks")
         write_json(EXTRACTED / f"{pid}.json",
-                   {"id": pid, "records": records, "usage": usage, "model": settings["model"]})
+                   {"id": pid, "records": records, "usage": usage, "model": params.get("model")})
         results.append({"id": pid, "n_records": len(records), "seconds": round(seconds, 1),
                         "usage": usage})
     return results
@@ -468,6 +499,7 @@ def _judge(body: PaperIds):
     if blockers:
         raise HTTPException(400, " ".join(blockers))
     rubric = config.get_judge_prompt()
+    params = models.call_params(settings.get("judge_model", ""))
 
     results = []
     for pid in body.paper_ids:
@@ -481,14 +513,14 @@ def _judge(body: PaperIds):
         text = parsing.chunks_to_text(paper["chunks"], with_source)
         started = time.monotonic()
         try:
-            verdicts, usage = judge.run_judge(settings["model"], rubric, text, extracted["records"])
+            verdicts, usage = judge.run_judge(params, rubric, text, extracted["records"])
         except Exception as e:
             results.append({"id": pid, "error": f"{type(e).__name__}: {e}"})
             continue
         seconds = time.monotonic() - started
         timings.record("judge", seconds, len(extracted["records"]), unit="records")
         write_json(JUDGED / f"{pid}.json",
-                   {"id": pid, "verdicts": verdicts, "usage": usage, "model": settings["model"],
+                   {"id": pid, "verdicts": verdicts, "usage": usage, "model": params.get("model"),
                     # what the judge actually saw, so a later edit can be spotted as post-dating it
                     "judged_records": extracted["records"]})
         results.append({"id": pid, "n_verdicts": len(verdicts), "seconds": round(seconds, 1),
@@ -597,12 +629,16 @@ def generate_prompt(body: PromptRequest):
                              "prompt fit papers that look like this — its table conventions, its "
                              "units, how it names things:\n\n" + excerpt})
 
-    import litellm
-    model = config.get_settings()["model"]
+    profile_id = config.get_settings().get("extract_model", "")
+    blocked = models.blockers(profile_id, "extraction")
+    if blocked:
+        raise HTTPException(400, " ".join(blocked))
+    params = models.call_params(profile_id)
     try:
-        resp = litellm.completion(model=model, messages=messages, timeout=180)
+        resp = llm.complete(params, messages)
     except Exception as e:
         raise HTTPException(502, f"{type(e).__name__}: {e}") from e
+    model = params["model"]
     text = (resp.choices[0].message.content or "").strip()
     text = re.sub(r"^```[a-z]*\n|\n```$", "", text)
     return {"prompt": text, "model": model}

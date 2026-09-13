@@ -65,10 +65,10 @@ def build_messages(rubric: str, paper_text: str, records: list[dict]) -> list[di
                                        f"Judge each of the {len(records)} extracted records below.\n\n{numbered}"}]
 
 
-def run_judge(model: str, rubric: str, paper_text: str, records: list[dict]) -> tuple[list[dict], dict]:
+def run_judge(params: dict, rubric: str, paper_text: str, records: list[dict]) -> tuple[list[dict], dict]:
     if not records:
         return [], {}
-    resp = llm.complete(model, build_messages(rubric, paper_text, records),
+    resp = llm.complete(params, build_messages(rubric, paper_text, records),
                         response_format=BatchVerdict)
     content = resp.choices[0].message.content
     outermost = content[content.find("{"): content.rfind("}") + 1]

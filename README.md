@@ -117,13 +117,18 @@ None of these exist until you save them; the examples shown in the interface liv
 
 Change all four and the same three-stage pipeline runs on a different literature entirely.
 
-## Model / API keys
+## Models
 
-The model is any [litellm](https://docs.litellm.ai/docs/providers) model string
-(`gpt-4o-mini`, `anthropic/claude-sonnet-4-5`, `ollama/llama3`, ...), set from Settings.
-Provider API keys are read from environment variables (`OPENAI_API_KEY`,
-`ANTHROPIC_API_KEY`, ...) via `.env`, or entered directly in Settings &mdash; either way they
-stay on this machine.
+You configure one entry per endpoint you call: a name, a
+[litellm](https://docs.litellm.ai/docs/providers) model string, a key, and an endpoint and API
+version where the provider needs them (Azure does; most do not). **Extraction and judging then
+pick separately** &mdash; a strong extractor and a cheaper or deliberately different auditor, each
+with its own endpoint and key, in one workspace.
+
+Credentials are passed per call rather than left to provider environment variables, so an Azure
+deployment and an OpenAI model can coexist without fighting over one `OPENAI_API_KEY`. Each
+entry's key is written to this project's local `.env` under its own variable and is never sent
+back to the browser. "Test connection" makes one tiny call against that exact configuration.
 
 ## API
 
