@@ -68,6 +68,52 @@ class ConfigTests(unittest.TestCase):
         self.assertTrue(body["OPENAI_API_KEY"]["preview"].endswith("1234"))
 
 
+class CredentialTests(unittest.TestCase):
+    """The very first thing a new install does is fail for want of a key. What it says then is
+    the whole of the onboarding experience."""
+
+    def test_a_missing_key_is_named_plainly(self):
+        import os
+        from server import llm
+        saved = os.environ.pop("OPENAI_API_KEY", None)
+        try:
+            message = llm.missing_credentials("gpt-4o-mini")
+            self.assertIsNotNone(message)
+            self.assertIn("OPENAI_API_KEY", message)
+            self.assertNotIn("workload_identity", message)   # the provider's wording, not ours
+        finally:
+            if saved is not None:
+                os.environ["OPENAI_API_KEY"] = saved
+
+    def test_an_empty_key_counts_as_missing(self):
+        # `OPENAI_API_KEY=` in a copied .env.example is not a key, though litellm's own check
+        # counts the empty string as present
+        import os
+        from server import llm
+        saved = os.environ.get("OPENAI_API_KEY")
+        os.environ["OPENAI_API_KEY"] = ""
+        try:
+            self.assertIsNotNone(llm.missing_credentials("gpt-4o-mini"))
+        finally:
+            if saved is None:
+                os.environ.pop("OPENAI_API_KEY", None)
+            else:
+                os.environ["OPENAI_API_KEY"] = saved
+
+    def test_a_present_key_is_not_reported_missing(self):
+        import os
+        from server import llm
+        saved = os.environ.get("OPENAI_API_KEY")
+        os.environ["OPENAI_API_KEY"] = "sk-something"
+        try:
+            self.assertIsNone(llm.missing_credentials("gpt-4o-mini"))
+        finally:
+            if saved is None:
+                os.environ.pop("OPENAI_API_KEY", None)
+            else:
+                os.environ["OPENAI_API_KEY"] = saved
+
+
 class PaperTests(unittest.TestCase):
     def test_missing_paper_is_404_not_500(self):
         self.assertEqual(client.get("/api/papers/nope").status_code, 404)

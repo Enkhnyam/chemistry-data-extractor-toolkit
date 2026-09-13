@@ -25,8 +25,40 @@ def usage_of(resp) -> dict:
     }
 
 
+def missing_credentials(model: str) -> str | None:
+    """The env var this model needs and does not have, or None.
+
+    litellm knows which variable each provider reads, so ask it rather than keeping our own
+    table. Without this the first thing a new user sees is the provider's own words --
+    "InternalServerError ... pass an `api_key`, `workload_identity`, `admin_api_key`" -- which
+    names three things that are not the one thing to do.
+    """
+    import os
+    # Empty is not set. Copying .env.example leaves `OPENAI_API_KEY=`, which becomes an empty
+    # string that litellm's check counts as present -- and litellm re-reads the .env itself on
+    # import, so stripping the blanks at startup does not hold. They are removed here, for the
+    # length of the check, and put back: this function answers a question, it does not tidy up.
+    blanks = {k: v for k, v in os.environ.items() if v == ""}
+    for k in blanks:
+        os.environ.pop(k, None)
+    try:
+        check = litellm.validate_environment(model=model)
+    except Exception:
+        return None
+    finally:
+        os.environ.update(blanks)
+    missing = [k for k in (check.get("missing_keys") or []) if k]
+    if check.get("keys_in_environment") or not missing:
+        return None
+    return (f"{model} needs {' and '.join(missing)}, which is not set. "
+            f"Add it under Keys in Settings.")
+
+
 def complete(model: str, messages: list[dict], **kwargs):
     """One completion, with provider errors translated into something a person can act on."""
+    gap = missing_credentials(model)
+    if gap:
+        raise RuntimeError(gap)
     try:
         return litellm.completion(model=model, messages=messages, num_retries=5,
                                   timeout=REQUEST_TIMEOUT, **kwargs)

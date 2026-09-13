@@ -198,7 +198,11 @@ def test_model():
     keys actually going to work" in two seconds and for a fraction of a cent -- instead of
     that question being answered twenty minutes into a batch run, by a failure."""
     import litellm
+    from . import llm
     model = config.get_settings()["model"]
+    gap = llm.missing_credentials(model)
+    if gap:
+        return {"ok": False, "model": model, "error": gap}
     started = time.monotonic()
     try:
         resp = litellm.completion(model=model, messages=[{"role": "user", "content": "Reply with OK."}],
