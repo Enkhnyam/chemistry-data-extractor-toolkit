@@ -28,7 +28,9 @@ tables) next to its records:
 
 Runs happen one paper at a time with live per-item progress, a time estimate drawn from your
 own machine's history, and a running token and dollar count. You can switch tabs while a run
-is going, and stop it after the current paper.
+is going, and stop it after the current paper. What each paper has cost is listed per row on
+the Parse and Report tables, with a total; a run can be deleted and re-run from either page,
+behind a confirmation that names what goes with it.
 
 A fourth page, **Report**, summarises whatever you have built: completeness by field, records
 per paper, what the judge changed, the distribution of any field you pick, and CSV/JSON export
@@ -120,6 +122,9 @@ stay on this machine.
 | PUT | `/api/papers/{id}/extraction` | save reviewer corrections + notes |
 | POST | `/api/judge` | `{paper_ids: [...]}` &rarr; run the judge |
 | GET | `/api/papers/{id}/judgment` | verdicts and fixes |
+| DELETE | `/api/papers/{id}` | the paper and every stage derived from it |
+| DELETE | `/api/papers/{id}/extraction` | the extraction, its judgment, and your notes |
+| DELETE | `/api/papers/{id}/judgment` | the verdicts only; records stay |
 | GET | `/api/api-key/{name}` | the stored value of one variable, so Settings can edit it |
 | POST | `/api/generate-prompt` | draft an extraction prompt or judge rubric for a domain |
 | GET | `/api/report` | corpus summary: completeness, verdicts, corrections per field |

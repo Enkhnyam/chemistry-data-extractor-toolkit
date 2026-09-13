@@ -53,6 +53,11 @@ def build() -> dict:
         by_index = {v["record_index"]: v for v in (judgment or {}).get("verdicts", [])}
         n_bad = sum(1 for v in by_index.values() if v.get("verdict") == "incorrect")
 
+        paper_cost = round(sum(((src or {}).get("usage") or {}).get("cost_usd", 0.0)
+                               for src in (extraction, judgment)), 6)
+        paper_tokens = sum(((src or {}).get("usage") or {}).get("prompt_tokens", 0) +
+                           ((src or {}).get("usage") or {}).get("completion_tokens", 0)
+                           for src in (extraction, judgment))
         papers.append({
             "id": pid,
             "filename": paper.get("filename", pid),
@@ -61,6 +66,8 @@ def build() -> dict:
             "judged": judgment is not None,
             "incorrect": n_bad,
             "reviewed": sum(1 for n in notes.values() if n.get("flag") or n.get("note")),
+            "cost_usd": paper_cost,
+            "tokens": paper_tokens,
         })
         if extraction:
             per_paper_records.append(len(records))

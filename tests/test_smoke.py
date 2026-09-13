@@ -118,6 +118,59 @@ class ReviewTests(unittest.TestCase):
                          "first", "the refused save overwrote the winner anyway")
 
 
+class DeleteTests(unittest.TestCase):
+    def setUp(self):
+        from server.storage import EXTRACTED, JUDGED, PARSED, write_json
+        self.pid = "deletable"
+        write_json(Path(PARSED) / f"{self.pid}.json", {"id": self.pid, "filename": "d.pdf", "chunks": []})
+        write_json(Path(EXTRACTED) / f"{self.pid}.json", {"id": self.pid, "records": [{"a": 1}]})
+        write_json(Path(JUDGED) / f"{self.pid}.json", {"id": self.pid, "verdicts": []})
+
+    def test_deleting_an_extraction_takes_its_judgment_with_it(self):
+        # a verdict about records that no longer exist is worse than no verdict
+        body = client.delete(f"/api/papers/{self.pid}/extraction").json()
+        self.assertTrue(body["also_deleted_judgment"])
+        self.assertEqual(client.get(f"/api/papers/{self.pid}/extraction").status_code, 404)
+        self.assertEqual(client.get(f"/api/papers/{self.pid}/judgment").status_code, 404)
+        self.assertEqual(client.get(f"/api/papers/{self.pid}").status_code, 200, "the paper itself went too")
+
+    def test_deleting_a_judgment_leaves_the_extraction(self):
+        self.assertEqual(client.delete(f"/api/papers/{self.pid}/judgment").status_code, 200)
+        self.assertEqual(client.get(f"/api/papers/{self.pid}/judgment").status_code, 404)
+        self.assertEqual(client.get(f"/api/papers/{self.pid}/extraction").status_code, 200)
+
+    def test_deleting_a_paper_removes_every_stage(self):
+        removed = client.delete(f"/api/papers/{self.pid}").json()["removed"]
+        self.assertIn("parsed", removed)
+        for path in ("", "/extraction", "/judgment"):
+            self.assertEqual(client.get(f"/api/papers/{self.pid}{path}").status_code, 404, path)
+
+    def test_deleting_what_is_not_there_is_404(self):
+        self.assertEqual(client.delete("/api/papers/ghost").status_code, 404)
+        self.assertEqual(client.delete("/api/papers/ghost/extraction").status_code, 404)
+
+
+class SpendTests(unittest.TestCase):
+    def test_per_paper_cost_is_listed_and_totalled(self):
+        from server.storage import EXTRACTED, JUDGED, PARSED, write_json
+        pid = "priced"
+        write_json(Path(PARSED) / f"{pid}.json", {"id": pid, "filename": "p.pdf", "chunks": []})
+        write_json(Path(EXTRACTED) / f"{pid}.json", {"id": pid, "records": [],
+                   "usage": {"prompt_tokens": 1000, "completion_tokens": 200, "cost_usd": 0.0123}})
+        write_json(Path(JUDGED) / f"{pid}.json", {"id": pid, "verdicts": [],
+                   "usage": {"prompt_tokens": 500, "completion_tokens": 50, "cost_usd": 0.0077}})
+
+        listed = next(p for p in client.get("/api/papers").json() if p["id"] == pid)
+        self.assertAlmostEqual(listed["spend"]["cost_usd"], 0.02)
+        self.assertEqual(listed["spend"]["tokens"], 1750)
+        self.assertEqual(listed["spend"]["calls"], 2)
+
+        paper = next(p for p in client.get("/api/report").json()["papers"] if p["id"] == pid)
+        self.assertAlmostEqual(paper["cost_usd"], 0.02)
+        self.assertEqual(paper["tokens"], 1750)
+        client.delete(f"/api/papers/{pid}")
+
+
 class ConcurrencyTests(unittest.TestCase):
     def test_a_second_run_is_refused_while_one_is_going(self):
         """Two tabs starting extractions on the same paper used to race for the same file."""

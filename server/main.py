@@ -268,6 +268,45 @@ def get_paper(paper_id: str):
     return {**paper, "chunks": parsing.with_html(paper["chunks"])}
 
 
+@app.delete("/api/papers/{paper_id}")
+def delete_paper(paper_id: str):
+    """The paper and everything derived from it. Irreversible, and it takes any reviewer
+    corrections with it -- the frontend says so before asking."""
+    removed = []
+    for path in (PDFS / f"{paper_id}.pdf", PARSED / f"{paper_id}.json",
+                 EXTRACTED / f"{paper_id}.json", JUDGED / f"{paper_id}.json"):
+        if path.exists():
+            path.unlink()
+            removed.append(path.parent.name)
+    if not removed:
+        raise HTTPException(404, f"nothing to delete for {paper_id}")
+    return {"deleted": paper_id, "removed": removed}
+
+
+@app.delete("/api/papers/{paper_id}/extraction")
+def delete_extraction(paper_id: str):
+    """The extraction, and with it the judgment -- a verdict about records that no longer
+    exist is worse than no verdict. Corrections and notes go too; they live in this file."""
+    path = EXTRACTED / f"{paper_id}.json"
+    if not path.exists():
+        raise HTTPException(404, f"no extraction for {paper_id}")
+    path.unlink()
+    judged = JUDGED / f"{paper_id}.json"
+    also = judged.exists()
+    if also:
+        judged.unlink()
+    return {"deleted": "extraction", "also_deleted_judgment": also}
+
+
+@app.delete("/api/papers/{paper_id}/judgment")
+def delete_judgment(paper_id: str):
+    path = JUDGED / f"{paper_id}.json"
+    if not path.exists():
+        raise HTTPException(404, f"no judgment for {paper_id}")
+    path.unlink()
+    return {"deleted": "judgment"}
+
+
 # ---------- extraction ----------
 
 class PaperIds(BaseModel):

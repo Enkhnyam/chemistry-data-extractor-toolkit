@@ -39,6 +39,19 @@ def paper_id_for(filename: str, content: bytes) -> str:
     return f"{slugify(filename)}-{hashlib.sha1(content).hexdigest()[:8]}"
 
 
+def spend_on(pid: str) -> dict:
+    """What this paper has cost so far, across both model stages."""
+    total = {"cost_usd": 0.0, "tokens": 0, "calls": 0}
+    for directory in (EXTRACTED, JUDGED):
+        usage = (read_json(directory / f"{pid}.json", {}) or {}).get("usage") or {}
+        if not usage:
+            continue
+        total["cost_usd"] = round(total["cost_usd"] + usage.get("cost_usd", 0.0), 6)
+        total["tokens"] += usage.get("prompt_tokens", 0) + usage.get("completion_tokens", 0)
+        total["calls"] += 1
+    return total
+
+
 def list_papers() -> list[dict]:
     papers = []
     for f in sorted(PARSED.glob("*.json")):
@@ -51,6 +64,7 @@ def list_papers() -> list[dict]:
             "n_chunks": len(meta.get("chunks", [])),
             "extracted": (EXTRACTED / f"{pid}.json").exists(),
             "judged": (JUDGED / f"{pid}.json").exists(),
+            "spend": spend_on(pid),
         })
     return papers
 

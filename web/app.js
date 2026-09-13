@@ -33,6 +33,7 @@ async function api(path, opts) {
 const get = (path) => api(path);
 const put = (path, body) => api(path, { method: 'PUT', body: JSON.stringify(body) });
 const post = (path, body) => api(path, { method: 'POST', body: body instanceof FormData ? body : JSON.stringify(body) });
+const del = (path) => api(path, { method: 'DELETE' });
 
 const esc = (s) => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmt = (v) => (v === null || v === undefined || v === '') ? '<span class="null">&mdash;</span>' : esc(v);
@@ -44,7 +45,8 @@ function el(html) {
   return t.content.firstElementChild;
 }
 
-const costOf = (r) => (r.usage && r.usage.cost_usd) ? ` · $${r.usage.cost_usd.toFixed(4)}` : '';
+const costOf = (r) => (r.usage && r.usage.cost_usd) ? ` · ${money(r.usage.cost_usd)}` : '';
+const money = (n) => !n ? '—' : n < 0.01 ? `$${n.toFixed(4)}` : `$${n.toFixed(2)}`;
 
 function humanSeconds(s) {
   if (s < 60) return `${Math.round(s)}s`;
@@ -529,6 +531,7 @@ function reviewPanelHTML(title) {
       <select id="review-pick"></select>
       <span class="grow"></span>
       <span class="muted" id="match-counter"></span>
+      <button id="delete-run">Delete this run</button>
       <button class="primary" id="save-review" disabled>Save corrections</button>
       <span class="muted" id="save-status"></span>
     </div>
@@ -547,23 +550,57 @@ function wireReviewPicker(papers, withJudgment) {
     || `<option value="">(nothing ${withJudgment ? 'judged' : 'extracted'} yet)</option>`;
   pick.addEventListener('change', () => loadReview(pick.value, withJudgment));
   document.getElementById('save-review').addEventListener('click', saveReview);
+
+  const stage = withJudgment ? 'judgment' : 'extraction';
+  const deleteBtn = document.getElementById('delete-run');
+  deleteBtn.disabled = !papers.length;
+  deleteBtn.addEventListener('click', async () => {
+    const id = pick.value;
+    if (!id) return;
+    const name = papers.find(p => p.id === id)?.filename || id;
+    const extra = withJudgment
+      ? '\n\nThe extracted records stay; only the verdicts go.'
+      : '\n\nThis also deletes its judgment, and any corrections and notes you saved.';
+    if (!confirm(`Delete the ${stage} for "${name}"?${extra}\n\nThis cannot be undone. `
+                 + `You can re-run it, at the usual cost.`)) return;
+    deleteBtn.disabled = true;
+    try {
+      await del(`/api/papers/${id}/${stage}`);
+      router();
+    } catch (e) {
+      deleteBtn.disabled = false;
+      alert('Could not delete: ' + e.message);
+    }
+  });
+
   if (papers.length) return loadReview(papers[0].id, withJudgment);
 }
 
 // ---------- Parse page ----------
 
 function papersTableHTML(papers) {
+  const spent = papers.reduce((n, p) => n + ((p.spend || {}).cost_usd || 0), 0);
   return `<table>
-    <thead><tr><th>File</th><th>Chunks</th><th>Source tracking</th><th>Extracted</th><th>Judged</th><th></th></tr></thead>
-    <tbody>${papers.map(p => `
-      <tr data-id="${p.id}">
+    <thead><tr><th>File</th><th>Chunks</th><th>Source</th><th>Extracted</th><th>Judged</th>
+      <th style="text-align:right">Cost</th><th></th></tr></thead>
+    <tbody>${papers.map(p => {
+      const spend = p.spend || {};
+      return `<tr data-id="${p.id}">
         <td>${esc(p.filename)}</td>
-        <td>${p.n_chunks}</td>
+        <td class="muted">${p.n_chunks}</td>
         <td><span class="tag ${p.source_tracking ? 'yes' : 'no'}">${p.source_tracking ? 'on' : 'off'}</span></td>
         <td><span class="tag ${p.extracted ? 'yes' : 'no'}">${p.extracted ? 'yes' : 'no'}</span></td>
         <td><span class="tag ${p.judged ? 'yes' : 'no'}">${p.judged ? 'yes' : 'no'}</span></td>
-        <td><button class="view-btn">View text</button></td>
-      </tr>`).join('') || '<tr><td colspan="6" class="muted">No papers yet</td></tr>'}</tbody>
+        <td class="money" title="${spend.tokens ? spend.tokens.toLocaleString() + ' tokens over ' + spend.calls + ' call(s)' : 'no model calls recorded'}">${money(spend.cost_usd)}</td>
+        <td class="nowrap">
+          <button class="view-btn">View</button>
+          <button class="del-btn" data-name="${esc(p.filename)}"
+            data-has="${[p.extracted && 'extraction', p.judged && 'judgment'].filter(Boolean).join(' and ')}">Delete</button>
+        </td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="7" class="muted">No papers yet</td></tr>'}</tbody>
+    ${spent ? `<tfoot><tr><td colspan="5" class="muted">total</td>
+      <td class="money">${money(spent)}</td><td></td></tr></tfoot>` : ''}
   </table>`;
 }
 
@@ -596,7 +633,7 @@ async function renderParse(gen) {
         <div id="run-progress"></div>
       </div>
       <div class="panel">
-        <h2>Papers <span class="muted" style="font-weight:400">${papers.length}</span></h2>
+        <h2>Papers <span class="muted" style="font-weight:400" id="paper-count">${papers.length}</span></h2>
         <div id="papers-table">${papersTableHTML(papers)}</div>
       </div>
       <div class="panel" id="preview-panel" style="display:none">
@@ -606,7 +643,19 @@ async function renderParse(gen) {
     </section>`;
 
   paintRun();
+
+  const refreshPapers = async () => {
+    const fresh = await get('/api/papers');
+    const table = document.getElementById('papers-table');
+    if (!table) return;
+    table.innerHTML = papersTableHTML(fresh);
+    wireViewButtons();
+    wireDeleteButtons(refreshPapers);
+    const count = document.getElementById('paper-count');
+    if (count) count.textContent = fresh.length;
+  };
   wireViewButtons();
+  wireDeleteButtons(refreshPapers);
 
   let picked = [];
   const pickedBox = document.getElementById('picked');
@@ -666,10 +715,32 @@ async function renderParse(gen) {
     });
     picked = [];
     showPicked();
-    const fresh = await get('/api/papers');
-    const table = document.getElementById('papers-table');
-    if (table) { table.innerHTML = papersTableHTML(fresh); wireViewButtons(); }
+    await refreshPapers();
   });
+}
+
+// Deleting is the one irreversible thing in the app, so the confirm names what goes with it:
+// an extraction carries the reviewer's corrections and notes, and those cannot be re-derived
+// by re-running anything.
+function wireDeleteButtons(onDone) {
+  document.querySelectorAll('.del-btn').forEach(btn => btn.addEventListener('click', async (e) => {
+    const row = e.target.closest('tr');
+    const id = row.dataset.id;
+    const has = btn.dataset.has;
+    const name = btn.dataset.name || id;
+    const extra = has
+      ? `\n\nThis also deletes its ${has}, including any corrections and notes you saved.`
+      : '';
+    if (!confirm(`Delete "${name}"?${extra}\n\nThis cannot be undone.`)) return;
+    btn.disabled = true;
+    try {
+      await del('/api/papers/' + id);
+      onDone();
+    } catch (err) {
+      btn.disabled = false;
+      alert('Could not delete: ' + err.message);
+    }
+  }));
 }
 
 function wireViewButtons() {
@@ -990,9 +1061,10 @@ async function renderReport(gen) {
 
       <div class="panel">
         <h3 style="margin:0 0 10px">Per paper</h3>
-        <table><thead><tr><th>Paper</th><th style="width:80px">Chunks</th>
-          <th style="width:150px">Records</th><th style="width:120px">Judge flagged</th>
-          <th style="width:110px">You reviewed</th></tr></thead>
+        <table><thead><tr><th>Paper</th><th style="width:76px">Chunks</th>
+          <th style="width:148px">Records</th><th style="width:116px">Judge flagged</th>
+          <th style="width:104px">You reviewed</th>
+          <th style="width:92px;text-align:right">Cost</th></tr></thead>
           <tbody>${data.papers.map(p => {
             const most = Math.max(...data.papers.map(x => x.records), 1);
             return `<tr>
@@ -1004,8 +1076,11 @@ async function renderReport(gen) {
                 ? (p.incorrect ? `<span class="tag no">${p.incorrect}</span>` : '<span class="tag yes">none</span>')
                 : '<span class="muted">not judged</span>'}</td>
               <td>${p.reviewed ? `<span class="tag yes">${p.reviewed}</span>` : '<span class="muted">—</span>'}</td>
+              <td class="money" title="${p.tokens ? p.tokens.toLocaleString() + ' tokens' : 'no model calls recorded'}">${money(p.cost_usd)}</td>
             </tr>`;
-          }).join('')}</tbody></table>
+          }).join('')}</tbody>
+          ${spend.cost_usd ? `<tfoot><tr><td colspan="5" class="muted">total</td>
+            <td class="money">${money(spend.cost_usd)}</td></tr></tfoot>` : ''}</table>
       </div>
     </section>`;
 
