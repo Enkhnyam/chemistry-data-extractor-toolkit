@@ -12,6 +12,7 @@ clean machine, from the committed tree, with real papers and a real model.
     python scripts/overnight_check.py                # full run, real LLM calls
     python scripts/overnight_check.py --no-llm       # everything except the paid stages
     python scripts/overnight_check.py --docker       # also build and boot the image
+    python scripts/overnight_check.py --repo <url>   # check what the public actually gets
 
 Writes artifacts/overnight-report.md and exits non-zero if anything failed.
 """
@@ -203,6 +204,8 @@ def main() -> int:
     ap.add_argument("--no-llm", action="store_true", help="skip the stages that cost money")
     ap.add_argument("--docker", action="store_true", help="also build and boot the image")
     ap.add_argument("--keep", action="store_true", help="leave the clone behind for inspection")
+    ap.add_argument("--repo", default=str(REPO),
+                    help="what to clone: a path, or the public URL to check what strangers get")
     args = ap.parse_args()
 
     report = Report()
@@ -213,11 +216,13 @@ def main() -> int:
 
     try:
         # --- a stranger's clone, not this working tree
-        r = run(["git", "clone", "--quiet", str(REPO), str(clone)])
+        r = run(["git", "clone", "--quiet", args.repo, str(clone)], timeout=900)
         if r.returncode:
             raise Failure(f"clone failed: {r.stderr[:300]}")
         tracked = len(run(["git", "ls-files"], cwd=clone).stdout.split())
-        report.ok("clone", f"{tracked} tracked files")
+        head = run(["git", "log", "-1", "--format=%h %s"], cwd=clone).stdout.strip()
+        source = "GitHub" if "://" in args.repo else "a local path"
+        report.ok("clone", f"{tracked} tracked files from {source}, at {head[:58]}")
 
         for leak in (".env", "workspace/config/settings.json", "workspace/config/schema.json"):
             if (clone / leak).exists():

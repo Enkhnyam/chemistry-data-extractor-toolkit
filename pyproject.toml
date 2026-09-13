@@ -1,7 +1,7 @@
 [project]
-name = "extraction-toolkit"
+name = "chemistry-data-extractor-toolkit"
 version = "0.1.0"
-description = "Parse PDFs, extract structured records with an LLM, and audit them with an LLM judge -- schema and prompts are yours to define."
+description = "Extract experimental data from scientific PDFs with an LLM, audit it with a second one, and review it against the source text. Schema, prompts and examples are yours to define."
 readme = "README.md"
 requires-python = ">=3.12"
 

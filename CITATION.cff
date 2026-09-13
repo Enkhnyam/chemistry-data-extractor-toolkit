@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+title: Chemistry Data Extractor Toolkit
+message: >-
+  If you use this software in work that you publish, please cite it.
+type: software
+authors:
+  - family-names: Battulga
+    given-names: Enkhnyam
+    affiliation: RWTH Aachen University
+repository-code: https://github.com/Enkhnyam/chemistry-data-extractor-toolkit
+abstract: >-
+  A local tool for building auditable experimental datasets from scientific PDFs. One language
+  model extracts records against a schema you define; a second re-reads the paper and audits
+  every record against it; the reviewer checks what remains with the source text alongside and
+  the passage behind each value highlighted. Schema, prompts and worked examples are
+  configuration rather than code, so the same pipeline serves any chemistry. Generalised from a
+  PET-depolymerisation database built the same way.
+keywords:
+  - information extraction
+  - large language models
+  - chemistry
+  - literature mining
+  - LLM-as-a-judge
+  - research data
+license: MIT

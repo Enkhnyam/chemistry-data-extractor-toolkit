@@ -1,10 +1,23 @@
-# Extraction Toolkit
+# Chemistry Data Extractor Toolkit
 
-Turn a folder of PDFs into structured, LLM-extracted, LLM-audited records &mdash; on your
-own machine, in whatever schema your field needs. Built out of the pipeline behind the
-[pet-depolymerisation-database](../pet-depolymerisation-database) project, generalised: the
-schema, the extraction prompt, the judge rubric and the few-shot examples are all yours to
-edit from the app, nothing is hardcoded to one chemistry.
+**Turn a folder of PDFs into a structured, auditable dataset — on your own machine, in whatever
+schema your field needs.**
+
+Extracting experimental data from the literature by hand does not scale, and an LLM left to do
+it alone produces a table nobody should trust. This tool does both halves: one model reads each
+paper and fills your schema, a second re-reads the paper and audits every record against it, and
+you review what is left with the source text beside you and the exact passage behind each value
+highlighted.
+
+It came out of a PET-depolymerisation database built this way — several thousand experiments
+extracted from the literature and audited — and everything domain-specific has been lifted out.
+The schema, the extraction prompt, the audit rubric and the worked examples are data you edit in
+the browser, so the same pipeline runs on ionic liquids, palladium catalysis or anything else
+without touching the code.
+
+Nothing leaves your machine except the calls to whichever LLM provider you configure. There is
+no database, no cloud service and no account: results are plain JSON files in a directory you
+choose.
 
 Three stages, one page each:
 
@@ -58,12 +71,14 @@ LLM provider you configure, and a one-time OCR model download the first time you
 ### With uv (fastest for local development)
 
 ```bash
+git clone https://github.com/Enkhnyam/chemistry-data-extractor-toolkit.git
+cd chemistry-data-extractor-toolkit
 uv sync
-cp .env.example .env   # then fill in your provider's key, or set it later from Settings
-uv run uvicorn server.main:app --reload
+uv run uvicorn server.main:app
 ```
 
-Open http://localhost:8000.
+Open <http://localhost:8000>. The app walks you through the four things it needs — a model,
+a schema, a prompt, and some papers — and refuses to run until they are there.
 
 ### With Docker
 
