@@ -1,5 +1,13 @@
 FROM python:3.12-slim
 
+# docling's imaging stack (opencv, via the OCR engine) links against X11 and GL shared
+# objects that python:*-slim does not ship. Without these the image builds and the server
+# starts, and then every single parse fails on "libxcb.so.1: cannot open shared object file"
+# -- a runtime-only failure no build log would have shown.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends libxcb1 libgl1 libglib2.0-0 \
+ && rm -rf /var/lib/apt/lists/*
+
 RUN pip install --no-cache-dir uv
 
 WORKDIR /app

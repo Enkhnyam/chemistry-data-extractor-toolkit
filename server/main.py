@@ -173,7 +173,10 @@ def put_api_key(body: ApiKey):
     so a freshly-entered key works without a server restart."""
     import os
     ENV_FILE.touch(exist_ok=True)
-    set_key(str(ENV_FILE), body.name, body.value)
+    # quote_mode="never": python-dotenv defaults to writing KEY='value' and strips the quotes
+    # again on load -- but Docker's env_file does not. A quoted api_base reached the container
+    # as "'https://...'" and every call failed on a URL nobody could see was wrong.
+    set_key(str(ENV_FILE), body.name, body.value, quote_mode="never")
     os.environ[body.name] = body.value
     return {"saved": body.name}
 
