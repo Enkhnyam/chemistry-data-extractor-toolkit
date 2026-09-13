@@ -422,3 +422,10 @@ label.switch .muted{display:block;margin-top:1px}
   background:var(--line-2);color:var(--dim);font-size:.6875rem;font-weight:600;
   font-variant-numeric:tabular-nums}
 nav a.active .navcount{background:var(--accent);color:#fff}
+
+/* A proposed fix is labelled with what it actually does. "sharp" marks the kinds our own
+   validation found least reliable -- re-reading a substance or a number -- so a reviewer's
+   attention goes where accepting blindly would cost them. */
+.fixkind{flex-basis:100%;font-size:.6875rem;color:var(--dim);margin-top:2px;
+  display:flex;align-items:center}
+.fixkind.sharp{color:var(--warn);font-weight:600}

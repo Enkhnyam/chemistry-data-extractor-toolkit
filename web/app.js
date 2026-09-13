@@ -469,6 +469,31 @@ function isEdited(i) {
   return Object.keys({ ...a, ...b }).some(k => k !== 'source_chunk_ids' && String(a[k] ?? '') !== String(b[k] ?? ''));
 }
 
+// What a proposed fix actually does, read off the fix itself. This is not decoration: in the
+// review that produced this tool's own validation, corrections that merely add or remove a value
+// caught a real error about three times in five, while corrections that re-read which substance
+// was used caught one in twenty-two -- the other twenty-one were two defensible spellings of the
+// same compound. A reviewer who knows which kind they are looking at spends their attention
+// where it changes something.
+function fixKind(record, fix) {
+  const was = record[fix.field];
+  const to = fix.value;
+  const wasBlank = blank(was), toBlank = blank(to);
+  if (wasBlank && !toBlank) return { label: 'fills a gap', tone: 'mild',
+    tip: 'The record had nothing here and the judge supplies a value. Usually derivable from ' +
+         'the paper, and the kind of fix that is most often right — but check it is not invented.' };
+  if (!wasBlank && toBlank) return { label: 'removes a value', tone: 'mild',
+    tip: 'The judge says the paper does not support this value. Check the cited passage: if the ' +
+         'value really is unsupported this is a genuine fix, and these are usually right.' };
+  if (typeof was === 'number' || typeof to === 'number') return { label: 'changes a number', tone: 'sharp',
+    tip: 'The judge read a different number than the extractor. One of them misread the paper — ' +
+         'worth finding the passage before accepting.' };
+  return { label: 'changes a substance', tone: 'sharp',
+    tip: 'The judge names a different substance. In our own validation this was the least ' +
+         'reliable kind of correction: 21 of 22 were two acceptable names for the same compound, ' +
+         'not an error. Read the paper before accepting.' };
+}
+
 function recordCardHTML(rec, i) {
   const v = review.verdicts ? review.verdicts.get(i) : null;
   const note = review.notes[i] || {};
@@ -497,6 +522,7 @@ function recordCardHTML(rec, i) {
     // pressed: that way it still reads correctly after a save and a reload, and undo works in
     // a later session too.
     const applied = fix && String(val ?? '') === String(fix.value ?? '');
+    const kindOf = fix ? fixKind(rec, fix) : null;
     const body = !fix
       ? `<v>${fmt(val)}</v>`
       : applied
@@ -512,6 +538,7 @@ function recordCardHTML(rec, i) {
              <span class="to" data-find="${esc(fix.value ?? '')}" data-field="${esc(f)}"
                    title="${esc(fix.evidence || 'click to find this value in the text')}">${fmt(fix.value)}</span>
              <button class="apply" data-apply="${fix.fi}" title="write the judge's value into this record">apply</button>
+             <span class="fixkind ${kindOf.tone}">${kindOf.label}${help(kindOf.tip)}</span>
            </div>`;
     return `<div class="cell${bad.has(f) ? ' bad' : ''}${fix ? (applied ? ' applied' : ' proposed') : ''}"
        data-field="${esc(f)}"
