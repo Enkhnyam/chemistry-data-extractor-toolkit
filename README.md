@@ -150,10 +150,11 @@ side by side.
 uv run python -m unittest discover -s tests
 ```
 
-Thirteen smoke tests over every endpoint that does not need a model: config validation, the
-review save path (including its refusal to overwrite a newer edit), the report, the exports,
-and that a corrupt PDF fails only its own upload. No network, no API key, no pytest &mdash;
-they run against a throwaway workspace in about a second.
+Twenty-three smoke tests over every endpoint that does not need a model: config validation,
+credential checks, the review save path (including its refusal to overwrite a newer edit),
+deletes, per-paper cost, the report and the exports, and that a corrupt PDF fails only its own
+upload. No network, no API key, no pytest &mdash; they run against a throwaway workspace in
+about a second.
 
 ## What's not in v1
 
