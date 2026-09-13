@@ -1,12 +1,12 @@
 # Overnight verification
 
-Run 2026-09-13 21:55 UTC · 1.8 minutes · **passed**
+Run 2026-09-13 22:00 UTC · 1.8 minutes · **passed**
 
 A fresh clone, installed from the lockfile, driven through the HTTP API the interface calls. This checks the endpoints behind every button on real papers with a real model; it does not click the interface itself.
 
 | | Step | Detail |
 |---|---|---|
-| ✓ | clone | 33 tracked files |
+| ✓ | clone | 34 tracked files from GitHub, at 3ce400d Ready the repository for people who did not write  |
 | ✓ | clone is clean | no .env, no config, no data |
 | ✓ | uv sync --frozen | 0s |
 | ✓ | unit tests in the clone | OK |
@@ -18,13 +18,13 @@ A fresh clone, installed from the lockfile, driven through the HTTP API the inte
 | ✓ | keys never leave the server | the key is not present in /api/models |
 | ✓ | readiness clears | extract and judge both unblocked |
 | ✓ | fetched papers | 2 open-access PDFs from Europe PMC |
-| ✓ | parse indole_dearomatization.pdf | 50 chunks in 37s |
-| ✓ | parse nitroalkane_coupling.pdf | 86 chunks in 29s |
+| ✓ | parse indole_dearomatization.pdf | 50 chunks in 34s |
+| ✓ | parse nitroalkane_coupling.pdf | 86 chunks in 28s |
 | ✓ | chunks render as HTML | markdown tables survive into the review pane |
 | ✓ | a corrupt PDF fails alone | ConversionError: Conversion failed for: not-a-7ceea113.pdf with status: failure. Errors: d |
-| ✓ | extract indole-dearomatization-7 | 17 records, 16.0s, 11,186 tokens |
-| ✓ | extract nitroalkane-coupling-e45 | 0 records, 1.3s, 8,145 tokens |
-| ✓ | judge indole-dearomatization-7 | 17 verdicts, 8.0s |
+| ✓ | extract indole-dearomatization-7 | 17 records, 17.5s, 11,299 tokens |
+| ✓ | extract nitroalkane-coupling-e45 | 0 records, 1.2s, 8,134 tokens |
+| ✓ | judge indole-dearomatization-7 | 17 verdicts, 7.6s |
 | · | judge nitroalkane-coupling-e45 | no records to judge |
 | ✓ | records extracted | 17 across 2 papers |
 | ✓ | a correction keeps the original | model_records still holds what the model said |
