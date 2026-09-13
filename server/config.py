@@ -2,6 +2,7 @@
 prompt, the judge rubric, and few-shot examples. All under workspace/config/, all editable
 from the Settings page -- change these four and the same pipeline runs on a different
 domain, no code changes."""
+from . import exemplar
 from .storage import CONFIG, read_json, write_json
 from .dynschema import DEFAULT_SCHEMA
 
@@ -15,52 +16,6 @@ DEFAULT_SETTINGS = {
     "model": "gpt-4o-mini",
     "source_tracking_default": True,
 }
-
-DEFAULT_EXTRACT_PROMPT = """You extract experimental records from a scientific paper's text and tables.
-Extract only what is stated; leave anything unreported as null. The output structure is
-enforced by the response schema below -- focus on getting the values (and their sources,
-if the schema asks for them) right.
-
-- Extract EVERY qualifying row: N rows of raw data -> N records. Don't merge rows or stop early.
-- Skip literature/cited results, values that appear only in a figure, and anything not
-  actually measured in this study.
-- A condition stated once (methods text, a table footnote) applies to every row it covers --
-  propagate it rather than leaving it null.
-- Use null, never a placeholder, when a value is genuinely not reported.
-
-This is a starting prompt -- rewrite it for your own schema and paper set in Settings.
-
-## Source chunks
-If the text below is tagged "ID: <uuid>" per chunk, list in source_chunk_ids every chunk id
-that supplied a value for that record.
-"""
-
-DEFAULT_JUDGE_PROMPT = """You are auditing a database of records extracted from scientific papers.
-You will be given the full text of ONE paper (possibly split into chunks tagged "ID: <uuid>")
-and several records extracted from it. Judge EACH record independently: would a careful
-expert accept it as an accurate rendering of something actually reported in THIS paper?
-
-Judge only the data fields the schema defines. Ignore source_chunk_ids -- provenance is not
-part of correctness.
-
-A field is bad if it contradicts the paper, invents a value the paper does not give, or is
-null although the paper reports (or lets you derive) a value for it. Do not penalize
-formatting, ordering, or other harmless surface differences.
-
-For each record report, in this order:
-- critique: 2-5 sentences citing the specific evidence, before deciding the verdict.
-- bad_fields: names of the fields you found wrong or unsupported. Empty if none.
-- verdict: "incorrect" if the record has any bad field, else "correct".
-- fixes: for every bad field the paper supports a specific value for, give that value.
-  Numbers as numbers, in the units the field name implies. Use null to empty a field the
-  paper does not support at all. Leave fixes empty for a record you judged correct.
-- drop_record: true only when the record should be deleted rather than repaired -- it does
-  not describe anything this paper reports at all (a literature-comparison row, a duplicate,
-  an invented value).
-
-This is a starting rubric -- rewrite it to match your own schema in Settings.
-"""
-
 
 def get_settings() -> dict:
     return {**DEFAULT_SETTINGS, **read_json(SETTINGS_FILE, {})}
@@ -81,12 +36,18 @@ def save_schema(fields: list[dict]) -> None:
     write_json(SCHEMA_FILE, {"fields": fields})
 
 
-def _get_text(path, default: str) -> str:
-    return path.read_text(encoding="utf-8") if path.exists() else default
+def _get_text(path) -> str:
+    """A prompt nobody has written yet is empty, not somebody else's.
+
+    This used to fall back to a built-in PET prompt, which meant a first run quietly extracted
+    ionic-liquid chemistry from whatever you uploaded and looked like it had worked. The
+    example text is still shown -- as placeholder text in the box -- but it is never the value.
+    """
+    return path.read_text(encoding="utf-8") if path.exists() else ""
 
 
 def get_extract_prompt() -> str:
-    return _get_text(EXTRACT_PROMPT_FILE, DEFAULT_EXTRACT_PROMPT)
+    return _get_text(EXTRACT_PROMPT_FILE)
 
 
 def save_extract_prompt(text: str) -> None:
@@ -94,7 +55,12 @@ def save_extract_prompt(text: str) -> None:
 
 
 def get_judge_prompt() -> str:
-    return _get_text(JUDGE_PROMPT_FILE, DEFAULT_JUDGE_PROMPT)
+    return _get_text(JUDGE_PROMPT_FILE)
+
+
+def placeholders() -> dict:
+    """The example prompts, for the grey text in an empty box."""
+    return {"extract": exemplar.EXTRACT_PROMPT, "judge": exemplar.JUDGE_PROMPT}
 
 
 def save_judge_prompt(text: str) -> None:

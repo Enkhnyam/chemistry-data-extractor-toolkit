@@ -90,7 +90,12 @@ def put_schema(body: SchemaBody):
 
 @app.get("/api/prompts")
 def get_prompts():
-    return {"extract": config.get_extract_prompt(), "judge": config.get_judge_prompt()}
+    """The prompts as written, plus the examples to show as placeholder text where they are
+    empty. `set` is what the run buttons gate on -- whitespace does not count as a prompt."""
+    extract, judge = config.get_extract_prompt(), config.get_judge_prompt()
+    return {"extract": extract, "judge": judge,
+            "extract_set": bool(extract.strip()), "judge_set": bool(judge.strip()),
+            "placeholders": config.placeholders()}
 
 
 @app.put("/api/prompts")
@@ -105,7 +110,9 @@ def put_prompts(body: dict):
 class FewShotExample(BaseModel):
     text: str = Field(min_length=1, description="the example paper text shown to the model")
     records: list[dict] = Field(description="the records the model should output for that text")
-    source: str | None = Field(None, description="where it came from, for the Settings list")
+    source: str | None = Field(None, description="where it came from, for the examples list")
+    paper_id: str | None = Field(None, description="the parsed paper it was built from, so the "
+                                                   "editor can preselect it when reopened")
 
 
 @app.get("/api/few-shot")
@@ -334,6 +341,9 @@ def run_extract(body: PaperIds):
 def _extract(body: PaperIds):
     settings = config.get_settings()
     prompt = config.get_extract_prompt()
+    if not prompt.strip():
+        raise HTTPException(400, "Write an extraction prompt before running. Until you do, "
+                                 "there is nothing telling the model what to pull out.")
     schema_fields = config.get_schema()
     few_shot = config.get_few_shot()
 
@@ -423,6 +433,9 @@ def run_judge_endpoint(body: PaperIds):
 def _judge(body: PaperIds):
     settings = config.get_settings()
     rubric = config.get_judge_prompt()
+    if not rubric.strip():
+        raise HTTPException(400, "Write a judge rubric before running. Until you do, there is "
+                                 "nothing telling the model what counts as a good record.")
 
     results = []
     for pid in body.paper_ids:

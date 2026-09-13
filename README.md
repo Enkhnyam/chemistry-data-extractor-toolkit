@@ -12,7 +12,8 @@ Three stages, one page each:
    into text/table chunks; source tracking (on by default) tags every chunk with a stable id
    so extracted records can cite exactly where a value came from.
 2. **Extract** &mdash; an LLM call per paper turns its parsed text into records matching your
-   schema, using your prompt and optional few-shot examples.
+   schema, using your prompt and optional worked examples. Both are edited from the Extract page
+   itself, beside the run button, so what a run will use is visible at the moment you start it.
 3. **Judge** &mdash; a second LLM call per paper audits those records against the paper's own
    text: a verdict, a critique, and field-level fixes per record.
 
@@ -81,6 +82,21 @@ CPU index, which avoids about 1.5 GB of unusable CUDA packages). Unpacking it in
 VM wants roughly 6-8 GB of headroom; on a machine already using most of its RAM the build
 stalls or the VM is OOM-killed. If that happens, close what you can, give Docker's VM at least
 8 GB, and build once — or just use the `uv` path above, which has no VM in the way.
+
+## Prompts are yours to write
+
+Nothing runs until you have written an extraction prompt (and a rubric, before judging). The
+boxes show a real prompt from a PET depolymerisation corpus as **grey placeholder text** &mdash;
+an illustration of the detail that works, never a value. "Start from the example" copies it in
+so you can adapt it.
+
+This is deliberate: the tool used to fall back to that PET prompt silently, which meant a first
+run extracted ionic-liquid chemistry from whatever you uploaded and looked like it had worked.
+
+A **worked example** is one paper's text paired with the records it should produce. The editor
+lays it out in the order the model sees it &mdash; prompt, then paper text, then records &mdash;
+with the JSON brackets pre-filled, a placeholder built from your own schema, and live validation
+against it.
 
 ## Configuring for your own domain
 

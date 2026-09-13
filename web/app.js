@@ -188,6 +188,47 @@ function paintRun() {
   }
 }
 
+// ---------- modal ----------
+
+// One dialog element, reused. <dialog> gives the backdrop, the escape key and focus trapping
+// for free, which is three fewer things to get wrong than a hand-rolled overlay.
+function openModal({ title, subtitle = '', body, width = '900px', onSave, saveLabel = 'Save' }) {
+  document.querySelectorAll('dialog.modal').forEach(d => d.remove());
+  const dialog = el(`<dialog class="modal" style="max-width:${width}">
+    <form method="dialog" class="modalhead">
+      <div><h2>${title}</h2>${subtitle ? `<p class="lede" style="margin:2px 0 0">${subtitle}</p>` : ''}</div>
+      <span class="grow"></span>
+      <button class="linkish" value="cancel" aria-label="Close">&times;</button>
+    </form>
+    <div class="modalbody">${body}</div>
+    <div class="modalfoot">
+      <span class="muted" id="modal-status"></span>
+      <span class="grow"></span>
+      <button id="modal-cancel">Cancel</button>
+      ${onSave ? `<button class="primary" id="modal-save">${saveLabel}</button>` : ''}
+    </div>
+  </dialog>`);
+  document.body.append(dialog);
+  dialog.querySelector('#modal-cancel').onclick = () => dialog.close();
+  dialog.addEventListener('close', () => dialog.remove());
+  if (onSave) {
+    dialog.querySelector('#modal-save').onclick = async () => {
+      const status = dialog.querySelector('#modal-status');
+      status.className = 'muted';
+      status.textContent = 'Saving\u2026';
+      try {
+        await onSave(dialog);
+        dialog.close();
+      } catch (e) {
+        status.className = 'error';
+        status.textContent = e.message;
+      }
+    };
+  }
+  dialog.showModal();
+  return dialog;
+}
+
 // ---------- router ----------
 
 const routes = { parse: renderParse, extract: renderExtract, judge: renderJudge,
@@ -606,6 +647,203 @@ function wireReviewPicker(papers, withJudgment) {
   if (papers.length) return loadReview(papers[0].id, withJudgment);
 }
 
+// ---------- worked examples ----------
+//
+// An example is three things in a fixed order -- the prompt, one paper's text, and the records
+// that paper should produce -- and the editor is laid out in that order because that is the
+// order the model sees them in. Getting that wrong is the whole reason people mis-author these.
+
+// The placeholder is built from the live schema, so it always shows the fields you actually
+// have, with a value of the right type next to each. Grey, never a value: nothing here is
+// saved unless it is typed.
+function recordsPlaceholder(schema) {
+  const sample = { string: '"text as written"', number: '0', integer: '0', boolean: 'false' };
+  const example = { catalyst: '"[Bmim]Cl"', solvent: '"ethylene glycol"', temperature_c: '190',
+                    yield_percent: '82.5' };
+  const lines = (schema.length ? schema : [{ name: 'field_1', type: 'string' },
+                                           { name: 'field_2', type: 'number' }])
+    .slice(0, 6)
+    .map(f => `    "${f.name}": ${example[f.name] || sample[f.type] || '"..."'}`);
+  return '[\n  {\n' + lines.join(',\n') + '\n  },\n  { ... one object per experiment ... }\n]';
+}
+
+// Enter keeps the current indentation and opens a level after a bracket; Tab inserts spaces
+// rather than leaving the field. Enough to make hand-writing a JSON array bearable without
+// pulling in an editor component.
+function wireJsonEditor(box) {
+  box.addEventListener('keydown', (e) => {
+    const { selectionStart: start, selectionEnd: end, value } = box;
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      box.setRangeText('  ', start, end, 'end');
+      return;
+    }
+    if (e.key === 'Enter') {
+      const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+      const indent = (value.slice(lineStart, start).match(/^\s*/) || [''])[0];
+      const opensBlock = /[[{,]\s*$/.test(value.slice(lineStart, start));
+      e.preventDefault();
+      box.setRangeText('\n' + indent + (opensBlock ? '  ' : ''), start, end, 'end');
+      box.dispatchEvent(new Event('input'));
+    }
+  });
+}
+
+function jsonStatus(box, note, schema) {
+  const text = box.value.trim();
+  if (!text) { note.className = 'muted'; note.textContent = 'empty'; return null; }
+  let parsed;
+  try { parsed = JSON.parse(text); }
+  catch (e) { note.className = 'error'; note.textContent = 'not valid JSON yet \u2014 ' + e.message; return null; }
+  if (!Array.isArray(parsed)) { note.className = 'error'; note.textContent = 'must be an array of records'; return null; }
+  const known = new Set(schema.map(f => f.name));
+  const unknown = [...new Set(parsed.flatMap(r => Object.keys(r || {})))]
+    .filter(k => k !== 'source_chunk_ids' && !known.has(k));
+  note.className = unknown.length ? 'warn-text' : 'ok-text';
+  note.textContent = `${parsed.length} record(s)` +
+    (unknown.length ? ` \u00b7 not in your schema: ${unknown.join(', ')}` : ' \u00b7 matches your schema');
+  return parsed;
+}
+
+async function openExamplesEditor(onSaved) {
+  const [examples, schema, prompts, papers] = await Promise.all([
+    get('/api/few-shot'), get('/api/schema'), get('/api/prompts'), get('/api/papers'),
+  ]);
+  const fields = schema.fields;
+  const parsed = papers.filter(p => p.n_chunks > 0);
+
+  const body = `
+    <div class="hint" style="margin-bottom:16px">
+      <b>What the model sees, in this order, for every paper you extract</b>
+      <ol class="order">
+        <li><span class="step">1</span> your <b>extraction prompt</b></li>
+        <li><span class="step">2</span> an example paper's <b>full text</b></li>
+        <li><span class="step">3</span> the <b>records</b> that paper should produce</li>
+        <li><span class="step">4</span> then the real paper, and it answers in the same shape</li>
+      </ol>
+      <p>Steps 2 and 3 are what you are editing here. Each example is re-sent with every paper,
+         so two or three is the practical ceiling.</p>
+    </div>
+
+    <div class="field">
+      <label>1 &middot; Extraction prompt <span class="muted">shared by every example and every run</span></label>
+      <textarea id="ex-prompt" rows="6" spellcheck="false"
+        placeholder="${esc(prompts.placeholders.extract)}">${esc(prompts.extract)}</textarea>
+      <p class="muted">Grey text is an example from a PET depolymerisation corpus &mdash; shown to
+         illustrate the level of detail that works. It is not used unless you type something.</p>
+    </div>
+
+    <div id="ex-list"></div>
+    <button id="ex-add" style="margin-top:4px">+ Add an example</button>`;
+
+  const dialog = openModal({
+    title: 'Worked examples',
+    subtitle: 'Teach the model by showing it one paper you have already got right.',
+    body, width: '1000px', saveLabel: 'Save examples',
+    onSave: async (d) => {
+      const prompt = d.querySelector('#ex-prompt').value;
+      if (!prompt.trim()) throw new Error('The extraction prompt cannot be empty — nothing would tell the model what to pull out.');
+      const built = [];
+      for (const row of d.querySelectorAll('.ex-item')) {
+        const paperId = row.querySelector('.ex-paper').value;
+        const box = row.querySelector('.ex-records');
+        if (!paperId) throw new Error(`Example ${Number(row.dataset.i) + 1}: choose a paper.`);
+        let records;
+        try { records = JSON.parse(box.value.trim() || '[]'); }
+        catch (e) { throw new Error(`Example ${Number(row.dataset.i) + 1}: the records are not valid JSON — ${e.message}`); }
+        if (!Array.isArray(records) || !records.length)
+          throw new Error(`Example ${Number(row.dataset.i) + 1}: add at least one record, or remove the example.`);
+        const paper = await get('/api/papers/' + paperId);
+        built.push({
+          text: paper.chunks.map(c => (paper.source_tracking ? `ID: ${c.id}\n` : '') + c.text).join('\n\n'),
+          records,
+          source: paper.filename,
+          paper_id: paperId,
+        });
+      }
+      await put('/api/prompts', { extract: prompt });
+      await put('/api/few-shot', built);
+      if (onSaved) onSaved();
+    },
+  });
+
+  const list = dialog.querySelector('#ex-list');
+  let rows = examples.map(ex => ({ paper_id: ex.paper_id || '', records: ex.records || [], source: ex.source }));
+
+  function paint() {
+    list.innerHTML = rows.map((row, i) => `
+      <div class="ex-item" data-i="${i}">
+        <div class="ex-head">
+          <b>Example ${i + 1}</b>
+          <span class="grow"></span>
+          <button class="ex-remove" data-i="${i}">remove</button>
+        </div>
+        <div class="field">
+          <label>2 &middot; The paper <span class="muted">its full text is sent as the example input</span></label>
+          <select class="ex-paper">
+            <option value="">Choose a parsed paper&hellip;</option>
+            ${parsed.map(p => `<option value="${p.id}" ${row.paper_id === p.id ? 'selected' : ''}>
+                ${esc(p.filename)} — ${p.n_chunks} chunks</option>`).join('')}
+          </select>
+          ${row.paper_id ? '' : `<p class="muted">${parsed.length ? 'Pick the paper this example is about.'
+              : 'No parsed papers yet — add one on the Parse page first.'}</p>`}
+        </div>
+        <div class="field" style="margin-bottom:6px">
+          <label>3 &middot; The records it should produce
+            <span class="muted">a JSON array, one object per experiment</span></label>
+          <div class="jsonwrap">
+            <textarea class="ex-records" rows="12" spellcheck="false"
+              placeholder="${esc(recordsPlaceholder(fields))}">${esc(row.records.length ? JSON.stringify(row.records, null, 2) : '')}</textarea>
+            <div class="jsonside">
+              <b>your schema</b>
+              ${fields.map(f => `<div><code>${esc(f.name)}</code> <span class="muted">${f.type}</span></div>`).join('')
+                || '<span class="muted">no fields defined</span>'}
+              <button class="ex-fill" data-i="${i}" title="start from an empty record with every field">use blank record</button>
+              <button class="ex-format" data-i="${i}">tidy JSON</button>
+            </div>
+          </div>
+          <div class="jsonnote muted"></div>
+        </div>
+      </div>`).join('') || '<p class="muted">No examples yet. Extraction works without them; one good one usually helps.</p>';
+
+    list.querySelectorAll('.ex-records').forEach(box => {
+      const note = box.closest('.field').querySelector('.jsonnote');
+      wireJsonEditor(box);
+      const check = () => jsonStatus(box, note, fields);
+      box.addEventListener('input', check);
+      check();
+    });
+    list.querySelectorAll('.ex-paper').forEach((sel, i) =>
+      sel.addEventListener('change', () => { rows[i].paper_id = sel.value; }));
+    list.querySelectorAll('.ex-remove').forEach(b => b.addEventListener('click', () => {
+      rows.splice(Number(b.dataset.i), 1); paint();
+    }));
+    list.querySelectorAll('.ex-fill').forEach(b => b.addEventListener('click', () => {
+      const box = list.querySelectorAll('.ex-records')[Number(b.dataset.i)];
+      const blank = Object.fromEntries(fields.map(f => [f.name, null]));
+      box.value = JSON.stringify([blank], null, 2);
+      box.dispatchEvent(new Event('input'));
+    }));
+    list.querySelectorAll('.ex-format').forEach(b => b.addEventListener('click', () => {
+      const box = list.querySelectorAll('.ex-records')[Number(b.dataset.i)];
+      try { box.value = JSON.stringify(JSON.parse(box.value), null, 2); } catch { /* the note says why */ }
+      box.dispatchEvent(new Event('input'));
+    }));
+  }
+  paint();
+
+  dialog.querySelector('#ex-add').addEventListener('click', () => {
+    // keep what is typed before repainting, or adding a second example wipes the first
+    [...list.querySelectorAll('.ex-item')].forEach((row, i) => {
+      rows[i].paper_id = row.querySelector('.ex-paper').value;
+      try { rows[i].records = JSON.parse(row.querySelector('.ex-records').value.trim() || '[]'); }
+      catch { /* leave the last good value */ }
+    });
+    rows.push({ paper_id: '', records: [] });
+    paint();
+  });
+}
+
 // ---------- Parse page ----------
 
 function papersTableHTML(papers) {
@@ -796,6 +1034,83 @@ function wireViewButtons() {
 
 // ---------- Extract / Judge pages (same shape) ----------
 
+// The right half of a stage's top panel: the prompt it will use and, for extraction, the
+// examples. Putting it beside the run button is what makes "you have not written a prompt"
+// visible at the moment you are about to run, rather than after.
+function stageSetupHTML(kind, prompts, examples) {
+  const isSet = kind === 'extract' ? prompts.extract_set : prompts.judge_set;
+  const label = kind === 'extract' ? 'Extraction prompt' : 'Judge rubric';
+  const chars = (kind === 'extract' ? prompts.extract : prompts.judge).trim().length;
+  return `<div class="stage-setup">
+    <h3>What this run uses</h3>
+    <div class="setup-row ${isSet ? '' : 'missing'}">
+      <span class="dot"></span>
+      <div>
+        <b>${label}</b>
+        <div class="muted">${isSet ? `${chars.toLocaleString()} characters` : 'not written yet — required'}</div>
+      </div>
+      <span class="grow"></span>
+      <button id="edit-prompt">${isSet ? 'Edit' : 'Write it'}</button>
+    </div>
+    ${kind === 'extract' ? `
+    <div class="setup-row">
+      <span class="dot optional"></span>
+      <div>
+        <b>Worked examples</b>
+        <div class="muted">${examples.length
+          ? `${examples.length} example${examples.length === 1 ? '' : 's'}, sent with every paper`
+          : 'none — optional, and extraction works without them'}</div>
+      </div>
+      <span class="grow"></span>
+      <button id="edit-examples">${examples.length ? 'Edit' : 'Add'}</button>
+    </div>` : ''}
+    <div class="setup-row">
+      <span class="dot"></span>
+      <div><b>Model</b><div class="muted" id="setup-model">&hellip;</div></div>
+      <span class="grow"></span>
+      <a href="#/settings"><button>Change</button></a>
+    </div>
+  </div>`;
+}
+
+// The prompt box, opened from the stage that needs it. Same value as Settings; two doors, one room.
+function openPromptEditor(kind, prompts, onSaved) {
+  const isExtract = kind === 'extract';
+  openModal({
+    title: isExtract ? 'Extraction prompt' : 'Judge rubric',
+    subtitle: isExtract
+      ? 'What to pull out of each paper, and what to leave alone.'
+      : 'What makes an extracted record right or wrong in your chemistry.',
+    width: '860px',
+    body: `<div class="row" style="margin-bottom:8px">
+        <span class="muted">The grey text is a real prompt from a PET depolymerisation corpus,
+          shown as an illustration of the detail that works. It is never used as yours.</span>
+        <span class="grow"></span>
+        <button id="prompt-copy-example">Start from the example</button>
+      </div>
+      <div class="field">
+        <textarea id="prompt-box" rows="22" spellcheck="false"
+          placeholder="${esc(isExtract ? prompts.placeholders.extract : prompts.placeholders.judge)}">${esc(isExtract ? prompts.extract : prompts.judge)}</textarea>
+      </div>`,
+    saveLabel: 'Save prompt',
+    onSave: async (d) => {
+      const text = d.querySelector('#prompt-box').value;
+      if (!text.trim()) throw new Error('An empty prompt cannot run. Write something, or start from the example and adapt it.');
+      await put('/api/prompts', { [kind]: text });
+      if (onSaved) onSaved();
+    },
+  }).addEventListener('click', (e) => {
+    // Copying the example in is one click, not a select-all from grey text you cannot select.
+    // It is also the fast way back for anyone whose workspace was relying on the old built-in
+    // default, which is no longer applied silently.
+    if (e.target.id !== 'prompt-copy-example') return;
+    const box = document.getElementById('prompt-box');
+    if (box.value.trim() && !confirm('Replace what is in the box with the example?')) return;
+    box.value = isExtract ? prompts.placeholders.extract : prompts.placeholders.judge;
+    box.focus();
+  });
+}
+
 function stageChecklistHTML(papers, doneKey, emptyMsg) {
   return papers.map(p =>
     `<label><input type="checkbox" value="${p.id}" ${p[doneKey] ? '' : 'checked'}>
@@ -804,7 +1119,8 @@ function stageChecklistHTML(papers, doneKey, emptyMsg) {
 }
 
 async function renderExtract(gen) {
-  const [papers, timings] = await Promise.all([get('/api/papers'), get('/api/timings')]);
+  const [papers, timings, prompts, examples] = await Promise.all([
+    get('/api/papers'), get('/api/timings'), get('/api/prompts'), get('/api/few-shot')]);
   if (stale(gen)) return;
   state.timings = timings;
 
@@ -812,14 +1128,18 @@ async function renderExtract(gen) {
     <section>
       <div class="panel">
         <h2>Extract</h2>
-        <p class="lede">One call per paper, using the schema and prompt from
-          <a href="#/settings">Settings</a>. ${esc(etaText('extract', 30))} for a typical paper.</p>
-        <div class="checklist" id="checklist">${stageChecklistHTML(papers, 'extracted',
-          '<span class="muted">No parsed papers yet &mdash; start in <a href="#/parse">Parse</a>.</span>')}</div>
-        <div class="muted" id="selection-summary" style="margin-top:8px"></div>
-        <div class="row" style="margin-top:10px">
-          <button class="primary" id="run-btn">Run extraction on selected</button>
-          <span class="muted" id="select-hint"></span>
+        <p class="lede">One call per paper. ${esc(etaText('extract', 30))} for a typical paper.</p>
+        <div class="stage-split">
+          <div>
+            <div class="checklist" id="checklist">${stageChecklistHTML(papers, 'extracted',
+              '<span class="muted">No parsed papers yet &mdash; start in <a href="#/parse">Parse</a>.</span>')}</div>
+            <div class="muted" id="selection-summary" style="margin-top:8px"></div>
+            <div class="row" style="margin-top:10px">
+              <button class="primary" id="run-btn">Run extraction on selected</button>
+              <span class="muted" id="select-hint"></span>
+            </div>
+          </div>
+          ${stageSetupHTML('extract', prompts, examples)}
         </div>
         <div id="run-progress"></div>
       </div>
@@ -827,13 +1147,27 @@ async function renderExtract(gen) {
     </section>`;
 
   paintRun();
+  wireStageSetup('extract', prompts);
   wireStageRun(papers, 'extract', 'Extracting',
-    (r) => `${r.n_records} records · ${humanSeconds(r.seconds)}${costOf(r)}`);
+    (r) => `${r.n_records} records · ${humanSeconds(r.seconds)}${costOf(r)}`,
+    prompts.extract_set);
   await wireReviewPicker(papers.filter(p => p.extracted), false);
 }
 
+function wireStageSetup(kind, prompts) {
+  get('/api/settings').then(s => {
+    const box = document.getElementById('setup-model');
+    if (box) box.textContent = s.model;
+  });
+  const promptBtn = document.getElementById('edit-prompt');
+  if (promptBtn) promptBtn.onclick = () => openPromptEditor(kind, prompts, () => router());
+  const exBtn = document.getElementById('edit-examples');
+  if (exBtn) exBtn.onclick = () => openExamplesEditor(() => router());
+}
+
 async function renderJudge(gen) {
-  const [papers, timings] = await Promise.all([get('/api/papers'), get('/api/timings')]);
+  const [papers, timings, prompts] = await Promise.all([
+    get('/api/papers'), get('/api/timings'), get('/api/prompts')]);
   if (stale(gen)) return;
   state.timings = timings;
   const extracted = papers.filter(p => p.extracted);
@@ -844,12 +1178,17 @@ async function renderJudge(gen) {
         <h2>Judge</h2>
         <p class="lede">A second model re-reads each paper and checks every record against it.
           ${esc(etaText('judge', 18))} for a typical paper.</p>
-        <div class="checklist" id="checklist">${stageChecklistHTML(extracted, 'judged',
-          '<span class="muted">Nothing extracted yet &mdash; run <a href="#/extract">Extract</a> first.</span>')}</div>
-        <div class="muted" id="selection-summary" style="margin-top:8px"></div>
-        <div class="row" style="margin-top:10px">
-          <button class="primary" id="run-btn">Run judge on selected</button>
-          <span class="muted" id="select-hint"></span>
+        <div class="stage-split">
+          <div>
+            <div class="checklist" id="checklist">${stageChecklistHTML(extracted, 'judged',
+              '<span class="muted">Nothing extracted yet &mdash; run <a href="#/extract">Extract</a> first.</span>')}</div>
+            <div class="muted" id="selection-summary" style="margin-top:8px"></div>
+            <div class="row" style="margin-top:10px">
+              <button class="primary" id="run-btn">Run judge on selected</button>
+              <span class="muted" id="select-hint"></span>
+            </div>
+          </div>
+          ${stageSetupHTML('judge', prompts, [])}
         </div>
         <div id="run-progress"></div>
       </div>
@@ -857,8 +1196,10 @@ async function renderJudge(gen) {
     </section>`;
 
   paintRun();
+  wireStageSetup('judge', prompts);
   wireStageRun(extracted, 'judge', 'Judging',
-    (r) => `${r.n_verdicts} verdicts · ${humanSeconds(r.seconds)}${costOf(r)}`);
+    (r) => `${r.n_verdicts} verdicts · ${humanSeconds(r.seconds)}${costOf(r)}`,
+    prompts.judge_set);
   await wireReviewPicker(papers.filter(p => p.judged), true);
 }
 
@@ -869,7 +1210,7 @@ function etaFor(endpoint, paper) {
   return (t.per_unit && size) ? t.per_unit * size : t.seconds;
 }
 
-function wireStageRun(papers, endpoint, stageLabel, describe) {
+function wireStageRun(papers, endpoint, stageLabel, describe, promptReady = true) {
   const btn = document.getElementById('run-btn');
   const checklist = document.getElementById('checklist');
   const byId = new Map(papers.map(p => [p.id, p]));
@@ -881,6 +1222,12 @@ function wireStageRun(papers, endpoint, stageLabel, describe) {
   const updateSummary = () => {
     const ids = [...checklist.querySelectorAll('input:checked')].map(i => i.value);
     if (!summary) return;
+    if (!promptReady) {
+      summary.innerHTML = `<span class="error">Write ${endpoint === 'extract' ? 'an extraction prompt' : 'a judge rubric'} first</span>
+        <span class="muted">&mdash; there is nothing yet telling the model what to do.</span>`;
+      btn.disabled = true;
+      return;
+    }
     if (!ids.length) { summary.textContent = 'Nothing selected.'; btn.disabled = true; return; }
     btn.disabled = runIsActive();
     const etas = ids.map(id => etaFor(endpoint, byId.get(id)));
@@ -1215,7 +1562,7 @@ async function renderSettings(gen) {
       </div>
 
       <div class="panel">
-        <h2>Extraction prompt</h2>
+        <h2>Extraction prompt ${prompts.extract_set ? '' : '<span class="tag no">required before extracting</span>'}</h2>
         <div class="hint" style="margin-bottom:10px">
           <b>Draft one for your domain</b>
           <p>Name the field and the model drafts a prompt around your schema, grounded in a paper
@@ -1228,13 +1575,16 @@ async function renderSettings(gen) {
             <span class="muted" id="gen-extract-status"></span>
           </div>
         </div>
-        <textarea id="extract-prompt" rows="12">${esc(prompts.extract)}</textarea>
+        <textarea id="extract-prompt" rows="12" spellcheck="false"
+          placeholder="${esc(prompts.placeholders.extract)}">${esc(prompts.extract)}</textarea>
+        <p class="muted">Grey text is a real prompt from a PET corpus, shown as an illustration.
+          It is never used as yours.</p>
         <div class="row" style="margin-top:10px"><button class="primary" id="save-extract-prompt">Save prompt</button>
           <span class="muted" id="extract-prompt-status"></span></div>
       </div>
 
       <div class="panel">
-        <h2>Judge rubric</h2>
+        <h2>Judge rubric ${prompts.judge_set ? '' : '<span class="tag no">required before judging</span>'}</h2>
         <div class="hint" style="margin-bottom:10px">
           <b>Draft one for your domain</b>
           <p>What makes a record right or wrong in this field.</p>
@@ -1244,7 +1594,8 @@ async function renderSettings(gen) {
             <span class="muted" id="gen-judge-status"></span>
           </div>
         </div>
-        <textarea id="judge-prompt" rows="12">${esc(prompts.judge)}</textarea>
+        <textarea id="judge-prompt" rows="12" spellcheck="false"
+          placeholder="${esc(prompts.placeholders.judge)}">${esc(prompts.judge)}</textarea>
         <div class="row" style="margin-top:10px"><button class="primary" id="save-judge-prompt">Save rubric</button>
           <span class="muted" id="judge-prompt-status"></span></div>
       </div>
@@ -1252,30 +1603,14 @@ async function renderSettings(gen) {
       <div class="panel">
         <h2>Worked examples <span class="muted" style="font-weight:400">optional</span></h2>
         <p class="lede">A paper's text paired with the records it should produce, shown to the
-          model before each extraction. One good example teaches more than a long prompt &mdash;
-          but its text is re-sent with every paper, so two or three is the practical ceiling.</p>
-
-        <div class="hint">
-          <b>Add an example</b>
-          <div class="row" style="margin-top:8px">
-            <select id="fs-source">${papers.filter(p => p.extracted).map(p =>
-              `<option value="${p.id}">${esc(p.filename)}</option>`).join('')
-              || '<option value="">(no extracted papers yet)</option>'}</select>
-            <button id="fs-add">Add from this paper</button>
-            <button id="fs-add-blank">Add an empty one</button>
-            <span class="muted" id="fs-add-status"></span>
-          </div>
-          <p>Copies the paper's text and its current, corrected records &mdash; so correct it in
-            the Extract review first. Add as many as you like.</p>
-        </div>
-
-        <div class="row" style="margin:14px 0 8px">
-          <span class="muted" id="fs-count"></span>
+          model before each extraction. Edited in one place &mdash; the same editor the Extract
+          page opens &mdash; because the example only makes sense next to the prompt it follows.</p>
+        <div class="row">
+          <span id="fs-summary" class="muted">&hellip;</span>
           <span class="grow"></span>
-          <button class="primary" id="save-few-shot">Save all examples</button>
-          <span class="muted" id="few-shot-status"></span>
+          <button class="primary" id="fs-open">Open examples editor</button>
         </div>
-        <div id="fs-list"></div>
+      </div>
 
       <div class="panel">
         <h2>Defaults</h2>
@@ -1418,166 +1753,17 @@ async function renderSettings(gen) {
   document.getElementById('gen-judge').addEventListener('click', () =>
     draft('judge-prompt', 'judge', 'gen-domain-judge', 'gen-judge-status', null));
 
-  // --- worked examples: a structured editor and the raw JSON side by side, both live on the
-  // same object, so the nice view is never a lossy summary of what will actually be sent.
-  let examples = fewShot.slice();
-  const fsList = document.getElementById('fs-list');
-  const tokens = (ex) => Math.round((ex.text.length + JSON.stringify(ex.records).length) / 4 / 100) / 10;
-  const openExamples = new Set([0]);
-
-  function columnsOf(ex) {
-    const declared = [...rows.querySelectorAll('.f-name')].map(i => i.value.trim()).filter(Boolean);
-    const seen = [...new Set(ex.records.flatMap(r => Object.keys(r)))].filter(c => c !== 'source_chunk_ids');
-    return [...new Set([...declared, ...seen])];
-  }
-
-  function exampleHTML(ex, i) {
-    const cols = columnsOf(ex);
-    const open = openExamples.has(i);
-    const body = !open ? '' : `
-      <div class="body">
-        <div class="fs-split">
-          <div>
-            <div class="row" style="margin-bottom:6px">
-              <b style="font-size:.78rem">Records the model should produce</b>
-              <span class="grow"></span>
-              <button data-add-rec="${i}">+ record</button>
-            </div>
-            <div style="overflow-x:auto">
-              <table class="ex-table"><thead><tr>
-                ${cols.map(c => `<th>${esc(c)}</th>`).join('')}<th></th>
-              </tr></thead><tbody>
-                ${ex.records.map((r, ri) => `<tr>
-                  ${cols.map(c => `<td><input data-ex="${i}" data-rec="${ri}" data-col="${esc(c)}"
-                     value="${blank(r[c]) ? '' : esc(r[c])}"></td>`).join('')}
-                  <td><button class="f-del" data-del-rec="${i}:${ri}" title="remove this record">&times;</button></td>
-                </tr>`).join('') || `<tr><td colspan="${cols.length + 1}" class="muted">no records yet</td></tr>`}
-              </tbody></table>
-            </div>
-            <details style="margin-top:8px"><summary class="muted">the paper text shown with it
-              (${ex.text.length.toLocaleString()} characters)</summary>
-              <textarea rows="8" data-text="${i}">${esc(ex.text)}</textarea></details>
-          </div>
-          <div>
-            <div class="row" style="margin-bottom:6px">
-              <b style="font-size:.78rem">Raw JSON</b>
-              <span class="muted">edit either side</span>
-              <span class="grow"></span>
-              <button data-apply-json="${i}">Apply JSON</button>
-            </div>
-            <textarea class="ex-json" rows="18" data-json="${i}">${esc(JSON.stringify(ex, null, 2))}</textarea>
-            <div class="muted" data-json-status="${i}"></div>
-          </div>
-        </div>
-      </div>`;
-    return `<div class="fs-item">
-      <div class="head">
-        <button data-toggle="${i}" class="linkish">${open ? '&#9662;' : '&#9656;'}</button>
-        <b>Example ${i + 1}</b>
-        <span class="muted">${esc(ex.source || 'added by hand')} &middot; ${ex.records.length} record(s)
-          &middot; roughly ${tokens(ex)}k tokens per call</span>
-        <span class="grow"></span>
-        <button data-dup="${i}">duplicate</button>
-        <button data-rm="${i}">remove</button>
-      </div>
-      ${body}
-    </div>`;
-  }
-
-  function paintExamples() {
-    document.getElementById('fs-count').textContent = examples.length
-      ? `${examples.length} example(s) · roughly ${examples.reduce((n, e) => n + tokens(e), 0).toFixed(1)}k tokens added to every extraction call`
-      : 'No examples — the model works from the prompt alone (zero-shot), which is often fine.';
-    fsList.innerHTML = examples.map(exampleHTML).join('');
-
-    fsList.querySelectorAll('[data-toggle]').forEach(b => b.addEventListener('click', () => {
-      const i = Number(b.dataset.toggle);
-      openExamples.has(i) ? openExamples.delete(i) : openExamples.add(i);
-      paintExamples();
-    }));
-    fsList.querySelectorAll('[data-rm]').forEach(b => b.addEventListener('click', () => {
-      examples.splice(Number(b.dataset.rm), 1);
-      openExamples.clear();
-      paintExamples();
-    }));
-    fsList.querySelectorAll('[data-dup]').forEach(b => b.addEventListener('click', () => {
-      const i = Number(b.dataset.dup);
-      examples.splice(i + 1, 0, JSON.parse(JSON.stringify(examples[i])));
-      paintExamples();
-    }));
-    fsList.querySelectorAll('[data-add-rec]').forEach(b => b.addEventListener('click', () => {
-      const i = Number(b.dataset.addRec);
-      examples[i].records.push(Object.fromEntries(columnsOf(examples[i]).map(c => [c, null])));
-      paintExamples();
-    }));
-    fsList.querySelectorAll('[data-del-rec]').forEach(b => b.addEventListener('click', () => {
-      const [i, ri] = b.dataset.delRec.split(':').map(Number);
-      examples[i].records.splice(ri, 1);
-      paintExamples();
-    }));
-    // A cell edit updates the object, then repaints only the JSON pane -- repainting the whole
-    // list would pull focus out of the field being typed in.
-    fsList.querySelectorAll('input[data-ex]').forEach(input => input.addEventListener('change', () => {
-      const i = Number(input.dataset.ex), ri = Number(input.dataset.rec), col = input.dataset.col;
-      const raw = input.value.trim();
-      const asNumber = raw !== '' && !Number.isNaN(Number(raw));
-      examples[i].records[ri][col] = raw === '' ? null : (asNumber ? Number(raw) : raw);
-      refreshJSON(i);
-    }));
-    fsList.querySelectorAll('textarea[data-text]').forEach(box => box.addEventListener('change', () => {
-      const i = Number(box.dataset.text);
-      examples[i].text = box.value;
-      refreshJSON(i);
-    }));
-    fsList.querySelectorAll('[data-apply-json]').forEach(b => b.addEventListener('click', () => {
-      const i = Number(b.dataset.applyJson);
-      const box = fsList.querySelector(`textarea[data-json="${i}"]`);
-      const status = fsList.querySelector(`[data-json-status="${i}"]`);
-      try {
-        const parsed = JSON.parse(box.value);
-        if (typeof parsed.text !== 'string' || !parsed.text) throw new Error('needs a non-empty "text"');
-        if (!Array.isArray(parsed.records)) throw new Error('needs a "records" array');
-        examples[i] = parsed;
-        paintExamples();
-      } catch (e) {
-        status.textContent = 'Not applied — ' + e.message;
-        status.className = 'error';
-      }
-    }));
-  }
-
-  function refreshJSON(i) {
-    const box = fsList.querySelector(`textarea[data-json="${i}"]`);
-    if (box) box.value = JSON.stringify(examples[i], null, 2);
-    document.getElementById('fs-count').textContent =
-      `${examples.length} example(s) · roughly ${examples.reduce((n, e) => n + tokens(e), 0).toFixed(1)}k tokens added to every extraction call`;
-  }
-  paintExamples();
-
-  document.getElementById('fs-add').addEventListener('click', () => say('fs-add-status', async () => {
-    const id = document.getElementById('fs-source').value;
-    if (!id) throw new Error('extract a paper first — there is nothing to build an example from');
-    const [paper, extraction] = await Promise.all([get('/api/papers/' + id), get(`/api/papers/${id}/extraction`)]);
-    if (!extraction.records.length) throw new Error('that paper produced no records');
-    examples.push({
-      text: paper.chunks.map(c => (paper.source_tracking ? `ID: ${c.id}\n` : '') + c.text).join('\n\n'),
-      records: extraction.records,
-      source: paper.filename,
-    });
-    openExamples.add(examples.length - 1);
-    paintExamples();
-    return 'Added below — press "Save all examples" to keep it.';
-  }));
-
-  document.getElementById('fs-add-blank').addEventListener('click', () => {
-    examples.push({ text: '', records: [], source: null });
-    openExamples.add(examples.length - 1);
-    paintExamples();
-    document.getElementById('fs-add-status').textContent = 'Empty example added — fill it in below.';
-  });
-
-  on('save-few-shot', 'few-shot-status', () =>
-    put('/api/few-shot', examples).then(r => `Saved ${r.length} example(s).`));
+  // --- worked examples: one editor, opened from here or from the Extract page
+  const summary = document.getElementById('fs-summary');
+  const tokensOf = (ex) => Math.round((ex.text.length + JSON.stringify(ex.records).length) / 4 / 100) / 10;
+  const paintSummary = (list) => {
+    summary.textContent = list.length
+      ? `${list.length} example(s) · roughly ${list.reduce((n, e) => n + tokensOf(e), 0).toFixed(1)}k tokens added to every extraction call`
+      : 'None — extraction works from the prompt alone, which is often fine.';
+  };
+  paintSummary(fewShot);
+  document.getElementById('fs-open').addEventListener('click', () =>
+    openExamplesEditor(async () => paintSummary(await get('/api/few-shot'))));
 
   // --- defaults
   on('save-defaults', 'defaults-status', () => put('/api/settings', {

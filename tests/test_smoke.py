@@ -29,9 +29,45 @@ class ConfigTests(unittest.TestCase):
         # worse than no test.
         self.assertEqual(client.get("/api/settings").json()["source_tracking_default"], True)
         self.assertGreater(len(client.get("/api/schema").json()["fields"]), 0)
-        self.assertGreater(len(client.get("/api/prompts").json()["extract"]), 100)
-        self.assertGreater(len(client.get("/api/prompts").json()["judge"]), 100)
         self.assertIsInstance(client.get("/api/few-shot").json(), list)
+
+    def test_prompts_start_empty_but_offer_an_example(self):
+        # A prompt must be written, not silently inherited from somebody else's chemistry --
+        # but the example is there to read and adapt.
+        body = client.get("/api/prompts").json()
+        for kind in ("extract", "judge"):
+            self.assertGreater(len(body["placeholders"][kind]), 500, kind)
+        if not body["extract_set"]:
+            self.assertEqual(body["extract"], "")
+
+    def test_stages_refuse_to_run_without_a_prompt(self):
+        from server import config
+        saved_extract, saved_judge = config.get_extract_prompt(), config.get_judge_prompt()
+        config.EXTRACT_PROMPT_FILE.unlink(missing_ok=True)
+        config.JUDGE_PROMPT_FILE.unlink(missing_ok=True)
+        try:
+            for endpoint, word in (("/api/extract", "extraction prompt"), ("/api/judge", "judge rubric")):
+                r = client.post(endpoint, json={"paper_ids": ["anything"]})
+                self.assertEqual(r.status_code, 400, endpoint)
+                self.assertIn(word, r.json()["detail"])
+        finally:
+            if saved_extract:
+                config.save_extract_prompt(saved_extract)
+            if saved_judge:
+                config.save_judge_prompt(saved_judge)
+
+    def test_a_saved_prompt_unblocks_the_stage(self):
+        from server import config
+        client.put("/api/prompts", json={"extract": "Extract every reaction.", "judge": "Check it."})
+        body = client.get("/api/prompts").json()
+        self.assertTrue(body["extract_set"])
+        self.assertTrue(body["judge_set"])
+        # no longer a 400; it fails per-paper on the missing paper instead
+        r = client.post("/api/extract", json={"paper_ids": ["nope"]})
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("error", r.json()[0])
+        config.EXTRACT_PROMPT_FILE.unlink(missing_ok=True)
+        config.JUDGE_PROMPT_FILE.unlink(missing_ok=True)
 
     def test_schema_rejects_bad_field_names_and_types(self):
         bad_name = client.put("/api/schema", json={"fields": [{"name": "has space", "type": "string"}]})
@@ -52,9 +88,13 @@ class ConfigTests(unittest.TestCase):
         # the failure that used to save fine and only explode during a later extraction
         self.assertEqual(client.put("/api/few-shot", json=[{"text": "hi"}]).status_code, 422)
         self.assertEqual(client.put("/api/few-shot", json=[{"records": []}]).status_code, 422)
-        good = [{"text": "a paper", "records": [{"compound": "x"}], "source": "p.pdf"}]
+        good = [{"text": "a paper", "records": [{"compound": "x"}], "source": "p.pdf",
+                 "paper_id": "p-123"}]
         self.assertEqual(client.put("/api/few-shot", json=good).status_code, 200)
-        self.assertEqual(client.get("/api/few-shot").json()[0]["source"], "p.pdf")
+        saved = client.get("/api/few-shot").json()[0]
+        self.assertEqual(saved["source"], "p.pdf")
+        # the editor reopens on the right paper only if this survives the round trip
+        self.assertEqual(saved["paper_id"], "p-123")
 
     def test_api_key_name_must_be_an_env_var(self):
         self.assertEqual(client.put("/api/api-key", json={"name": "lower", "value": "x"}).status_code, 422)
@@ -121,6 +161,7 @@ class PaperTests(unittest.TestCase):
         self.assertEqual(client.get("/api/papers/nope/judgment").status_code, 404)
 
     def test_stages_report_missing_papers_per_item_rather_than_failing(self):
+        client.put("/api/prompts", json={"extract": "Extract things.", "judge": "Judge things."})
         for endpoint in ("/api/extract", "/api/judge"):
             body = client.post(endpoint, json={"paper_ids": ["nope"]}).json()
             self.assertIn("error", body[0], endpoint)
@@ -221,6 +262,7 @@ class ConcurrencyTests(unittest.TestCase):
     def test_a_second_run_is_refused_while_one_is_going(self):
         """Two tabs starting extractions on the same paper used to race for the same file."""
         from server.main import STAGE_LOCK
+        client.put("/api/prompts", json={"extract": "Extract things.", "judge": "Judge things."})
         STAGE_LOCK.acquire()
         try:
             for endpoint in ("/api/extract", "/api/judge"):
