@@ -4,7 +4,7 @@ from the Settings page -- change these four and the same pipeline runs on a diff
 domain, no code changes."""
 from . import exemplar
 from .storage import CONFIG, read_json, write_json
-from .dynschema import DEFAULT_SCHEMA
+from .dynschema import PLACEHOLDER_SCHEMA
 
 SETTINGS_FILE = CONFIG / "settings.json"
 SCHEMA_FILE = CONFIG / "schema.json"
@@ -13,8 +13,8 @@ JUDGE_PROMPT_FILE = CONFIG / "judge_prompt.txt"
 FEW_SHOT_FILE = CONFIG / "few_shot.json"
 
 DEFAULT_SETTINGS = {
-    "model": "gpt-4o-mini",
-    "source_tracking_default": True,
+    "model": "",                      # no model until one is chosen; see placeholders()
+    "source_tracking_default": True,  # a real default: provenance on unless turned off
 }
 
 def get_settings() -> dict:
@@ -29,7 +29,9 @@ def save_settings(patch: dict) -> dict:
 
 
 def get_schema() -> list[dict]:
-    return read_json(SCHEMA_FILE, {"fields": DEFAULT_SCHEMA})["fields"]
+    """Empty until someone defines one. A shipped default meant every new install began with
+    ten PET fields nobody chose, and an extraction that looked like it had worked."""
+    return read_json(SCHEMA_FILE, {"fields": []})["fields"]
 
 
 def save_schema(fields: list[dict]) -> None:
@@ -59,8 +61,9 @@ def get_judge_prompt() -> str:
 
 
 def placeholders() -> dict:
-    """The example prompts, for the grey text in an empty box."""
-    return {"extract": exemplar.EXTRACT_PROMPT, "judge": exemplar.JUDGE_PROMPT}
+    """Everything shown as grey example text in an empty field. None of it is ever a value."""
+    return {"extract": exemplar.EXTRACT_PROMPT, "judge": exemplar.JUDGE_PROMPT,
+            "model": "gpt-4o-mini", "schema": PLACEHOLDER_SCHEMA}
 
 
 def save_judge_prompt(text: str) -> None:

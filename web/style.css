@@ -314,9 +314,6 @@ dialog.modal::backdrop{background:rgba(16,24,32,.42)}
   border-bottom:1px solid var(--line-2);font-size:.8125rem}
 .setup-row:last-child{border-bottom:none}
 .setup-row b{font-weight:600}
-.setup-row .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);flex-shrink:0}
-.setup-row .dot.optional{background:var(--line)}
-.setup-row.missing .dot{background:var(--no)}
 .setup-row.missing b{color:var(--no)}
 .setup-row a{text-decoration:none}
 
@@ -343,3 +340,46 @@ dialog.modal::backdrop{background:rgba(16,24,32,.42)}
 .ok-text{color:var(--ok);font-size:.75rem}
 .warn-text{color:var(--warn);font-size:.75rem}
 textarea::placeholder{color:var(--dim);opacity:.62}
+
+/* ---- help tooltips ---- */
+.help{position:relative;display:inline-flex;align-items:center;margin-left:5px;cursor:help;
+  vertical-align:middle;outline:none}
+.helpmark{display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;
+  border-radius:50%;border:1px solid var(--line);color:var(--dim);font-size:9px;font-weight:700;
+  line-height:1;background:var(--panel)}
+.help:hover .helpmark,.help:focus .helpmark{border-color:var(--accent);color:var(--accent)}
+.helptip{position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);
+  width:max-content;max-width:290px;background:var(--ink);color:var(--panel);font-size:.75rem;
+  font-weight:400;line-height:1.45;padding:7px 10px;border-radius:6px;text-transform:none;
+  letter-spacing:0;opacity:0;visibility:hidden;transition:opacity .12s;z-index:40;
+  box-shadow:0 4px 14px rgba(16,24,32,.2);pointer-events:none;text-align:left}
+.helptip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:var(--ink)}
+.help:hover .helptip,.help:focus .helptip{opacity:1;visibility:visible}
+
+/* ---- icons in buttons ---- */
+.ic{width:13px;height:13px;flex-shrink:0}
+button .ic{margin-right:5px;margin-bottom:-1px}
+button.iconly{padding:5px 8px}
+button.iconly .ic{margin:0}
+td .row-actions{display:flex;gap:5px;justify-content:flex-end}
+
+/* ---- settings: one save, ghost rows, switches ---- */
+.settingshead{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px;
+  position:sticky;top:0;z-index:5;background:var(--bg);padding:4px 0 10px}
+.settingshead h2{font-size:1.0625rem}
+label.switch{display:flex;gap:10px;align-items:flex-start;margin:0;color:var(--ink);
+  font-size:.8125rem;cursor:pointer}
+label.switch input{margin:2px 0 0;accent-color:var(--accent);flex-shrink:0}
+label.switch b{font-weight:600}
+label.switch .muted{display:block;margin-top:1px}
+.schema-table tr.ghost input,.schema-table tr.ghost select{opacity:.55}
+.schema-table tr.ghost .f-del{visibility:hidden}
+.blockers{margin-top:10px;padding-top:10px;border-top:1px solid var(--line-2);font-size:.78rem;
+  color:var(--no);display:flex;flex-direction:column;gap:4px}
+.setup-row .dot{display:inline-flex;align-items:center;justify-content:center;width:15px;
+  height:15px;border-radius:50%;background:var(--ok-soft);color:var(--ok)}
+.setup-row .dot .ic{width:10px;height:10px;margin:0}
+.setup-row.missing .dot{background:var(--no-soft)}
+.setup-row .dot.optional{background:var(--line-2)}
+.setup-row.optional b{font-weight:600}

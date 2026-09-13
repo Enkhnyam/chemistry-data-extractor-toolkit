@@ -7,7 +7,9 @@ from pydantic import BaseModel, ConfigDict, Field, create_model
 
 TYPE_MAP = {"string": str, "number": float, "integer": int, "boolean": bool}
 
-DEFAULT_SCHEMA = [
+# Never returned as a value. Shown as grey placeholder rows in the schema editor so the shape
+# of a good field list is visible before you have written one.
+PLACEHOLDER_SCHEMA = [
     {"name": "catalyst", "type": "string", "description": "Catalyst name exactly as written"},
     {"name": "solvent", "type": "string", "description": "Solvent name exactly as written"},
     {"name": "temperature_c", "type": "number", "description": "Temperature in Celsius"},

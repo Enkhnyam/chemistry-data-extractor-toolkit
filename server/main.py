@@ -53,7 +53,7 @@ async def clean_error(request: Request, exc: Exception):
 
 @app.get("/api/settings")
 def get_settings():
-    return config.get_settings()
+    return {**config.get_settings(), "placeholders": config.placeholders()}
 
 
 @app.put("/api/settings")
@@ -74,7 +74,9 @@ class SchemaBody(BaseModel):
 
 @app.get("/api/schema")
 def get_schema():
-    return {"fields": config.get_schema()}
+    fields = config.get_schema()
+    return {"fields": fields, "set": bool(fields),
+            "placeholder": config.placeholders()["schema"]}
 
 
 @app.put("/api/schema")
@@ -221,6 +223,36 @@ def test_model():
             "seconds": round(time.monotonic() - started, 1)}
 
 
+def _blockers(stage: str) -> list[str]:
+    """What is still missing before this stage can run, in the order a person would fix it.
+
+    The UI shows the same list as a checklist; both call this so they can never disagree about
+    whether a run is possible."""
+    settings = config.get_settings()
+    missing = []
+    if not settings.get("model", "").strip():
+        missing.append("Choose a model in Settings.")
+    else:
+        from . import llm
+        gap = llm.missing_credentials(settings["model"])
+        if gap:
+            missing.append(gap)
+    if not config.get_schema():
+        missing.append("Define the fields a record has, in Settings.")
+    if stage == "extract" and not config.get_extract_prompt().strip():
+        missing.append("Write an extraction prompt. Until you do, nothing tells the model what "
+                       "to pull out.")
+    if stage == "judge" and not config.get_judge_prompt().strip():
+        missing.append("Write a judge rubric. Until you do, nothing tells the model what counts "
+                       "as a good record.")
+    return missing
+
+
+@app.get("/api/readiness")
+def get_readiness():
+    return {stage: _blockers(stage) for stage in ("extract", "judge")}
+
+
 # ---------- papers: upload + parse ----------
 
 @app.post("/api/papers")
@@ -340,10 +372,10 @@ def run_extract(body: PaperIds):
 
 def _extract(body: PaperIds):
     settings = config.get_settings()
+    blockers = _blockers("extract")
+    if blockers:
+        raise HTTPException(400, " ".join(blockers))
     prompt = config.get_extract_prompt()
-    if not prompt.strip():
-        raise HTTPException(400, "Write an extraction prompt before running. Until you do, "
-                                 "there is nothing telling the model what to pull out.")
     schema_fields = config.get_schema()
     few_shot = config.get_few_shot()
 
@@ -432,10 +464,10 @@ def run_judge_endpoint(body: PaperIds):
 
 def _judge(body: PaperIds):
     settings = config.get_settings()
+    blockers = _blockers("judge")
+    if blockers:
+        raise HTTPException(400, " ".join(blockers))
     rubric = config.get_judge_prompt()
-    if not rubric.strip():
-        raise HTTPException(400, "Write a judge rubric before running. Until you do, there is "
-                                 "nothing telling the model what counts as a good record.")
 
     results = []
     for pid in body.paper_ids:

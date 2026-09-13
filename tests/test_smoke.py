@@ -10,6 +10,7 @@ Each test runs against a throwaway workspace, so it never touches real data.
 import os
 import tempfile
 import unittest
+from contextlib import contextmanager
 from pathlib import Path
 
 WORKSPACE = tempfile.mkdtemp(prefix="toolkit-test-")
@@ -22,14 +23,47 @@ from server.main import app                      # noqa: E402
 client = TestClient(app)
 
 
+@contextmanager
+def configured():
+    """A workspace with everything a run needs, torn back down afterwards. Stages now refuse
+    until a model, a key, a schema and a prompt are all present, so most tests need this."""
+    from server import config
+    os.environ["OPENAI_API_KEY"] = "sk-test-not-a-real-key"
+    config.save_settings({"model": "gpt-4o-mini"})
+    config.save_schema([{"name": "compound", "type": "string", "description": "what it is"}])
+    config.save_extract_prompt("Extract every reaction this paper reports.")
+    config.save_judge_prompt("Check each record against the paper.")
+    try:
+        yield
+    finally:
+        config.save_settings({"model": ""})
+        config.save_schema([])
+        config.EXTRACT_PROMPT_FILE.unlink(missing_ok=True)
+        config.JUDGE_PROMPT_FILE.unlink(missing_ok=True)
+
+
 class ConfigTests(unittest.TestCase):
-    def test_fresh_workspace_has_working_defaults(self):
-        # Deliberately no assertion about few-shot being empty: another test in this file sets
-        # one, and unittest runs alphabetically. A test that only passes in a given order is
-        # worse than no test.
-        self.assertEqual(client.get("/api/settings").json()["source_tracking_default"], True)
-        self.assertGreater(len(client.get("/api/schema").json()["fields"]), 0)
+    def test_a_fresh_workspace_is_genuinely_empty(self):
+        """Nothing is filled in for you. Someone who downloads this finds no schema, no model
+        and no prompts -- only examples of each, shown as placeholder text."""
+        settings = client.get("/api/settings").json()
+        self.assertEqual(settings["model"], "", "a model was prefilled")
+        self.assertEqual(settings["source_tracking_default"], True, "a real default, not a leftover")
+
+        schema = client.get("/api/schema").json()
+        self.assertEqual(schema["fields"], [], "a schema was prefilled")
+        self.assertFalse(schema["set"])
+        self.assertGreater(len(schema["placeholder"]), 0, "no example schema to show")
+
         self.assertIsInstance(client.get("/api/few-shot").json(), list)
+
+    def test_nothing_leaks_from_the_example_into_the_values(self):
+        # the placeholders are PET chemistry; the values must not be
+        settings = client.get("/api/settings").json()
+        prompts = client.get("/api/prompts").json()
+        blob = (settings["model"] + prompts["extract"] + prompts["judge"]).lower()
+        for word in ("pet", "glycolysis", "bhet", "ionic liquid"):
+            self.assertNotIn(word, blob, f"{word!r} leaked from the example into a real value")
 
     def test_prompts_start_empty_but_offer_an_example(self):
         # A prompt must be written, not silently inherited from somebody else's chemistry --
@@ -42,32 +76,34 @@ class ConfigTests(unittest.TestCase):
 
     def test_stages_refuse_to_run_without_a_prompt(self):
         from server import config
-        saved_extract, saved_judge = config.get_extract_prompt(), config.get_judge_prompt()
+        config.save_settings({"model": "gpt-4o-mini"})
+        config.save_schema([{"name": "x", "type": "string", "description": ""}])
         config.EXTRACT_PROMPT_FILE.unlink(missing_ok=True)
         config.JUDGE_PROMPT_FILE.unlink(missing_ok=True)
-        try:
-            for endpoint, word in (("/api/extract", "extraction prompt"), ("/api/judge", "judge rubric")):
-                r = client.post(endpoint, json={"paper_ids": ["anything"]})
-                self.assertEqual(r.status_code, 400, endpoint)
-                self.assertIn(word, r.json()["detail"])
-        finally:
-            if saved_extract:
-                config.save_extract_prompt(saved_extract)
-            if saved_judge:
-                config.save_judge_prompt(saved_judge)
+        os.environ["OPENAI_API_KEY"] = "sk-test"
+        for endpoint, word in (("/api/extract", "extraction prompt"), ("/api/judge", "judge rubric")):
+            r = client.post(endpoint, json={"paper_ids": ["anything"]})
+            self.assertEqual(r.status_code, 400, endpoint)
+            self.assertIn(word, r.json()["detail"])
 
-    def test_a_saved_prompt_unblocks_the_stage(self):
+    def test_a_fully_configured_workspace_unblocks_the_stages(self):
+        """Every blocker must clear before a run is possible: model, key, schema, prompt."""
         from server import config
-        client.put("/api/prompts", json={"extract": "Extract every reaction.", "judge": "Check it."})
-        body = client.get("/api/prompts").json()
-        self.assertTrue(body["extract_set"])
-        self.assertTrue(body["judge_set"])
-        # no longer a 400; it fails per-paper on the missing paper instead
-        r = client.post("/api/extract", json={"paper_ids": ["nope"]})
-        self.assertEqual(r.status_code, 200)
-        self.assertIn("error", r.json()[0])
+        with configured():
+            self.assertEqual(client.get("/api/readiness").json(), {"extract": [], "judge": []})
+            r = client.post("/api/extract", json={"paper_ids": ["nope"]})
+            self.assertEqual(r.status_code, 200)          # now fails per-paper, not as a gate
+            self.assertIn("error", r.json()[0])
+
+    def test_readiness_names_each_missing_piece(self):
+        from server import config
+        config.save_settings({"model": ""})
+        config.save_schema([])
         config.EXTRACT_PROMPT_FILE.unlink(missing_ok=True)
-        config.JUDGE_PROMPT_FILE.unlink(missing_ok=True)
+        blockers = " ".join(client.get("/api/readiness").json()["extract"])
+        self.assertIn("model", blockers)
+        self.assertIn("fields", blockers)
+        self.assertIn("extraction prompt", blockers)
 
     def test_schema_rejects_bad_field_names_and_types(self):
         bad_name = client.put("/api/schema", json={"fields": [{"name": "has space", "type": "string"}]})
@@ -161,10 +197,10 @@ class PaperTests(unittest.TestCase):
         self.assertEqual(client.get("/api/papers/nope/judgment").status_code, 404)
 
     def test_stages_report_missing_papers_per_item_rather_than_failing(self):
-        client.put("/api/prompts", json={"extract": "Extract things.", "judge": "Judge things."})
-        for endpoint in ("/api/extract", "/api/judge"):
-            body = client.post(endpoint, json={"paper_ids": ["nope"]}).json()
-            self.assertIn("error", body[0], endpoint)
+        with configured():
+            for endpoint in ("/api/extract", "/api/judge"):
+                body = client.post(endpoint, json={"paper_ids": ["nope"]}).json()
+                self.assertIn("error", body[0], endpoint)
 
     def test_unparseable_pdf_fails_that_file_only_and_leaves_nothing_behind(self):
         from server.storage import PDFS
@@ -262,17 +298,17 @@ class ConcurrencyTests(unittest.TestCase):
     def test_a_second_run_is_refused_while_one_is_going(self):
         """Two tabs starting extractions on the same paper used to race for the same file."""
         from server.main import STAGE_LOCK
-        client.put("/api/prompts", json={"extract": "Extract things.", "judge": "Judge things."})
-        STAGE_LOCK.acquire()
-        try:
-            for endpoint in ("/api/extract", "/api/judge"):
-                busy = client.post(endpoint, json={"paper_ids": ["anything"]})
-                self.assertEqual(busy.status_code, 409, endpoint)
-                self.assertIn("already in progress", busy.json()["detail"])
-        finally:
-            STAGE_LOCK.release()
-        # and the lock is genuinely released afterwards, not leaked by the error path
-        self.assertNotEqual(client.post("/api/extract", json={"paper_ids": ["nope"]}).status_code, 409)
+        with configured():
+            STAGE_LOCK.acquire()
+            try:
+                for endpoint in ("/api/extract", "/api/judge"):
+                    busy = client.post(endpoint, json={"paper_ids": ["anything"]})
+                    self.assertEqual(busy.status_code, 409, endpoint)
+                    self.assertIn("already in progress", busy.json()["detail"])
+            finally:
+                STAGE_LOCK.release()
+            # and the lock is genuinely released, not leaked by the error path
+            self.assertNotEqual(client.post("/api/extract", json={"paper_ids": ["nope"]}).status_code, 409)
 
 
 class ReportTests(unittest.TestCase):

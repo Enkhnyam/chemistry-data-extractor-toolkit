@@ -83,15 +83,19 @@ VM wants roughly 6-8 GB of headroom; on a machine already using most of its RAM 
 stalls or the VM is OOM-killed. If that happens, close what you can, give Docker's VM at least
 8 GB, and build once — or just use the `uv` path above, which has no VM in the way.
 
-## Prompts are yours to write
+## Nothing is filled in for you
 
-Nothing runs until you have written an extraction prompt (and a rubric, before judging). The
-boxes show a real prompt from a PET depolymerisation corpus as **grey placeholder text** &mdash;
-an illustration of the detail that works, never a value. "Start from the example" copies it in
-so you can adapt it.
+A fresh install has **no model, no schema and no prompts** &mdash; it writes no config files at
+all until you save something. Each empty field instead shows a real example from a PET
+depolymerisation corpus as **grey placeholder text**: the ten-field schema, the extraction
+prompt, the rubric. None of it is ever a value; "Use the example" copies it in if you want it.
 
-This is deliberate: the tool used to fall back to that PET prompt silently, which meant a first
-run extracted ionic-liquid chemistry from whatever you uploaded and looked like it had worked.
+This is deliberate. Those examples used to be defaults, which meant a first run quietly
+extracted ionic-liquid chemistry from whatever you uploaded and looked like it had worked.
+
+Extract and Judge show a readiness checklist beside the run button &mdash; model, key, schema,
+prompt &mdash; and the run is refused, by the server as well as the button, until every row is
+green.
 
 A **worked example** is one paper's text paired with the records it should produce. The editor
 lays it out in the order the model sees it &mdash; prompt, then paper text, then records &mdash;
@@ -107,6 +111,9 @@ Everything that makes this specific to ionic-liquid PET depolymerisation lives i
 - `extract_prompt.txt` &mdash; the extraction instructions
 - `judge_prompt.txt` &mdash; the judge's rubric
 - `few_shot.json` &mdash; optional worked examples, `[{"text": ..., "records": [...]}]`
+
+None of these exist until you save them; the examples shown in the interface live in
+`server/exemplar.py` and are only ever placeholder text.
 
 Change all four and the same three-stage pipeline runs on a different literature entirely.
 

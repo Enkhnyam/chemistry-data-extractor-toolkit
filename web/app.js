@@ -173,12 +173,20 @@ function paintRun() {
   banner.className = 'runbanner' + (r.finished ? (failed ? ' failed' : ' done') : '');
   const current = r.items.find(i => i.state === 'running');
   banner.innerHTML = r.finished
-    ? `${esc(r.stage)} finished — ${done - failed} ok${failed ? `, ${failed} failed` : ''}
-       <button class="linkish" id="run-dismiss">dismiss</button>`
+    ? `${icon(failed ? 'trash' : 'check')} ${esc(r.stage)} finished \u2014 ${done - failed} ok${failed ? `, ${failed} failed` : ''}`
     : `<span class="spinner"></span> ${esc(r.stage)} ${done}/${r.items.length}
        <span class="muted">${esc(current ? current.label : '')}</span>`;
-  const dismiss = document.getElementById('run-dismiss');
-  if (dismiss) dismiss.onclick = () => { state.run = null; paintRun(); };
+
+  // A finished banner clears itself. The dismiss button it used to carry sat past the pill's own
+  // max-width and was clipped -- present in the DOM, invisible and unclickable on screen. A
+  // status you have already read is the wrong shape for something needing dismissal anyway.
+  // Failures linger three times as long as successes, because they are worth reading twice.
+  clearTimeout(paintRun.timer);
+  if (r.finished) {
+    paintRun.timer = setTimeout(() => {
+      if (state.run && state.run.finished) { state.run = null; paintRun(); }
+    }, failed ? 15000 : 5000);
+  }
 
   const host = document.getElementById('run-progress');
   if (host) {
@@ -187,6 +195,27 @@ function paintRun() {
     if (stop) stop.onclick = () => { state.run.stopping = true; paintRun(); };
   }
 }
+
+// ---------- small UI pieces ----------
+
+// A hover explanation, the way an editor shows one: a quiet marker that does not compete with
+// the label, and text that says why a thing exists rather than restating its name.
+function help(text) {
+  return `<span class="help" tabindex="0" role="note"><span class="helpmark">?</span>
+    <span class="helptip">${esc(text)}</span></span>`;
+}
+
+// Inline SVG rather than an icon font: one fewer download, and it inherits currentColor.
+const ICONS = {
+  view: '<path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5Z"/><circle cx="8" cy="8" r="2.2"/>',
+  trash: '<path d="M2.5 4h11M6.5 4V2.5h3V4M4 4l.7 9.5h6.6L12 4"/><path d="M6.5 6.5v5M9.5 6.5v5"/>',
+  edit: '<path d="M11.5 2.5 13.5 4.5 5.5 12.5 2.5 13.5 3.5 10.5z"/>',
+  plus: '<path d="M8 3v10M3 8h10"/>',
+  download: '<path d="M8 2v8M4.5 7 8 10.5 11.5 7M2.5 13h11"/>',
+  check: '<path d="M3 8.5 6.5 12 13 4.5"/>',
+};
+const icon = (name) => `<svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+  stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${ICONS[name] || ''}</svg>`;
 
 // ---------- modal ----------
 
@@ -602,7 +631,7 @@ function reviewPanelHTML(title) {
       <select id="review-pick"></select>
       <span class="grow"></span>
       <span class="muted" id="match-counter"></span>
-      <button id="delete-run">Delete this run</button>
+      <button id="delete-run">${icon('trash')}Delete this run</button>
       <button class="primary" id="save-review" disabled>Save corrections</button>
       <span class="muted" id="save-status"></span>
     </div>
@@ -865,11 +894,12 @@ function papersTableHTML(papers) {
                 : `<span class="tag yes">${p.n_records}</span>`}</td>
         <td><span class="tag ${p.judged ? 'yes' : 'no'}">${p.judged ? 'yes' : 'no'}</span></td>
         ${spendCell(spend.cost_usd, spend.tokens)}
-        <td class="nowrap">
-          <button class="view-btn">View</button>
-          <button class="del-btn" data-name="${esc(p.filename)}"
-            data-has="${[p.extracted && 'extraction', p.judged && 'judgment'].filter(Boolean).join(' and ')}">Delete</button>
-        </td>
+        <td class="nowrap"><span class="row-actions">
+          <button class="view-btn iconly" title="View the parsed text">${icon('view')}</button>
+          <button class="del-btn iconly" title="Delete this paper and everything from it"
+            data-name="${esc(p.filename)}"
+            data-has="${[p.extracted && 'extraction', p.judged && 'judgment'].filter(Boolean).join(' and ')}">${icon('trash')}</button>
+        </span></td>
       </tr>`;
     }).join('') || '<tr><td colspan="7" class="muted">No papers yet</td></tr>'}</tbody>
     ${(spent || totalTokens) ? `<tfoot><tr><td colspan="5" class="muted">total</td>
@@ -1034,42 +1064,56 @@ function wireViewButtons() {
 
 // ---------- Extract / Judge pages (same shape) ----------
 
-// The right half of a stage's top panel: the prompt it will use and, for extraction, the
-// examples. Putting it beside the run button is what makes "you have not written a prompt"
-// visible at the moment you are about to run, rather than after.
-function stageSetupHTML(kind, prompts, examples) {
-  const isSet = kind === 'extract' ? prompts.extract_set : prompts.judge_set;
-  const label = kind === 'extract' ? 'Extraction prompt' : 'Judge rubric';
-  const chars = (kind === 'extract' ? prompts.extract : prompts.judge).trim().length;
+// The right half of a stage's top panel: everything this run needs, each row either satisfied
+// or a one-click route to fixing it. The list comes from /api/readiness, the same function the
+// API refuses the run with, so the checklist and the error can never disagree.
+function stageSetupHTML(kind, state) {
+  const { prompts, examples, settings, schema, blockers } = state;
+  const ok = (cond, label, detail, action, tip) => `
+    <div class="setup-row ${cond ? '' : 'missing'}">
+      <span class="dot">${cond ? icon('check') : ''}</span>
+      <div class="grow">
+        <b>${label}${tip ? help(tip) : ''}</b>
+        <div class="muted">${detail}</div>
+      </div>
+      ${action}
+    </div>`;
+
+  const promptSet = kind === 'extract' ? prompts.extract_set : prompts.judge_set;
+  const promptChars = (kind === 'extract' ? prompts.extract : prompts.judge).trim().length;
+
   return `<div class="stage-setup">
-    <h3>What this run uses</h3>
-    <div class="setup-row ${isSet ? '' : 'missing'}">
-      <span class="dot"></span>
-      <div>
-        <b>${label}</b>
-        <div class="muted">${isSet ? `${chars.toLocaleString()} characters` : 'not written yet — required'}</div>
-      </div>
-      <span class="grow"></span>
-      <button id="edit-prompt">${isSet ? 'Edit' : 'Write it'}</button>
-    </div>
+    <h3>What this run needs${help('Every row must be green before the run button works. ' +
+      'The same checks run on the server, so a run can never start half-configured.')}</h3>
+    ${ok(settings.model, 'Model', settings.model || 'not chosen',
+        '<a href="#/settings"><button>Choose</button></a>',
+        'Which LLM to call, in litellm format — and its API key must be set too.')}
+    ${ok(schema.set, 'Schema',
+        schema.set ? `${schema.fields.length} fields` : 'no fields defined',
+        '<a href="#/settings"><button>Define</button></a>',
+        'The fields one record has. Everything downstream — the prompt, the review pane, the ' +
+        'report — is built from this list.')}
+    ${ok(promptSet, kind === 'extract' ? 'Extraction prompt' : 'Judge rubric',
+        promptSet ? `${promptChars.toLocaleString()} characters` : 'not written yet',
+        `<button id="edit-prompt">${icon('edit')}${promptSet ? 'Edit' : 'Write'}</button>`,
+        kind === 'extract'
+          ? 'What to pull out of each paper, and what to leave alone. An example from a real ' +
+            'corpus is shown in grey inside the box.'
+          : 'What makes a record right or wrong in your chemistry. The judge reads the paper ' +
+            'again and checks every record against it.')}
     ${kind === 'extract' ? `
-    <div class="setup-row">
+    <div class="setup-row optional">
       <span class="dot optional"></span>
-      <div>
-        <b>Worked examples</b>
+      <div class="grow">
+        <b>Worked examples${help('One paper\'s text paired with the records it should produce, ' +
+          'shown to the model before each paper. Optional — extraction works without them, and ' +
+          'each one is re-sent with every paper, so two or three is the ceiling.')}</b>
         <div class="muted">${examples.length
-          ? `${examples.length} example${examples.length === 1 ? '' : 's'}, sent with every paper`
-          : 'none — optional, and extraction works without them'}</div>
+          ? `${examples.length} example${examples.length === 1 ? '' : 's'}` : 'none — optional'}</div>
       </div>
-      <span class="grow"></span>
-      <button id="edit-examples">${examples.length ? 'Edit' : 'Add'}</button>
+      <button id="edit-examples">${icon(examples.length ? 'edit' : 'plus')}${examples.length ? 'Edit' : 'Add'}</button>
     </div>` : ''}
-    <div class="setup-row">
-      <span class="dot"></span>
-      <div><b>Model</b><div class="muted" id="setup-model">&hellip;</div></div>
-      <span class="grow"></span>
-      <a href="#/settings"><button>Change</button></a>
-    </div>
+    ${blockers.length ? `<div class="blockers">${blockers.map(b => `<div>${esc(b)}</div>`).join('')}</div>` : ''}
   </div>`;
 }
 
@@ -1119,10 +1163,12 @@ function stageChecklistHTML(papers, doneKey, emptyMsg) {
 }
 
 async function renderExtract(gen) {
-  const [papers, timings, prompts, examples] = await Promise.all([
-    get('/api/papers'), get('/api/timings'), get('/api/prompts'), get('/api/few-shot')]);
+  const [papers, timings, prompts, examples, settings, schema, readiness] = await Promise.all([
+    get('/api/papers'), get('/api/timings'), get('/api/prompts'), get('/api/few-shot'),
+    get('/api/settings'), get('/api/schema'), get('/api/readiness')]);
   if (stale(gen)) return;
   state.timings = timings;
+  const setup = { prompts, examples, settings, schema, blockers: readiness.extract };
 
   view.innerHTML = `
     <section>
@@ -1139,7 +1185,7 @@ async function renderExtract(gen) {
               <span class="muted" id="select-hint"></span>
             </div>
           </div>
-          ${stageSetupHTML('extract', prompts, examples)}
+          ${stageSetupHTML('extract', setup)}
         </div>
         <div id="run-progress"></div>
       </div>
@@ -1150,15 +1196,11 @@ async function renderExtract(gen) {
   wireStageSetup('extract', prompts);
   wireStageRun(papers, 'extract', 'Extracting',
     (r) => `${r.n_records} records · ${humanSeconds(r.seconds)}${costOf(r)}`,
-    prompts.extract_set);
+    readiness.extract);
   await wireReviewPicker(papers.filter(p => p.extracted), false);
 }
 
 function wireStageSetup(kind, prompts) {
-  get('/api/settings').then(s => {
-    const box = document.getElementById('setup-model');
-    if (box) box.textContent = s.model;
-  });
   const promptBtn = document.getElementById('edit-prompt');
   if (promptBtn) promptBtn.onclick = () => openPromptEditor(kind, prompts, () => router());
   const exBtn = document.getElementById('edit-examples');
@@ -1166,11 +1208,13 @@ function wireStageSetup(kind, prompts) {
 }
 
 async function renderJudge(gen) {
-  const [papers, timings, prompts] = await Promise.all([
-    get('/api/papers'), get('/api/timings'), get('/api/prompts')]);
+  const [papers, timings, prompts, settings, schema, readiness] = await Promise.all([
+    get('/api/papers'), get('/api/timings'), get('/api/prompts'),
+    get('/api/settings'), get('/api/schema'), get('/api/readiness')]);
   if (stale(gen)) return;
   state.timings = timings;
   const extracted = papers.filter(p => p.extracted);
+  const setup = { prompts, examples: [], settings, schema, blockers: readiness.judge };
 
   view.innerHTML = `
     <section>
@@ -1188,7 +1232,7 @@ async function renderJudge(gen) {
               <span class="muted" id="select-hint"></span>
             </div>
           </div>
-          ${stageSetupHTML('judge', prompts, [])}
+          ${stageSetupHTML('judge', setup)}
         </div>
         <div id="run-progress"></div>
       </div>
@@ -1199,7 +1243,7 @@ async function renderJudge(gen) {
   wireStageSetup('judge', prompts);
   wireStageRun(extracted, 'judge', 'Judging',
     (r) => `${r.n_verdicts} verdicts · ${humanSeconds(r.seconds)}${costOf(r)}`,
-    prompts.judge_set);
+    readiness.judge);
   await wireReviewPicker(papers.filter(p => p.judged), true);
 }
 
@@ -1210,7 +1254,7 @@ function etaFor(endpoint, paper) {
   return (t.per_unit && size) ? t.per_unit * size : t.seconds;
 }
 
-function wireStageRun(papers, endpoint, stageLabel, describe, promptReady = true) {
+function wireStageRun(papers, endpoint, stageLabel, describe, blockers = []) {
   const btn = document.getElementById('run-btn');
   const checklist = document.getElementById('checklist');
   const byId = new Map(papers.map(p => [p.id, p]));
@@ -1222,9 +1266,9 @@ function wireStageRun(papers, endpoint, stageLabel, describe, promptReady = true
   const updateSummary = () => {
     const ids = [...checklist.querySelectorAll('input:checked')].map(i => i.value);
     if (!summary) return;
-    if (!promptReady) {
-      summary.innerHTML = `<span class="error">Write ${endpoint === 'extract' ? 'an extraction prompt' : 'a judge rubric'} first</span>
-        <span class="muted">&mdash; there is nothing yet telling the model what to do.</span>`;
+    if (blockers.length) {
+      summary.innerHTML = `<span class="error">${blockers.length} thing${blockers.length === 1 ? '' : 's'} to set up first</span>
+        <span class="muted">&mdash; listed on the right.</span>`;
       btn.disabled = true;
       return;
     }
@@ -1382,8 +1426,8 @@ async function renderReport(gen) {
             ${t.papers_judged} audited by the judge.</p>
         </div>
         <span class="grow"></span>
-        <a href="/api/export.csv" download><button>Export CSV</button></a>
-        <a href="/api/export.json" download><button>Export JSON</button></a>
+        <a href="/api/export.csv" download><button>${icon('download')}CSV</button></a>
+        <a href="/api/export.json" download><button>${icon('download')}JSON</button></a>
       </div>
 
       <div class="cards">
@@ -1514,136 +1558,203 @@ async function renderSettings(gen) {
     get('/api/env-keys'), get('/api/papers'),
   ]);
   if (stale(gen)) return;
+  const ph = settings.placeholders;
+  const TYPES = ['string', 'number', 'integer', 'boolean'];
 
   view.innerHTML = `
     <section>
-      <p class="lede">The model, the schema, the prompt and the rubric are all that decide what
-        gets extracted. Change them and the same pipeline works on any literature.</p>
+      <div class="settingshead">
+        <div>
+          <h2 style="margin:0">Settings</h2>
+          <p class="lede" style="margin:2px 0 0">The model, the schema and the prompts are all
+            that decide what gets extracted. Nothing here is filled in for you.</p>
+        </div>
+        <span class="grow"></span>
+        <span class="muted" id="save-all-status"></span>
+        <button class="primary" id="save-all">${icon('check')}Save changes</button>
+      </div>
 
       <div class="panel">
-        <h2>Model</h2>
+        <h2>Behaviour</h2>
+        <label class="switch">
+          <input type="checkbox" id="src-default" ${settings.source_tracking_default ? 'checked' : ''}>
+          <span><b>Source tracking</b>${help('Tags every parsed chunk with a stable id, and asks ' +
+            'the model to cite the chunks each record came from. That is what lets the review pane ' +
+            'shade the exact passage behind a value. Turn it off only if your model struggles with ' +
+            'the extra field.')}
+          <span class="muted">new papers are parsed with chunk ids so records can cite their source</span></span>
+        </label>
+      </div>
+
+      <div class="panel">
+        <h2>Model${help('Any litellm model string. The API key for its provider must also be set ' +
+          'below, or runs are blocked.')}</h2>
         <div class="field">
-          <label>Model (litellm format)</label>
-          <input id="model-input" value="${esc(settings.model)}" style="width:100%">
-          <p class="muted" style="margin-top:6px">
-            <code>gpt-4o-mini</code> &middot; <code>anthropic/claude-sonnet-4-5</code> &middot;
-            <code>ollama/llama3</code> &middot; <code>azure/your-deployment-name</code>.
-            <a href="https://docs.litellm.ai/docs/providers" target="_blank">Full list</a>.</p>
+          <input id="model-input" value="${esc(settings.model)}" placeholder="${esc(ph.model)}" style="width:100%">
+          <p class="muted"><code>gpt-4o-mini</code> &middot; <code>anthropic/claude-sonnet-4-5</code>
+            &middot; <code>ollama/llama3</code> &middot; <code>azure/your-deployment</code> &middot;
+            <a href="https://docs.litellm.ai/docs/providers" target="_blank">full list</a></p>
         </div>
         <div class="row">
-          <button class="primary" id="save-settings">Save model</button>
           <button id="test-model">Test connection</button>
           <span class="muted" id="settings-status"></span>
         </div>
-        <h3 style="margin-top:20px">Keys</h3>
-        <p class="lede" style="margin-bottom:10px">Stored in this project's local
-          <code>.env</code>. Azure needs all three rows; other providers need one.</p>
+
+        <h3 style="margin-top:20px">Keys${help('Written to this project\'s local .env and never ' +
+          'sent anywhere else. Azure needs all three rows; other providers need one.')}</h3>
         <table class="keys"><tbody id="key-rows"></tbody></table>
         <div class="row" style="margin-top:10px">
           <input id="new-key-name" placeholder="ANOTHER_VARIABLE_NAME" style="width:230px">
           <input id="new-key-value" type="password" placeholder="value" style="flex:1">
-          <button class="primary" id="add-key">Add variable</button>
+          <button id="add-key">${icon('plus')}Add</button>
           <span class="muted" id="key-status"></span>
         </div>
       </div>
 
       <div class="panel">
-        <h2>Schema</h2>
-        <p class="lede">The fields one record carries. Descriptions are read by the model.</p>
+        <h2>Schema${help('The fields one record has. The extraction prompt, the review pane and ' +
+          'the report are all built from this list, so it is the first thing to define.')}
+          ${schema.set ? '' : '<span class="tag no">not defined yet</span>'}</h2>
+        <p class="lede">Grey rows are an example from a PET corpus &mdash; an illustration of the
+          shape, never your data. Type over them, or press <b>Use the example</b>.</p>
         <table class="schema-table"><thead><tr>
-          <th style="width:24%">Field name</th><th style="width:14%">Type</th><th>Description (the model reads this)</th><th></th>
+          <th style="width:26%">Field name</th><th style="width:15%">Type</th>
+          <th>Description <span class="muted" style="text-transform:none">the model reads this</span></th><th></th>
         </tr></thead><tbody id="schema-rows"></tbody></table>
         <div class="row" style="margin-top:10px">
-          <button id="add-field">+ Add field</button>
-          <button class="primary" id="save-schema">Save schema</button>
+          <button id="add-field">${icon('plus')}Add field</button>
+          ${schema.set ? '' : '<button id="use-example-schema">Use the example</button>'}
           <span class="muted" id="schema-status"></span>
         </div>
-        <p class="muted">Changing this does not re-run existing extractions.</p>
       </div>
 
       <div class="panel">
-        <h2>Extraction prompt ${prompts.extract_set ? '' : '<span class="tag no">required before extracting</span>'}</h2>
-        <div class="hint" style="margin-bottom:10px">
-          <b>Draft one for your domain</b>
-          <p>Name the field and the model drafts a prompt around your schema, grounded in a paper
-            you have already parsed. It lands below for you to edit.</p>
-          <div class="row">
-            <input id="gen-domain" placeholder="e.g. metal salt catalysed PET glycolysis" style="flex:1;min-width:240px">
-            <select id="gen-paper"><option value="">(no example paper)</option>
-              ${papers.map(p => `<option value="${p.id}">${esc(p.filename)}</option>`).join('')}</select>
-            <button id="gen-extract">Draft prompt</button>
-            <span class="muted" id="gen-extract-status"></span>
-          </div>
+        <h2>Extraction prompt${help('What to pull out of each paper, and what to skip. Written ' +
+          'once, used for every paper.')}
+          ${prompts.extract_set ? '' : '<span class="tag no">required before extracting</span>'}</h2>
+        <div class="row" style="margin-bottom:8px">
+          <span class="muted">Grey text is a real prompt from a PET corpus, shown as an
+            illustration. It is never used as yours.</span>
+          <span class="grow"></span>
+          <button data-copy-example="extract">Use the example</button>
         </div>
         <textarea id="extract-prompt" rows="12" spellcheck="false"
           placeholder="${esc(prompts.placeholders.extract)}">${esc(prompts.extract)}</textarea>
-        <p class="muted">Grey text is a real prompt from a PET corpus, shown as an illustration.
-          It is never used as yours.</p>
-        <div class="row" style="margin-top:10px"><button class="primary" id="save-extract-prompt">Save prompt</button>
-          <span class="muted" id="extract-prompt-status"></span></div>
       </div>
 
       <div class="panel">
-        <h2>Judge rubric ${prompts.judge_set ? '' : '<span class="tag no">required before judging</span>'}</h2>
-        <div class="hint" style="margin-bottom:10px">
-          <b>Draft one for your domain</b>
-          <p>What makes a record right or wrong in this field.</p>
-          <div class="row">
-            <input id="gen-domain-judge" placeholder="e.g. metal salt catalysed PET glycolysis" style="flex:1;min-width:240px">
-            <button id="gen-judge">Draft rubric</button>
-            <span class="muted" id="gen-judge-status"></span>
-          </div>
+        <h2>Judge rubric${help('What makes an extracted record right or wrong. The judge re-reads ' +
+          'each paper and checks every record against this.')}
+          ${prompts.judge_set ? '' : '<span class="tag no">required before judging</span>'}</h2>
+        <div class="row" style="margin-bottom:8px">
+          <span class="grow"></span>
+          <button data-copy-example="judge">Use the example</button>
         </div>
         <textarea id="judge-prompt" rows="12" spellcheck="false"
           placeholder="${esc(prompts.placeholders.judge)}">${esc(prompts.judge)}</textarea>
-        <div class="row" style="margin-top:10px"><button class="primary" id="save-judge-prompt">Save rubric</button>
-          <span class="muted" id="judge-prompt-status"></span></div>
       </div>
 
       <div class="panel">
-        <h2>Worked examples <span class="muted" style="font-weight:400">optional</span></h2>
-        <p class="lede">A paper's text paired with the records it should produce, shown to the
-          model before each extraction. Edited in one place &mdash; the same editor the Extract
-          page opens &mdash; because the example only makes sense next to the prompt it follows.</p>
+        <h2>Worked examples <span class="muted" style="font-weight:400">optional</span>
+          ${help('One paper\'s text paired with the records it should produce. Edited in the same ' +
+          'dialog the Extract page opens, because an example only makes sense next to the prompt ' +
+          'it follows.')}</h2>
         <div class="row">
           <span id="fs-summary" class="muted">&hellip;</span>
           <span class="grow"></span>
-          <button class="primary" id="fs-open">Open examples editor</button>
+          <button id="fs-open">${icon('edit')}Open examples editor</button>
         </div>
-      </div>
-
-      <div class="panel">
-        <h2>Defaults</h2>
-        <label><input type="checkbox" id="src-default" ${settings.source_tracking_default ? 'checked' : ''}>
-          Turn source tracking on for newly uploaded papers</label>
-        <div class="row" style="margin-top:10px"><button class="primary" id="save-defaults">Save defaults</button>
-          <span class="muted" id="defaults-status"></span></div>
       </div>
     </section>`;
 
   paintRun();
 
-  const say = async (statusId, fn) => {
-    const status = document.getElementById(statusId);
-    status.textContent = 'Working…';
-    try { const msg = await fn(); status.textContent = msg || 'Saved.'; }
-    catch (e) { status.textContent = 'Error: ' + e.message; }
+  // ---- one save button: collect every dirty field, write them, report once
+  const dirty = () => {
+    const rows = [...document.querySelectorAll('#schema-rows tr')].map(tr => ({
+      name: tr.querySelector('.f-name').value.trim(),
+      type: tr.querySelector('.f-type').value,
+      description: tr.querySelector('.f-desc').value.trim(),
+    })).filter(f => f.name);
+    return {
+      settings: { model: document.getElementById('model-input').value.trim(),
+                  source_tracking_default: document.getElementById('src-default').checked },
+      fields: rows,
+      extract: document.getElementById('extract-prompt').value,
+      judge: document.getElementById('judge-prompt').value,
+    };
   };
-  const on = (id, statusId, fn) => document.getElementById(id).addEventListener('click', () => say(statusId, fn));
 
-  // --- model + keys
-  on('save-settings', 'settings-status', async () => {
-    await put('/api/settings', { model: document.getElementById('model-input').value.trim() });
-    document.getElementById('model-badge').textContent = 'model: ' + document.getElementById('model-input').value.trim();
-  });
-  on('test-model', 'settings-status', async () => {
-    const r = await post('/api/test-model', {});
-    if (!r.ok) throw new Error(r.error);
-    return `${r.model} replied in ${r.seconds}s — working.`;
+  document.getElementById('save-all').addEventListener('click', async () => {
+    const status = document.getElementById('save-all-status');
+    const d = dirty();
+    status.className = 'muted';
+    status.textContent = 'Saving…';
+    try {
+      await put('/api/settings', d.settings);
+      if (d.fields.length) await put('/api/schema', { fields: d.fields });
+      await put('/api/prompts', { extract: d.extract, judge: d.judge });
+      status.className = 'ok-text';
+      status.textContent = 'Saved.';
+      document.getElementById('model-badge').textContent = 'model: ' + (d.settings.model || 'not set');
+      setTimeout(() => router(), 700);
+    } catch (e) {
+      status.className = 'error';
+      status.textContent = e.message;
+    }
   });
 
-  // One row per variable, each editable where it sits. The stored value is fetched only when
-  // Edit is pressed on that row, so no secret sits in the page waiting for a screen-share.
+  document.getElementById('test-model').addEventListener('click', async () => {
+    const status = document.getElementById('settings-status');
+    status.className = 'muted';
+    status.textContent = 'Calling the model…';
+    try {
+      await put('/api/settings', { model: document.getElementById('model-input').value.trim() });
+      const r = await post('/api/test-model', {});
+      status.className = r.ok ? 'ok-text' : 'error';
+      status.textContent = r.ok ? `${r.model} replied in ${r.seconds}s` : r.error;
+    } catch (e) { status.className = 'error'; status.textContent = e.message; }
+  });
+
+  // ---- schema table, empty by default with the example shown in grey
+  const rows = document.getElementById('schema-rows');
+  const addRow = (f = null, grey = false) => rows.append(el(`
+    <tr${grey ? ' class="ghost"' : ''}>
+      <td><input class="f-name" value="${f && !grey ? esc(f.name) : ''}" placeholder="${grey && f ? esc(f.name) : 'field_name'}"></td>
+      <td><select class="f-type">${TYPES.map(t =>
+        `<option ${f && f.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select></td>
+      <td><input class="f-desc" value="${f && !grey ? esc(f.description || '') : ''}"
+          placeholder="${grey && f ? esc(f.description || '') : 'what the model should put here'}"></td>
+      <td><button class="f-del iconly" title="remove">${icon('trash')}</button></td>
+    </tr>`));
+
+  if (schema.set) schema.fields.forEach(f => addRow(f));
+  else schema.placeholder.slice(0, 6).forEach(f => addRow(f, true));
+
+  rows.addEventListener('click', e => {
+    const del = e.target.closest('.f-del');
+    if (del) del.closest('tr').remove();
+  });
+  rows.addEventListener('input', e => {
+    const tr = e.target.closest('tr');
+    if (tr) tr.classList.remove('ghost');   // typing in a ghost row makes it real
+  });
+  document.getElementById('add-field').addEventListener('click', () => addRow());
+  const useExample = document.getElementById('use-example-schema');
+  if (useExample) useExample.addEventListener('click', () => {
+    rows.innerHTML = '';
+    schema.placeholder.forEach(f => addRow(f));
+  });
+
+  document.querySelectorAll('[data-copy-example]').forEach(btn => btn.addEventListener('click', () => {
+    const kind = btn.dataset.copyExample;
+    const box = document.getElementById(kind + '-prompt');
+    if (box.value.trim() && !confirm('Replace what is in the box with the example?')) return;
+    box.value = prompts.placeholders[kind];
+    box.focus();
+  }));
+
+  // ---- keys: one row each, edited in place
   const keyRows = document.getElementById('key-rows');
   const keyState = { ...envKeys };
   let editingKey = null;
@@ -1651,109 +1762,70 @@ async function renderSettings(gen) {
   function paintKeys() {
     keyRows.innerHTML = Object.entries(keyState).map(([name, info]) => {
       if (editingKey === name) {
-        return `<tr data-key="${esc(name)}">
-          <td><code>${esc(name)}</code></td>
+        return `<tr><td><code>${esc(name)}</code></td>
           <td colspan="2"><input class="key-input" type="text" value="${esc(info.draft ?? '')}"
              placeholder="paste the value" style="width:100%"></td>
-          <td class="nowrap">
-            <button class="primary" data-save-key="${esc(name)}">Save</button>
+          <td class="nowrap"><button class="primary" data-save-key="${esc(name)}">Save</button>
             <button data-cancel-key="${esc(name)}">Cancel</button></td></tr>`;
       }
-      return `<tr data-key="${esc(name)}">
-        <td><code>${esc(name)}</code></td>
+      return `<tr><td><code>${esc(name)}</code></td>
         <td><span class="tag ${info.set ? 'yes' : 'no'}">${info.set ? 'set' : 'not set'}</span></td>
-        <td class="keyprev">${info.set ? esc(info.preview) : '<span class="muted">not set</span>'}</td>
-        <td class="nowrap"><button data-edit-key="${esc(name)}">${info.set ? 'Edit' : 'Set'}</button></td></tr>`;
+        <td class="keyprev">${info.set ? esc(info.preview) : '<span class="muted">&mdash;</span>'}</td>
+        <td class="nowrap"><button data-edit-key="${esc(name)}">${icon('edit')}${info.set ? 'Edit' : 'Set'}</button></td></tr>`;
     }).join('');
 
-    keyRows.querySelectorAll('[data-edit-key]').forEach(b => b.addEventListener('click', () =>
-      say('key-status', async () => {
-        const name = b.dataset.editKey;
-        const r = await get('/api/api-key/' + encodeURIComponent(name));
-        keyState[name] = { ...keyState[name], draft: r.value };
-        editingKey = name;
-        paintKeys();
-        const box = keyRows.querySelector('.key-input');
-        if (box) box.focus();
-        return r.value ? 'Editing ' + name : name + ' is empty, paste a value.';
-      })));
-
+    const say = async (fn) => {
+      const status = document.getElementById('key-status');
+      status.className = 'muted';
+      try { status.textContent = await fn() || ''; }
+      catch (e) { status.className = 'error'; status.textContent = e.message; }
+    };
+    keyRows.querySelectorAll('[data-edit-key]').forEach(b => b.addEventListener('click', () => say(async () => {
+      const name = b.dataset.editKey;
+      const r = await get('/api/api-key/' + encodeURIComponent(name));
+      keyState[name] = { ...keyState[name], draft: r.value };
+      editingKey = name;
+      paintKeys();
+      const box = keyRows.querySelector('.key-input');
+      if (box) box.focus();
+      return r.value ? 'Editing ' + name : name + ' is empty, paste a value.';
+    })));
     keyRows.querySelectorAll('[data-cancel-key]').forEach(b => b.addEventListener('click', () => {
       delete keyState[b.dataset.cancelKey].draft;
       editingKey = null;
       paintKeys();
     }));
-
-    keyRows.querySelectorAll('[data-save-key]').forEach(b => b.addEventListener('click', () =>
-      say('key-status', async () => {
-        const name = b.dataset.saveKey;
-        const value = keyRows.querySelector('.key-input').value;
-        if (!value) throw new Error('paste a value, or press Cancel');
-        await put('/api/api-key', { name, value });
-        editingKey = null;
-        Object.assign(keyState, await get('/api/env-keys'));
-        paintKeys();
-        return name + ' saved.';
-      })));
+    keyRows.querySelectorAll('[data-save-key]').forEach(b => b.addEventListener('click', () => say(async () => {
+      const name = b.dataset.saveKey;
+      const value = keyRows.querySelector('.key-input').value;
+      if (!value) throw new Error('paste a value, or press Cancel');
+      await put('/api/api-key', { name, value });
+      editingKey = null;
+      Object.assign(keyState, await get('/api/env-keys'));
+      paintKeys();
+      return name + ' saved.';
+    })));
   }
   paintKeys();
 
-  on('add-key', 'key-status', async () => {
+  document.getElementById('add-key').addEventListener('click', async () => {
+    const status = document.getElementById('key-status');
     const name = document.getElementById('new-key-name').value.trim().toUpperCase();
     const value = document.getElementById('new-key-value').value;
-    if (!name) throw new Error('name the variable first');
-    if (!value) throw new Error('paste the value first');
-    await put('/api/api-key', { name, value });
-    document.getElementById('new-key-name').value = '';
-    document.getElementById('new-key-value').value = '';
-    Object.assign(keyState, await get('/api/env-keys'));
-    paintKeys();
-    return name + ' added.';
+    status.className = 'muted';
+    try {
+      if (!name) throw new Error('name the variable first');
+      if (!value) throw new Error('paste the value first');
+      await put('/api/api-key', { name, value });
+      document.getElementById('new-key-name').value = '';
+      document.getElementById('new-key-value').value = '';
+      Object.assign(keyState, await get('/api/env-keys'));
+      paintKeys();
+      status.textContent = name + ' added.';
+    } catch (e) { status.className = 'error'; status.textContent = e.message; }
   });
 
-  // --- schema table
-  const rows = document.getElementById('schema-rows');
-  const TYPES = ['string', 'number', 'integer', 'boolean'];
-  const addRow = (f = { name: '', type: 'string', description: '' }) => rows.append(el(`
-    <tr>
-      <td><input class="f-name" value="${esc(f.name)}" placeholder="field_name"></td>
-      <td><select class="f-type">${TYPES.map(t =>
-        `<option ${f.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select></td>
-      <td><input class="f-desc" value="${esc(f.description || '')}" placeholder="what the model should put here"></td>
-      <td><button class="f-del" title="remove">&times;</button></td>
-    </tr>`));
-  schema.fields.forEach(addRow);
-  rows.addEventListener('click', e => { if (e.target.classList.contains('f-del')) e.target.closest('tr').remove(); });
-  document.getElementById('add-field').addEventListener('click', () => addRow());
-  on('save-schema', 'schema-status', () => put('/api/schema', {
-    fields: [...rows.querySelectorAll('tr')].map(tr => ({
-      name: tr.querySelector('.f-name').value.trim(),
-      type: tr.querySelector('.f-type').value,
-      description: tr.querySelector('.f-desc').value.trim(),
-    })).filter(f => f.name),
-  }).then(() => 'Saved.'));
-
-  // --- prompts
-  on('save-extract-prompt', 'extract-prompt-status', () =>
-    put('/api/prompts', { extract: document.getElementById('extract-prompt').value }).then(() => 'Saved.'));
-  on('save-judge-prompt', 'judge-prompt-status', () =>
-    put('/api/prompts', { judge: document.getElementById('judge-prompt').value }).then(() => 'Saved.'));
-
-  // --- prompt drafting
-  const draft = (target, kind, domainId, statusId, paperId) => say(statusId, async () => {
-    const domain = document.getElementById(domainId).value.trim();
-    if (!domain) throw new Error('say what the corpus is about first');
-    const paper_id = paperId ? document.getElementById(paperId).value || null : null;
-    const r = await post('/api/generate-prompt', { kind, domain, paper_id });
-    document.getElementById(target).value = r.prompt;
-    return `Drafted by ${r.model} — read it, edit it, then Save.`;
-  });
-  document.getElementById('gen-extract').addEventListener('click', () =>
-    draft('extract-prompt', 'extract', 'gen-domain', 'gen-extract-status', 'gen-paper'));
-  document.getElementById('gen-judge').addEventListener('click', () =>
-    draft('judge-prompt', 'judge', 'gen-domain-judge', 'gen-judge-status', null));
-
-  // --- worked examples: one editor, opened from here or from the Extract page
+  // ---- worked examples: summary here, editing in the one dialog
   const summary = document.getElementById('fs-summary');
   const tokensOf = (ex) => Math.round((ex.text.length + JSON.stringify(ex.records).length) / 4 / 100) / 10;
   const paintSummary = (list) => {
@@ -1764,11 +1836,6 @@ async function renderSettings(gen) {
   paintSummary(fewShot);
   document.getElementById('fs-open').addEventListener('click', () =>
     openExamplesEditor(async () => paintSummary(await get('/api/few-shot'))));
-
-  // --- defaults
-  on('save-defaults', 'defaults-status', () => put('/api/settings', {
-    source_tracking_default: document.getElementById('src-default').checked,
-  }).then(() => 'Saved.'));
 }
 
 // ---------- boot ----------
