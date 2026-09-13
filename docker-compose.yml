@@ -1,0 +1,13 @@
+services:
+  extraction-toolkit:
+    build: .
+    # 127.0.0.1 on purpose. The API can read and write this machine's provider keys and spend
+    # money against them, and it has no authentication -- publishing it as "8000:8000" would
+    # bind every interface and hand that to anyone on the same network. Change this only if you
+    # have put an authenticating proxy in front of it.
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./data:/data
+    env_file:
+      - .env

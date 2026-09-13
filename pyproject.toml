@@ -1,0 +1,24 @@
+[project]
+name = "extraction-toolkit"
+version = "0.1.0"
+description = "Parse PDFs, extract structured records with an LLM, and audit them with an LLM judge -- schema and prompts are yours to define."
+readme = "README.md"
+requires-python = ">=3.12"
+
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "python-multipart>=0.0.12",
+    "docling>=2.110.0",
+    "litellm>=1.91.0",
+    "pydantic>=2.0",
+    "python-dotenv>=1.0.1",
+    "markdown-it-py>=4.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["server"]

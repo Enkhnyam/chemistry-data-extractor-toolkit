@@ -1,0 +1,21 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+workspace/pdfs/*
+workspace/parsed/*
+workspace/extracted/*
+workspace/judged/*
+!workspace/pdfs/.gitkeep
+!workspace/parsed/.gitkeep
+!workspace/extracted/.gitkeep
+!workspace/judged/.gitkeep
+
+# the Docker workspace volume
+data/*
+!data/.gitkeep
+
+# user config is local: prompts, schema and model choice are per-project, and timings are
+# measurements of one machine
+workspace/config/*
+!workspace/config/.gitkeep
