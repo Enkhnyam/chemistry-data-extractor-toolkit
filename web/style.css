@@ -399,3 +399,26 @@ label.switch .muted{display:block;margin-top:1px}
   box-shadow:0 6px 24px rgba(16,24,32,.16);min-width:340px}
 .savebar[hidden]{display:none}
 .savebar > span:first-child{font-weight:600}
+
+/* ---- getting-started guide: present until setup is done, then gone for good ---- */
+.guide{background:var(--panel);border:1px solid var(--accent);border-radius:var(--radius-lg);
+  padding:14px 18px;margin-bottom:16px;box-shadow:var(--shadow)}
+.guidehead{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:10px}
+.guidehead b{font-size:.9375rem}
+.guidesteps{list-style:none;margin:0;padding:0;display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px}
+.guidesteps li{display:flex;gap:8px;align-items:baseline;padding:8px 10px;border-radius:var(--radius);
+  background:var(--sunk);border:1px solid var(--line-2);font-size:.8125rem;flex-wrap:wrap}
+.guidesteps li.next{border-color:var(--accent);background:var(--accent-soft)}
+.guidesteps li.done{opacity:.55}
+.guidesteps li.done a{color:var(--ink-2);text-decoration:none;cursor:default}
+.guidesteps .tick{display:inline-flex;align-items:center;justify-content:center;width:15px;
+  height:15px;border-radius:50%;border:1px solid var(--line);color:var(--ok);flex-shrink:0;
+  align-self:center}
+.guidesteps li.done .tick{background:var(--ok-soft);border-color:transparent}
+.guidesteps li.next .tick{border-color:var(--accent)}
+.guidesteps .muted{flex-basis:100%;padding-left:23px;margin-top:-2px}
+.navcount{display:inline-block;margin-left:6px;padding:0 5px;border-radius:99px;
+  background:var(--line-2);color:var(--dim);font-size:.6875rem;font-weight:600;
+  font-variant-numeric:tabular-nums}
+nav a.active .navcount{background:var(--accent);color:#fff}

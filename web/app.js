@@ -258,6 +258,63 @@ function openModal({ title, subtitle = '', body, width = '900px', onSave, saveLa
   return dialog;
 }
 
+// ---------- the guide ----------
+//
+// A first-time user lands on a page with no papers and no configuration and has no way to know
+// that four things must happen in order. This strip is that knowledge, made visible: the steps,
+// which are done, and the one to do next. It disappears the moment setup is complete, so it
+// never becomes furniture for someone who has used the tool before.
+
+function guideHTML(status) {
+  const steps = [
+    { done: status.has_model, label: 'Add a model',
+      hint: 'a model string and its API key', href: '#/settings' },
+    { done: status.has_schema, label: 'Define the fields',
+      hint: 'what one record should contain', href: '#/settings' },
+    { done: status.has_extract_prompt, label: 'Write the extraction prompt',
+      hint: 'what to pull out of each paper', href: '#/settings' },
+    { done: status.papers > 0, label: 'Add papers',
+      hint: 'drop in some PDFs', href: '#/parse' },
+  ];
+  const next = steps.find(s => !s.done);
+  if (!next) return '';
+  const doneCount = steps.filter(s => s.done).length;
+
+  return `<div class="guide">
+    <div class="guidehead">
+      <b>Getting started</b>
+      <span class="muted">${doneCount} of ${steps.length} done &mdash; then Extract becomes available</span>
+    </div>
+    <ol class="guidesteps">
+      ${steps.map(s => `
+        <li class="${s.done ? 'done' : (s === next ? 'next' : '')}">
+          <span class="tick">${s.done ? icon('check') : ''}</span>
+          <a href="${s.href}"><b>${s.label}</b></a>
+          <span class="muted">${s.hint}</span>
+        </li>`).join('')}
+    </ol>
+  </div>`;
+}
+
+function navCountsHTML(status) {
+  const badge = (n) => n ? `<span class="navcount">${n}</span>` : '';
+  return { parse: badge(status.papers), extract: badge(status.records),
+           judge: badge(status.judged), report: '' };
+}
+
+async function paintChrome() {
+  let status;
+  try { status = await get('/api/status'); } catch { return null; }
+  state.status = status;
+  const counts = navCountsHTML(status);
+  document.querySelectorAll('nav a').forEach(a => {
+    const key = a.getAttribute('href').replace('#/', '');
+    a.querySelector('.navcount')?.remove();
+    if (counts[key]) a.insertAdjacentHTML('beforeend', counts[key]);
+  });
+  return status;
+}
+
 // ---------- router ----------
 
 const routes = { parse: renderParse, extract: renderExtract, judge: renderJudge,
@@ -270,6 +327,13 @@ async function router() {
   view.innerHTML = '<section><p class="muted">Loading&hellip;</p></section>';
   try {
     await (routes[name] || renderParse)(gen);
+    if (gen !== state.generation) return;
+    const status = await paintChrome();
+    if (status && gen === state.generation) {
+      const guide = guideHTML(status);
+      const section = view.querySelector('section');
+      if (guide && section) section.insertAdjacentHTML('afterbegin', guide);
+    }
   } catch (e) {
     if (gen === state.generation) view.innerHTML = `<section class="panel error">${esc(e.message)}</section>`;
   }
@@ -1576,17 +1640,6 @@ async function renderSettings(gen) {
       </div>
 
       <div class="panel">
-        <h2>Behaviour</h2>
-        <label class="switch">
-          <input type="checkbox" id="src-default" ${settings.source_tracking_default ? 'checked' : ''}>
-          <span><b>Source tracking</b>${help('Tags every parsed chunk with a stable id and asks ' +
-            'the model to cite the chunks each record came from. That is what lets the review pane ' +
-            'shade the exact passage behind a value.')}
-          <span class="muted">new papers are parsed with chunk ids so records can cite their source</span></span>
-        </label>
-      </div>
-
-      <div class="panel">
         <h2>Models${help('One entry per endpoint you call. Extraction and judging pick ' +
           'separately, so you can extract with a strong model and audit with a cheaper or ' +
           'deliberately different one.')}</h2>
@@ -1651,6 +1704,17 @@ async function renderSettings(gen) {
           <span class="grow"></span>
           <button id="fs-open">${icon('edit')}Open examples editor</button>
         </div>
+      </div>
+
+      <div class="panel">
+        <h2>Behaviour</h2>
+        <label class="switch">
+          <input type="checkbox" id="src-default" ${settings.source_tracking_default ? 'checked' : ''}>
+          <span><b>Source tracking</b>${help('Tags every parsed chunk with a stable id and asks ' +
+            'the model to cite the chunks each record came from. That is what lets the review pane ' +
+            'shade the exact passage behind a value.')}
+          <span class="muted">new papers are parsed with chunk ids so records can cite their source</span></span>
+        </label>
       </div>
 
       <div class="savebar" id="savebar" hidden>

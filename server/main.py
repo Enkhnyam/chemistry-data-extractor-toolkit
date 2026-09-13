@@ -283,6 +283,30 @@ def get_readiness():
     return {stage: _blockers(stage) for stage in ("extract", "judge")}
 
 
+@app.get("/api/status")
+def get_status():
+    """One call describing where this workspace is in the pipeline.
+
+    The interface needs it on every page: to badge the nav with what exists, and to show a
+    first-run guide that knows which steps are already done. Cheap enough to fetch each render
+    -- it reads directory listings, not paper contents."""
+    papers = list_papers()
+    settings = config.get_settings()
+    extracted = [p for p in papers if p["extracted"]]
+    records = sum(p["n_records"] or 0 for p in papers)
+    return {
+        "papers": len(papers),
+        "extracted": len(extracted),
+        "judged": sum(1 for p in papers if p["judged"]),
+        "records": records,
+        "has_model": bool(settings.get("extract_model")),
+        "has_schema": bool(config.get_schema()),
+        "has_extract_prompt": bool(config.get_extract_prompt().strip()),
+        "has_judge_prompt": bool(config.get_judge_prompt().strip()),
+        "blockers": {stage: _blockers(stage) for stage in ("extract", "judge")},
+    }
+
+
 # ---------- papers: upload + parse ----------
 
 @app.post("/api/papers")
