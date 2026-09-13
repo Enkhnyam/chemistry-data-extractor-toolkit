@@ -32,6 +32,10 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 PORT = 8399
+
+# Resolved rather than assumed: run from a systemd timer and PATH does not include the places
+# a per-user uv installs itself, so a bare "uv" is FileNotFoundError at 2am and nowhere else.
+UV = shutil.which("uv") or str(Path.home() / ".local/bin/uv")
 BASE = f"http://127.0.0.1:{PORT}"
 
 # Open-access papers, fetched fresh each run so the check never silently depends on a file
@@ -224,12 +228,12 @@ def main() -> int:
 
         # --- install exactly what the README says to install
         t0 = time.time()
-        r = run(["uv", "sync", "--frozen"], cwd=clone, timeout=3600)
+        r = run([UV, "sync", "--frozen"], cwd=clone, timeout=3600)
         if r.returncode:
             raise Failure(f"uv sync failed: {r.stderr[-400:]}")
         report.ok("uv sync --frozen", f"{time.time() - t0:.0f}s")
 
-        r = run(["uv", "run", "python", "-m", "unittest", "discover", "-s", "tests"], cwd=clone, timeout=1800)
+        r = run([UV, "run", "python", "-m", "unittest", "discover", "-s", "tests"], cwd=clone, timeout=1800)
         if r.returncode:
             raise Failure(f"tests failed in the clone: {r.stderr[-400:]}")
         report.ok("unit tests in the clone", r.stderr.strip().splitlines()[-1] if r.stderr else "passed")
@@ -240,7 +244,7 @@ def main() -> int:
         env = {**os.environ, "WORKSPACE_DIR": str(workspace)}
         with log.open("w") as fh:
             server = subprocess.Popen(
-                ["uv", "run", "uvicorn", "server.main:app", "--port", str(PORT)],
+                [UV, "run", "uvicorn", "server.main:app", "--port", str(PORT)],
                 cwd=clone, stdout=fh, stderr=subprocess.STDOUT, env=env)
         wait_for_server(server, log)
         report.ok("server starts", f"port {PORT}")

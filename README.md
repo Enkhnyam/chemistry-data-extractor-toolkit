@@ -138,9 +138,13 @@ back to the browser. "Test connection" makes one tiny call against that exact co
 | GET/PUT | `/api/schema` | record fields |
 | GET/PUT | `/api/prompts` | extraction prompt, judge rubric |
 | GET/PUT | `/api/few-shot` | few-shot examples |
+| GET/PUT | `/api/models` | the configured endpoints, and which stage uses which |
+| PUT | `/api/models/{id}/key` | set one entry's key |
+| POST | `/api/models/{id}/test` | one tiny completion against that exact configuration |
+| GET | `/api/status` | pipeline state: counts, what is configured, what blocks a run |
+| GET | `/api/readiness` | what still has to be done before each stage can run |
 | GET | `/api/env-keys` | which provider env vars are set (never their values) |
-| PUT | `/api/api-key` | write a provider key to `.env` |
-| POST | `/api/test-model` | one tiny completion — "does my model + key work?" |
+| PUT | `/api/api-key` | write a variable to `.env` |
 | GET | `/api/timings` | median duration per stage, from your own runs |
 | POST | `/api/papers` | upload + parse PDFs (multipart, `source_tracking` query param) |
 | GET | `/api/papers` | list papers and their stage status |
@@ -177,6 +181,25 @@ side by side.
 ```bash
 uv run python -m unittest discover -s tests
 ```
+
+### End-to-end check
+
+```bash
+uv run python scripts/overnight_check.py            # real papers, real model calls
+uv run python scripts/overnight_check.py --no-llm   # everything except the paid stages
+uv run python scripts/overnight_check.py --docker   # also build the image
+```
+
+Clones this repo the way a stranger would, installs it from the lockfile, boots the server
+against an empty workspace, and drives the whole pipeline through the HTTP API: configure a
+model, define a schema, write prompts, fetch and parse real open-access PDFs, extract, judge,
+correct a record, export, delete. It asserts the things that have actually broken before &mdash;
+that a clone carries no `.env` or config, that an unconfigured run is refused, that a key never
+appears in a listing, that a correction keeps the model's original, that a stale save is
+refused. Writes `artifacts/overnight-report.md` and exits non-zero on any failure.
+
+It drives the API the interface calls; it does not click the interface. There is no browser
+automation here and the report says so.
 
 Twenty-three smoke tests over every endpoint that does not need a model: config validation,
 credential checks, the review save path (including its refusal to overwrite a newer edit),

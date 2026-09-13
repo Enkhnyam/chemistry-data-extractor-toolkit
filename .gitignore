@@ -19,3 +19,6 @@ data/*
 # measurements of one machine
 workspace/config/*
 !workspace/config/.gitkeep
+
+# the verification run's console log; its report (artifacts/overnight-report.md) is worth keeping
+artifacts/overnight.log
