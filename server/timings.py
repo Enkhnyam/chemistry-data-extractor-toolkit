@@ -13,10 +13,10 @@ FILE = CONFIG / "timings.json"
 KEEP = 20          # recent runs per stage; enough for a stable median, short enough to track change
 
 
-def record(stage: str, seconds: float, size: int | None = None) -> None:
+def record(stage: str, seconds: float, size: int | None = None, unit: str = "") -> None:
     history = read_json(FILE, {})
     runs = history.setdefault(stage, [])
-    runs.append({"seconds": round(seconds, 2), "size": size})
+    runs.append({"seconds": round(seconds, 2), "size": size, "unit": unit})
     history[stage] = runs[-KEEP:]
     write_json(FILE, history)
 
@@ -33,10 +33,16 @@ def estimates() -> dict:
     for stage, runs in history.items():
         if not runs:
             continue
-        sized = [r for r in runs if r.get("size")]
+        # A per-unit rate is only meaningful against one unit. Parse used to be measured per
+        # chunk -- a number nobody knows before parsing -- and is now measured per byte, which
+        # the browser knows the moment a file is chosen. Older entries in the other unit are
+        # ignored rather than averaged into nonsense.
+        unit = runs[-1].get("unit", "")
+        sized = [r for r in runs if r.get("size") and r.get("unit", "") == unit]
         out[stage] = {
             "seconds": round(median(r["seconds"] for r in runs), 1),
-            "per_unit": round(median(r["seconds"] / r["size"] for r in sized), 3) if sized else None,
+            "per_unit": (median(r["seconds"] / r["size"] for r in sized)) if sized else None,
+            "unit": unit,
             "n": len(runs),
         }
     return out

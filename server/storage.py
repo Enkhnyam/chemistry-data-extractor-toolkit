@@ -64,6 +64,10 @@ def list_papers() -> list[dict]:
             "n_chunks": len(meta.get("chunks", [])),
             "extracted": (EXTRACTED / f"{pid}.json").exists(),
             "judged": (JUDGED / f"{pid}.json").exists(),
+            # None when never extracted, 0 when extracted and empty -- the two look identical
+            # in the UI otherwise, and they mean very different things.
+            "n_records": (lambda d: None if d is None else len(d.get("records", [])))(
+                read_json(EXTRACTED / f"{pid}.json")),
             "spend": spend_on(pid),
         })
     return papers

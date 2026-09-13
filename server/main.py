@@ -250,7 +250,9 @@ async def _upload(files: list[UploadFile], source_tracking: bool | None):
             "id": pid, "filename": f.filename, "source_tracking": with_source, "chunks": chunks,
         })
         seconds = time.monotonic() - started
-        timings.record("parse", seconds, len(chunks))
+        # Measured per byte, because that is what the browser can see before it uploads. Chunk
+        # count only exists once the parse is over, which is too late to estimate with.
+        timings.record("parse", seconds, len(content), unit="bytes")
         results.append({"id": pid, "filename": f.filename, "n_chunks": len(chunks),
                         "source_tracking": with_source, "seconds": round(seconds, 1)})
     return results
@@ -352,7 +354,7 @@ def _extract(body: PaperIds):
             results.append({"id": pid, "error": f"{type(e).__name__}: {e}"})
             continue
         seconds = time.monotonic() - started
-        timings.record("extract", seconds, len(paper["chunks"]))
+        timings.record("extract", seconds, len(paper["chunks"]), unit="chunks")
         write_json(EXTRACTED / f"{pid}.json",
                    {"id": pid, "records": records, "usage": usage, "model": settings["model"]})
         results.append({"id": pid, "n_records": len(records), "seconds": round(seconds, 1),
@@ -439,7 +441,7 @@ def _judge(body: PaperIds):
             results.append({"id": pid, "error": f"{type(e).__name__}: {e}"})
             continue
         seconds = time.monotonic() - started
-        timings.record("judge", seconds, len(extracted["records"]))
+        timings.record("judge", seconds, len(extracted["records"]), unit="records")
         write_json(JUDGED / f"{pid}.json",
                    {"id": pid, "verdicts": verdicts, "usage": usage, "model": settings["model"],
                     # what the judge actually saw, so a later edit can be spotted as post-dating it

@@ -66,6 +66,14 @@ function humanSeconds(s) {
 
 // "about how long will this take", from this machine's own history -- never a hardcoded guess,
 // because parse speed depends on the PDF, on OCR, and on whether there's a GPU.
+// A 4 MB paper takes proportionally longer than a 0.5 MB one, and the browser knows the size
+// before it uploads -- so the estimate is per byte rather than a flat median over past parses.
+function parseEta(file) {
+  const t = state.timings.parse;
+  if (!t) return null;
+  return (t.unit === 'bytes' && t.per_unit) ? t.per_unit * file.size : t.seconds;
+}
+
 function etaText(stage, size) {
   const t = state.timings[stage];
   if (!t) return 'no estimate yet — this is the first run of this stage';
@@ -418,7 +426,19 @@ function paintRecords() {
   if (!host) return;
   host.innerHTML = review.records.length
     ? review.records.map((r, i) => recordCardHTML(r, i)).join('')
-    : '<p class="muted">No records for this paper.</p>';
+    : `<div class="empty-records">
+         <b>The model returned no records for this paper.</b>
+         <p>That is usually one of three things, in this order of likelihood:</p>
+         <ol>
+           <li>The paper is <b>out of scope</b> for your prompt &mdash; it is about something your
+               schema does not describe. Read the text on the left and see.</li>
+           <li>Your prompt's <b>SKIP rules are too broad</b> and excluded everything.</li>
+           <li>The paper <b>parsed badly</b> &mdash; if the text on the left looks empty or
+               scrambled, that is the problem, not the model.</li>
+         </ol>
+         <p class="muted">It is not an error, and it did cost a call. Nothing is wrong with the
+           app if a paper genuinely has nothing to extract.</p>
+       </div>`;
   wireRecords(host);
   const save = document.getElementById('save-review');
   if (save) save.disabled = !review.dirty;
@@ -592,7 +612,7 @@ function papersTableHTML(papers) {
   const spent = papers.reduce((n, p) => n + ((p.spend || {}).cost_usd || 0), 0);
   const totalTokens = papers.reduce((n, p) => n + ((p.spend || {}).tokens || 0), 0);
   return `<table>
-    <thead><tr><th>File</th><th>Chunks</th><th>Source</th><th>Extracted</th><th>Judged</th>
+    <thead><tr><th>File</th><th>Chunks</th><th>Source</th><th>Records</th><th>Judged</th>
       <th style="text-align:right">Cost</th><th></th></tr></thead>
     <tbody>${papers.map(p => {
       const spend = p.spend || {};
@@ -600,7 +620,11 @@ function papersTableHTML(papers) {
         <td>${esc(p.filename)}</td>
         <td class="muted">${p.n_chunks}</td>
         <td><span class="tag ${p.source_tracking ? 'yes' : 'no'}">${p.source_tracking ? 'on' : 'off'}</span></td>
-        <td><span class="tag ${p.extracted ? 'yes' : 'no'}">${p.extracted ? 'yes' : 'no'}</span></td>
+        <td>${p.n_records === null || p.n_records === undefined
+              ? '<span class="tag no">not extracted</span>'
+              : p.n_records === 0
+                ? '<span class="tag warn" title="the model found nothing matching your prompt and schema">0 &mdash; nothing found</span>'
+                : `<span class="tag yes">${p.n_records}</span>`}</td>
         <td><span class="tag ${p.judged ? 'yes' : 'no'}">${p.judged ? 'yes' : 'no'}</span></td>
         ${spendCell(spend.cost_usd, spend.tokens)}
         <td class="nowrap">
@@ -685,10 +709,11 @@ async function renderParse(gen) {
       return;
     }
     const mb = picked.reduce((n, f) => n + f.size, 0) / 1e6;
-    const each = state.timings.parse ? state.timings.parse.seconds : null;
-    const total = each
-      ? `about <b>${humanSeconds(each * picked.length)}</b> in total (~${humanSeconds(each)} each)`
-      : 'no time estimate yet — the first parse sets one';
+    const total = (() => {
+      const seconds = picked.reduce((n, f) => n + (parseEta(f) || 0), 0);
+      if (!seconds) return 'no time estimate yet \u2014 the first parse sets one';
+      return `about <b>${humanSeconds(seconds)}</b> in total`;
+    })();
     pickedBox.className = 'picked';
     pickedBox.innerHTML = `<b>${picked.length} PDF${picked.length === 1 ? '' : 's'} chosen</b>
       <span class="muted">${mb.toFixed(1)} MB · ${total}</span>
@@ -714,8 +739,7 @@ async function renderParse(gen) {
   uploadBtn.addEventListener('click', async () => {
     if (runIsActive()) return;
     const srcTrack = document.getElementById('src-track').checked;
-    const eta = state.timings.parse ? state.timings.parse.seconds : null;
-    const items = picked.map(f => ({ label: f.webkitRelativePath || f.name, file: f, eta }));
+    const items = picked.map(f => ({ label: f.webkitRelativePath || f.name, file: f, eta: parseEta(f) }));
     uploadBtn.disabled = true;
     await runJob('Parsing', items, async (item) => {
       const fd = new FormData();
@@ -1016,7 +1040,9 @@ async function renderReport(gen) {
       </div>
 
       <div class="cards">
-        ${statCard(t.papers_parsed, 'papers parsed', `${t.papers_extracted} extracted · ${t.papers_judged} judged`)}
+        ${statCard(t.papers_parsed, 'papers parsed',
+          `${t.papers_extracted} extracted · ${t.papers_judged} judged` +
+          (t.papers_without_records ? ` · ${t.papers_without_records} found nothing` : ''))}
         ${statCard(t.records.toLocaleString(), 'records extracted',
           worked.length ? `median ${median(t.records_per_paper)} per paper` : '')}
         ${statCard(correctShare === null ? '—' : `${Math.round(100 * correctShare)}%`, 'judged correct',

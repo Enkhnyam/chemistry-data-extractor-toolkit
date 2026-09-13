@@ -63,6 +63,7 @@ def build() -> dict:
             "filename": paper.get("filename", pid),
             "chunks": len(paper.get("chunks", [])),
             "records": len(records),
+            "extracted": extraction is not None,
             "judged": judgment is not None,
             "incorrect": n_bad,
             "reviewed": sum(1 for n in notes.values() if n.get("flag") or n.get("note")),
@@ -125,7 +126,11 @@ def build() -> dict:
         "fields": fields,
         "totals": {
             "papers_parsed": len(papers),
-            "papers_extracted": sum(1 for p in papers if p["records"] or p["judged"]),
+            # Extracted means a call was made, not that it found something. A paper that
+            # legitimately yields nothing was still processed and still cost money; counting it
+            # as unextracted hides both.
+            "papers_extracted": sum(1 for p in papers if p["extracted"]),
+            "papers_without_records": sum(1 for p in papers if p["extracted"] and not p["records"]),
             "papers_judged": sum(1 for p in papers if p["judged"]),
             "records": sum(per_paper_records),
             "records_per_paper": per_paper_records,

@@ -280,3 +280,11 @@ table.keys .keyprev{font-family:ui-monospace,monospace;font-size:.75rem;color:va
 .ex-table td{padding:2px 4px;border-bottom:1px solid var(--line-2)}
 .ex-table input{width:100%;min-width:76px;padding:2px 5px;font-size:.72rem}
 .ex-json{font-size:.7rem;line-height:1.45}
+
+.tag.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.empty-records{padding:14px 16px;border:1px solid var(--line);border-radius:var(--radius);
+ background:var(--sunk);font-size:.8125rem;line-height:1.55}
+.empty-records b{font-weight:650}
+.empty-records p{margin:6px 0}
+.empty-records ol{margin:6px 0;padding-left:20px;color:var(--ink-2)}
+.empty-records li{margin:4px 0}

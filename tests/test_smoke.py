@@ -238,8 +238,21 @@ class ReportTests(unittest.TestCase):
         body = client.get("/api/report").json()
         for key in ("papers", "fields", "totals"):
             self.assertIn(key, body)
-        for key in ("records", "verdicts", "spend"):
+        for key in ("records", "verdicts", "spend", "papers_without_records"):
             self.assertIn(key, body["totals"])
+
+    def test_a_paper_that_yields_nothing_still_counts_as_extracted(self):
+        # it cost a call; counting it as unextracted hides both the work and the spend
+        from server.storage import EXTRACTED, PARSED, write_json
+        pid = "empty-but-processed"
+        write_json(Path(PARSED) / f"{pid}.json", {"id": pid, "filename": "e.pdf", "chunks": []})
+        write_json(Path(EXTRACTED) / f"{pid}.json", {"id": pid, "records": []})
+        totals = client.get("/api/report").json()["totals"]
+        self.assertGreaterEqual(totals["papers_without_records"], 1)
+        paper = next(p for p in client.get("/api/report").json()["papers"] if p["id"] == pid)
+        self.assertTrue(paper["extracted"])
+        self.assertEqual(client.get("/api/papers").json()[0].get("n_records", "missing") is None, False)
+        client.delete(f"/api/papers/{pid}")
         # flat_records() shares no state with build(); a NameError here only shows up on export
         self.assertEqual(client.get("/api/export.csv").status_code, 200)
         self.assertIn("paper_id", client.get("/api/export.csv").text.splitlines()[0])
