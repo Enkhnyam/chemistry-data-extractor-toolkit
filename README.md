@@ -70,7 +70,15 @@ cp .env.example .env   # fill in your provider's key -- the UI's key-save writes
 docker compose up --build
 ```
 
-Data persists in `./data` on the host (mounted to `/data` in the container).
+Data persists in `./data` on the host (mounted to `/data` in the container). The port is bound
+to `127.0.0.1` deliberately: the API can read this machine's provider keys and has no
+authentication, so it must not be published to a network.
+
+**The build needs memory.** It installs PyTorch (CPU-only wheels — the Dockerfile pins the
+CPU index, which avoids about 1.5 GB of unusable CUDA packages). Unpacking it inside Docker's
+VM wants roughly 6-8 GB of headroom; on a machine already using most of its RAM the build
+stalls or the VM is OOM-killed. If that happens, close what you can, give Docker's VM at least
+8 GB, and build once — or just use the `uv` path above, which has no VM in the way.
 
 ## Configuring for your own domain
 
