@@ -146,5 +146,5 @@ they run against a throwaway workspace in about a second.
 
 One run at a time, in the server process, with no job queue &mdash; fine for the batch sizes a
 systematic review actually has; a second concurrent run is refused rather than queued. No
-multi-user auth: this is a single-researcher local tool. Editing a record after the audit has
-run marks its verdict stale rather than re-running the audit for you.
+multi-user auth: this is a single-researcher local tool. Editing a record after the judge has
+run marks its verdict stale rather than re-judging it for you.

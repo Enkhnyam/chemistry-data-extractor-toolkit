@@ -735,7 +735,7 @@ async function renderJudge(gen) {
   view.innerHTML = `
     <section>
       <div class="panel">
-        <h2>Audit</h2>
+        <h2>Judge</h2>
         <p class="lede">A second model re-reads each paper and checks every record against it.
           ${esc(etaText('judge', 18))} for a typical paper.</p>
         <div class="checklist" id="checklist">${stageChecklistHTML(extracted, 'judged',
@@ -951,7 +951,7 @@ async function renderReport(gen) {
           'Share of records carrying a value for each field.',
           hbars(completeness, { max: 100 }))}
 
-        ${chart('Audit verdicts',
+        ${chart('Judge verdicts',
           verdictTotal
             ? `${verdictTotal} record${verdictTotal === 1 ? '' : 's'} audited` +
               (t.records_dropped_by_judge ? ` · ${t.records_dropped_by_judge} it would drop outright` : '')
@@ -962,8 +962,8 @@ async function renderReport(gen) {
             { label: 'unparsed', value: t.verdicts.unparsed || 0, color: 'var(--dim)' },
           ]))}
 
-        ${chart('Fields the audit flagged',
-          'Flagged, and how many of those it could propose a value for.',
+        ${chart('Fields the judge flagged',
+          'Flagged by the judge, and how many it could propose a value for.',
           intervened.length
             ? hbars(intervened.map(f => ({
                 label: f.name, value: f.bad, tone: 'weak',
@@ -1118,7 +1118,7 @@ async function renderSettings(gen) {
       </div>
 
       <div class="panel">
-        <h2>Audit rubric</h2>
+        <h2>Judge rubric</h2>
         <div class="hint" style="margin-bottom:10px">
           <b>Draft one for your domain</b>
           <p>What makes a record right or wrong in this field.</p>

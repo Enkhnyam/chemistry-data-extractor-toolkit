@@ -40,9 +40,3 @@ def complete(model: str, messages: list[dict], **kwargs):
                            f"Use a longer-context model, or remove a few-shot example.") from e
     except litellm.APIError as e:
         raise RuntimeError(f"The provider returned an error: {e}") from e
-
-
-def add_usage(total: dict, one: dict) -> dict:
-    for key, value in one.items():
-        total[key] = round(total.get(key, 0) + value, 6)
-    return total
