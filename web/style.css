@@ -252,6 +252,7 @@ details.reasoning .ev{display:block;margin-top:5px;padding-left:9px;
 .minibar i{display:block;height:100%;background:var(--accent)}
 td .val{font-variant-numeric:tabular-nums;color:var(--ink-2)}
 td.money{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2)}
+td.money.unpriced{color:var(--dim);font-size:.78rem}
 tfoot td{border-top:1px solid var(--line);border-bottom:none;font-weight:600;padding-top:8px}
 .del-btn:hover:not(:disabled){color:var(--no);border-color:var(--no);background:var(--no-soft)}
 

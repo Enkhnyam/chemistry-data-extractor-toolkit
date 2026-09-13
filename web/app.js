@@ -47,6 +47,16 @@ function el(html) {
 
 const costOf = (r) => (r.usage && r.usage.cost_usd) ? ` · ${money(r.usage.cost_usd)}` : '';
 const money = (n) => !n ? '—' : n < 0.01 ? `$${n.toFixed(4)}` : `$${n.toFixed(2)}`;
+const tokens = (n) => n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
+
+// litellm prices the public models; it cannot price a private deployment, and there a dollar
+// figure of zero would read as "free" for calls that were actually billed. Fall back to the
+// token count, which is always real, and say which one is being shown.
+function spendCell(cost, tok) {
+  if (cost) return `<td class="money" title="${tok ? tokens(tok) + ' tokens' : ''}">${money(cost)}</td>`;
+  if (tok) return `<td class="money unpriced" title="this model has no public price; tokens are exact">${tokens(tok)} tok</td>`;
+  return '<td class="money muted">—</td>';
+}
 
 function humanSeconds(s) {
   if (s < 60) return `${Math.round(s)}s`;
@@ -580,6 +590,7 @@ function wireReviewPicker(papers, withJudgment) {
 
 function papersTableHTML(papers) {
   const spent = papers.reduce((n, p) => n + ((p.spend || {}).cost_usd || 0), 0);
+  const totalTokens = papers.reduce((n, p) => n + ((p.spend || {}).tokens || 0), 0);
   return `<table>
     <thead><tr><th>File</th><th>Chunks</th><th>Source</th><th>Extracted</th><th>Judged</th>
       <th style="text-align:right">Cost</th><th></th></tr></thead>
@@ -591,7 +602,7 @@ function papersTableHTML(papers) {
         <td><span class="tag ${p.source_tracking ? 'yes' : 'no'}">${p.source_tracking ? 'on' : 'off'}</span></td>
         <td><span class="tag ${p.extracted ? 'yes' : 'no'}">${p.extracted ? 'yes' : 'no'}</span></td>
         <td><span class="tag ${p.judged ? 'yes' : 'no'}">${p.judged ? 'yes' : 'no'}</span></td>
-        <td class="money" title="${spend.tokens ? spend.tokens.toLocaleString() + ' tokens over ' + spend.calls + ' call(s)' : 'no model calls recorded'}">${money(spend.cost_usd)}</td>
+        ${spendCell(spend.cost_usd, spend.tokens)}
         <td class="nowrap">
           <button class="view-btn">View</button>
           <button class="del-btn" data-name="${esc(p.filename)}"
@@ -599,8 +610,8 @@ function papersTableHTML(papers) {
         </td>
       </tr>`;
     }).join('') || '<tr><td colspan="7" class="muted">No papers yet</td></tr>'}</tbody>
-    ${spent ? `<tfoot><tr><td colspan="5" class="muted">total</td>
-      <td class="money">${money(spent)}</td><td></td></tr></tfoot>` : ''}
+    ${(spent || totalTokens) ? `<tfoot><tr><td colspan="5" class="muted">total</td>
+      ${spendCell(spent, totalTokens)}<td></td></tr></tfoot>` : ''}
   </table>`;
 }
 
@@ -966,6 +977,7 @@ async function renderReport(gen) {
   const intervened = withRecords.filter(f => f.bad || f.corrections).sort((a, b) => b.bad - a.bad);
   const worked = data.papers.filter(p => p.records || p.judged);
   const spend = t.spend || { cost_usd: 0, calls: 0, prompt_tokens: 0, completion_tokens: 0 };
+  const spendTokens = spend.prompt_tokens + spend.completion_tokens;
 
   if (!t.records) {
     view.innerHTML = `<section><div class="panel empty">
@@ -1012,9 +1024,12 @@ async function renderReport(gen) {
           correctShare !== null && correctShare < 0.8 ? 'warn' : '')}
         ${statCard(t.records_edited, 'corrected by you',
           t.flags.ok || t.flags.bad ? `${t.flags.ok || 0} marked right · ${t.flags.bad || 0} marked wrong` : 'no manual review yet')}
-        ${statCard(spend.cost_usd ? '$' + spend.cost_usd.toFixed(2) : '—', 'spent on models',
-          spend.calls ? `${(spend.prompt_tokens + spend.completion_tokens).toLocaleString()} tokens over ${spend.calls} calls`
-                      : 'no calls recorded yet')}
+        ${statCard(
+          spend.cost_usd ? '$' + spend.cost_usd.toFixed(2) : (spendTokens ? tokens(spendTokens) : '—'),
+          spend.cost_usd ? 'spent on models' : (spendTokens ? 'tokens used' : 'model usage'),
+          spend.calls
+            ? `${spend.calls} calls` + (spend.cost_usd ? '' : ' · this model has no public price')
+            : 'no calls recorded yet')}
       </div>
 
       <div class="charts">
@@ -1076,11 +1091,11 @@ async function renderReport(gen) {
                 ? (p.incorrect ? `<span class="tag no">${p.incorrect}</span>` : '<span class="tag yes">none</span>')
                 : '<span class="muted">not judged</span>'}</td>
               <td>${p.reviewed ? `<span class="tag yes">${p.reviewed}</span>` : '<span class="muted">—</span>'}</td>
-              <td class="money" title="${p.tokens ? p.tokens.toLocaleString() + ' tokens' : 'no model calls recorded'}">${money(p.cost_usd)}</td>
+              ${spendCell(p.cost_usd, p.tokens)}
             </tr>`;
           }).join('')}</tbody>
-          ${spend.cost_usd ? `<tfoot><tr><td colspan="5" class="muted">total</td>
-            <td class="money">${money(spend.cost_usd)}</td></tr></tfoot>` : ''}</table>
+          ${(spend.cost_usd || spendTokens) ? `<tfoot><tr><td colspan="5" class="muted">total</td>
+            ${spendCell(spend.cost_usd, spendTokens)}</tr></tfoot>` : ''}</table>
       </div>
     </section>`;
 
