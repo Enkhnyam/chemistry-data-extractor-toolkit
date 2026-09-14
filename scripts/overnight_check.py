@@ -209,6 +209,18 @@ def main() -> int:
     args = ap.parse_args()
 
     report = Report()
+    # Claim the report before doing any work. A run that is killed -- OOM at 02:02 was the real
+    # case -- never reaches the finally block, and the previous run's report stays on disk saying
+    # "passed". Someone reads it in the morning and believes a job that died. An in-progress
+    # marker means a missing result looks missing instead of looking like success.
+    started_marker = REPO / "artifacts" / "overnight-report.md"
+    started_marker.parent.mkdir(parents=True, exist_ok=True)
+    started_marker.write_text(
+        f"# Overnight verification\n\nStarted {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}"
+        f" \u00b7 **still running, or killed before it could finish**\n\n"
+        f"If this text is still here, the run did not complete. A killed process cannot write its\n"
+        f"own report, so this line is what a failure looks like.\n", encoding="utf-8")
+
     workdir = Path(tempfile.mkdtemp(prefix="toolkit-check-"))
     clone = workdir / "clone"
     server = None
