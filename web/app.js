@@ -264,8 +264,37 @@ function openModal({ title, subtitle = '', body, width = '900px', onSave, saveLa
 // that four things must happen in order. This strip is that knowledge, made visible: the steps,
 // which are done, and the one to do next. It disappears the moment setup is complete, so it
 // never becomes furniture for someone who has used the tool before.
+//
+// On a fresh clone that strip is not what a new user needs, because the workspace is seeded with
+// a finished demo: three of its four steps are already done and the fourth, the API key, is the
+// only thing standing between them and running it themselves. So the demo gets its own banner
+// that says what they are looking at, points at the one missing thing, and offers the way out.
+
+function demoBannerHTML(status) {
+  const needsKey = !status.has_model;
+  return `<div class="guide demo${needsKey ? ' needskey' : ''}">
+    <div class="guidehead">
+      <b>This is the demo, not your data</b>
+      <span class="muted">two open-access papers, already parsed, extracted and judged</span>
+    </div>
+    ${needsKey ? `<div class="keycta">
+      <div>
+        <b>Add an API key to run it yourself.</b>
+        <span class="muted">Everything else is set up &mdash; the schema, both prompts and the
+        papers. A key is the only thing missing, and nothing calls a model without one.</span>
+      </div>
+      <button class="primary" id="gotokey">Add a key</button>
+    </div>` : ''}
+    <div class="guidefoot">
+      <span class="muted">Look around first: <a href="#/report">Report</a> and
+      <a href="#/judge">Review</a> are already full.</span>
+      <button class="linkish" id="cleardemo">Clear the demo and start my own project</button>
+    </div>
+  </div>`;
+}
 
 function guideHTML(status) {
+  if (status.is_demo) return demoBannerHTML(status);
   const steps = [
     { done: status.has_model, label: 'Add a model',
       hint: 'a model string and its API key', href: '#/settings' },
@@ -294,6 +323,16 @@ function guideHTML(status) {
         </li>`).join('')}
     </ol>
   </div>`;
+}
+
+async function clearDemo() {
+  if (!confirm('Remove the two demo papers, their records and the demo schema and prompts?\n\n'
+             + 'This leaves an empty workspace ready for your own papers. It cannot be undone, '
+             + 'but the demo stays in demo/ and you can restore it by emptying workspace/ again.'))
+    return;
+  await post('/api/demo/clear', {});
+  location.hash = '#/parse';
+  router();
 }
 
 function navCountsHTML(status) {
@@ -332,7 +371,11 @@ async function router() {
     if (status && gen === state.generation) {
       const guide = guideHTML(status);
       const section = view.querySelector('section');
-      if (guide && section) section.insertAdjacentHTML('afterbegin', guide);
+      if (guide && section) {
+        section.insertAdjacentHTML('afterbegin', guide);
+        document.getElementById('cleardemo')?.addEventListener('click', clearDemo);
+        document.getElementById('gotokey')?.addEventListener('click', () => { location.hash = '#/settings'; });
+      }
     }
   } catch (e) {
     if (gen === state.generation) view.innerHTML = `<section class="panel error">${esc(e.message)}</section>`;

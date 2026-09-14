@@ -1,0 +1,599 @@
+{
+  "id": "amino-acid-based-cholinium-ionic-liquids-acs-sust-chem-eng-2021-e56865fb",
+  "filename": "Amino Acid-Based Cholinium Ionic Liquids (ACS Sust. Chem. Eng. 2021).pdf",
+  "source_tracking": true,
+  "chunks": [
+    {
+      "id": "c83cd6b3-f1d4-5742-92fc-97bd1a9e9d2b",
+      "text": "Sustainable"
+    },
+    {
+      "id": "ba6e3a46-a845-5f5c-a77b-40caf758a2b3",
+      "text": "pubs.acs.org/journal/ascecg"
+    },
+    {
+      "id": "f3ed26f0-81e9-53a1-9624-b3be8f7ed58d",
+      "text": "Amino Acid-Based Cholinium Ionic Liquids as Sustainable Catalysts for PET Depolymerization"
+    },
+    {
+      "id": "c85c2ed5-ae77-5387-9082-7c9c36846523",
+      "text": "Salvatore Marullo, Carla Rizzo, Nadka T. Dintcheva, and Francesca D ' Anna *"
+    },
+    {
+      "id": "3636f179-0c28-50fe-957d-0c379d3a07f0",
+      "text": "Cite This: ACS Sustainable Chem. Eng. 2021, 9, 15157 - 15165"
+    },
+    {
+      "id": "24c1b64d-a988-501f-9807-bbbf89e14e00",
+      "text": "ACCESS"
+    },
+    {
+      "id": "966ed87b-9b21-56c3-b9cd-64138c54299d",
+      "text": "Metrics & More Article Recommendations"
+    },
+    {
+      "id": "9245c76b-93d9-57dd-852b-07b518fb0ac7",
+      "text": "ABSTRACT: Chemical recycling to monomers is one of the key strategies in tackling the issues deriving from persistent plastic pollution in the environment, and poly(ethylene terephthalate) (PET) is among the most used polymers in modern society. In this context, we herein describe the glycolysis of PET to bis-hydroxyethyl terephthalate (BHET), promoted by basic cholinium salts di ff ering for the anions, also comprising amino acid anions. We investigated the optimal reaction conditions, fi nding that the best-performing catalyst is [Ch][Gly], in the presence of which a conversion of 85% and a yield of 51% are achieved at 150 ° C after 6 h, from PET deriving from a clear water bottle. We used our protocol to carry out the glycolysis of PET deriving from di ff erent postconsumer waste, like opaque and colored bottles and food packages, fi nding that the performance is better in the former compared with the latter starting materials."
+    },
+    {
+      "id": "eba90845-d662-5579-a355-72263cd9da85",
+      "text": "*"
+    },
+    {
+      "id": "2e19adbc-f7ea-5179-8127-cd7e74c3e3d8",
+      "text": "Supporting Information"
+    },
+    {
+      "id": "1c05a97b-f422-5b56-ba24-4f79052f0017",
+      "text": "KEYWORDS: PET depolymerization, task-specific ionic liquids, glycolysis, waste valorization, BHET, cholinium salts"
+    },
+    {
+      "id": "eaf99663-e9b9-5bbd-95fb-d74581dc23b1",
+      "text": "■ INTRODUCTION"
+    },
+    {
+      "id": "50fc553b-7860-50be-95b2-ec0dbc36e805",
+      "text": "The widespread use of plastic materials is one of the hallmarks of the technological advancement of the contemporary era. Owing to its lightness, inertness, versatility, and resistance, plastic is practically ubiquitous in every human endeavor. Unfortunately, the very same properties that make these polymers so successful are at the root, together with poor disposal management and slow recycling rate, of the pressing issue of plastic pollution, nowadays emblematically pictured by the island of plastic waste fl oating in the ocean, like the socalled Great Paci fi c Garbage Patch. 1 One of the reasons of the low portion of plastic waste that is actually recycled is due to the possible loss in properties, contamination, or degradation undergone by the polymers at their end-of-life stage, which renders its reuse impractical. A possible solution to this issue is given by chemical recycling of polymers, i.e ., their treatment through suitable processes, thermal or catalytic, aimed at converting plastic waste into industrially relevant products (open-loop recycling). 2,3 In this context, an interesting route is chemical recycling to monomers (CRM) or closed-loop recycling, in which the polymers are converted back to their monomers, which then can be introduced back into the synthesis of the same polymers. 4,5 This entails, in principle, the possibility of using waste as feedstock, in full compliance with the requirements of circular economy. 6,7 This process is not viable for every polymer and depends on the thermodynamic and kinetic features of the polymerization process. 8 For example, extremely exothermic polymerizations will require impractically high temperatures to achieve acceptable recovery of monomer. This is the case, for example, of polyole fi ns like polyethylene and polypropylene or poly(vinyl chloride), which would require a very high energy input. 6 Among the polymers that are most suitable to be chemically recycled by this strategy, we can include polyesters. 8 Indeed, the presence on their backbone of ester groups makes them susceptible to nucleophilic attack, ful fi lling one important requirement. Among these polymers, poly(ethylene terephthalate) (PET) appears particularly suitable to chemical recycling. It is indeed a widely used and commercialized polymer, due to its high mechanical resistance, transparency, and barrier properties. It is therefore applied in many fi elds, from food and beverage packages 9 to textile and construction sectors. 10 Since the formation of PET is only mildly exoergonic, 11 PET is amenable to depolymerization and chemical recycling at relatively accessible temperatures and pressures. Given the massive yearly production of this polymer, estimated in 2020 to 70 million tonnes, 11 a signi fi cant portion of which escapes waste management and contributes to pollution of the environment, chemical recycling of PET is also very important from this"
+    },
+    {
+      "id": "c0d7c57f-1fb5-58c1-938a-449b8f176af0",
+      "text": "Received:"
+    },
+    {
+      "id": "bea9fc61-3a0a-5059-bcbe-4d4266ab2652",
+      "text": "June 16, 2021"
+    },
+    {
+      "id": "b4a3ea82-41c5-5d1f-88aa-8514b34f6736",
+      "text": "Revised:"
+    },
+    {
+      "id": "6ff96ebc-8d8d-55db-8d75-fc204fad938b",
+      "text": "October 23, 2021"
+    },
+    {
+      "id": "a663a76e-31b2-5900-bdda-03ab506adad9",
+      "text": "Published:"
+    },
+    {
+      "id": "11f0d733-543e-5fa6-b707-9154221906a8",
+      "text": "November 4, 2021"
+    },
+    {
+      "id": "1042d6c6-da7b-502e-a15b-eb0d2fc16f1a",
+      "text": "Chart 1. Glycolysis of PET and TSILs Used"
+    },
+    {
+      "id": "44de930b-d50b-538c-b700-0fe95d537821",
+      "text": "perspective. In practice, depolymerization of PET is carried out with di ff erent nucleophiles, such as water (hydrolysis), methanol (methanolysis), amines (aminolysis), and glycols (glycolysis), mainly ethylene glycol. 2,8"
+    },
+    {
+      "id": "2983ad69-8aa9-5ea7-8783-5f364c325fcd",
+      "text": "In this context, glycolysis is currently the most widely used method of chemical recycling of PET, leading to the formation of bis-hydroxyethyl terephthalate (BHET). The latter can be used not only to obtain PET by repolymerization but also gives access to unsaturated polyester resins and textile softeners. 2,12 Generally, this reaction is carried out under pressure, at temperatures between 180 and 240 ° C, in the presence of catalysts like Zn(OAc)2, and an excess of ethylene glycol. However, such catalyst has the drawbacks of toxicity, corrosiveness, and di ffi culties to recover the metal salt so that a large body of work has focused on fi nding alternative, safer, and more environmentally friendly catalysts. To this aim, safer salts like Na2CO3 13 or Na2SO4 14 were shown to promote PET glycolysis with good selectivity in BHET."
+    },
+    {
+      "id": "6603c417-8b90-5e7b-826c-9a429ea93678",
+      "text": "A more recent development is represented by the use of ionic liquids (ILs) as glycolysis catalysts, following the seminal report by Wang, describing the use of imidazolium-based ILs. 15 Given the aforementioned e ffi cacy of transition-metal salts to promote the glycolysis of PET, a number of earlier reports focused on the use of metal-containing ILs, bearing anions such as [Zn(OAc)3 - ], [FeCl 4 - ], or [ZnCl 4 2 - ], which entail the sustainability issues discussed above. 16 - 19"
+    },
+    {
+      "id": "5808ce69-0a4b-573a-9302-5b9acc17cbe3",
+      "text": "ILs are low-melting organic salts, often liquid at room temperature, and are nonconventional solvents, generally regarded as safer alternatives to conventional organic solvents, due to their low vapor pressure and fl ammability. 20 An attracting feature of ILs is that their properties can be changed to a great extent simply by varying the constituting ions. These properties encompass di ff erent aspects as catalytic e ffi ciency as well as toxicity or biodegradability. In this respect, using ILs bearing reactive or catalytically active ions yields the so-called task-speci fi c ionic liquids (TSILs). 21,22 Similarly, the suitable choice of nontoxic and eco-compatible ions enhances the sustainability of the IL. 23"
+    },
+    {
+      "id": "57f15ab4-38b0-588c-9b5d-57f674c2bb66",
+      "text": "In this context, it is now widely acknowledged that ILs based on naturally occurring aliphatic cations, such as the (2hydroxyethyl)trimethylammonium, also known as cholinium, 24"
+    },
+    {
+      "id": "1674112d-1072-533c-b7d1-cc296c3c5fc4",
+      "text": "and carboxylates or amino acid anions, are among the best combination of ions in terms of eco-compatibility of ILs. 25 In an ideal scenario, such a choice of ions would be associated with a high catalytic activity, in compliance with the 4th, 7th, and 9th principles of Green Chemistry. 26"
+    },
+    {
+      "id": "5cf1a65d-115d-5e95-9ba6-262e5f2d5cd2",
+      "text": "Not surprisingly, reports of cholinium-based ILs as a catalyst for PET glycolysis have recently started to surface in the literature, mostly coupled with basic inorganic ions. 27,28"
+    },
+    {
+      "id": "8b91b815-d3f8-5d71-82a2-b5b06452282f",
+      "text": "In the light of all of these considerations, we studied the glycolysis of PET into BHET, in the presence of choliniumbased task-speci fi c ILs as catalysts. In particular, we employed salts with amino acid anions, such as glycinate ([Ch][Gly]), lysinate ([Ch][Lys]), alaninate ([Ch][Ala]), and other basic salts such as cholinium hydroxide ([Ch][OH]), cholinium phosphate [Ch][PO4] cholinium imidazolate [Ch][Im] (Chart 1), and, for comparison, tetrabutylammonium hydroxide triakonta hydrate (TBA(OH) · 30 H2O). It is worth noting that, in the case of amino acid-based ILs, a low environmentally impacting cation is associated with a naturally occurring anion, thus maximizing the sustainability of the process and making for a completely safe catalyst. This approach, which makes use of completely safe catalysts, is di ff erent from the majority of the reports dealing with IL-based catalysts for PET glycolysis, in which a strongly basic anion is often privileged. A catalyst that is entirely composed of sustainable species, avoiding the use of metal salts or corrosive reactants, and is e ffi cient under milder conditions, is desirable not only in terms of safety and sustainability but also can contribute to the many factors that could improve the potential of the process for scalability."
+    },
+    {
+      "id": "71e7a8df-ae69-5300-8312-b21bc369d54f",
+      "text": "First, we optimized experimental parameters such as reaction temperature and time, as well as catalyst loading. Then, we went on to determine which catalyst is the most e ffi cient under the optimized reaction conditions. Finally, we used the bestperforming catalyst to carry out glycolysis of PET deriving postconsumer PET waste, such as beverage bottles and food packaging, obtaining in most cases good yields and conversions. The results obtained showed that in the presence of [Ch][Gly], the best-performing catalyst, we observed good conversion and yield of 85 and 51%, respectively, for the glycolysis of PET deriving from a colorless transparent bottle at 150 ° C. Comparison with related works reported in the literature reveals that this is competitive with most examples reported for the same process. Moreover, the reaction temperature used in this work is in several cases lower than that reported in the literature, thus evidencing the bene fi t of milder reaction conditions."
+    },
+    {
+      "id": "8e1e0863-6cf2-571c-a112-b9dd60c300cd",
+      "text": "Figure 1. Conversion and yield for the glycolysis of PET at di ff erent temperatures in the presence of (a) TBA · 30 H2O after 6 h and (b) [Ch][Gly] after 4 h in the presence of a catalyst:polymer mole ratio of 1:5. Conversions and yields are reproducible within ± 5%, based on triplicate experiments."
+    },
+    {
+      "id": "3aafdf42-8d01-547f-b55e-85e427efd388",
+      "text": "■ EXPERIMENTAL SECTION"
+    },
+    {
+      "id": "f22864e4-fedc-5e74-8b96-5fa503beb866",
+      "text": "Materials. Poly(ethylene terephthalate) (Bottle grade, intrinsic viscosity 0.82 dL/g), cholinium hydroxide (50% solution in water), tetrabutylammonium · 30 H2O, choline chloride, L-glycine, L-lysine, Lalanine, phosphoric acid, imidazole, Amberlite IRA-400-chloride form, and ethylene glycol were obtained from commercial sources and used without further puri fi cation."
+    },
+    {
+      "id": "f8fcf153-7e03-5024-a7e4-eb34452e7112",
+      "text": "General Procedure for the Synthesis of Cholinium ILs. All cholinium salts, with the exception of [Ch][Lys], were prepared according to a reported procedure. 29 To 7.5 g of a choline hydroxide solution in water (50 wt %), a stoichiometric aqueous solution of the suitable acid was added dropwise, on an ice bath. In the case of amino acids, a slight excess was added (1.2 equiv). The ensuing solution was left stirring at room temperature for 72 h. Subsequently, the solvent was removed under reduced pressure, yielding the IL. To remove unreacted amino acid, the residue was dissolved in methanol and left to stand at room temperature overnight. The precipitate was then fi ltered o ff and washed with methanol, while the fi ltrate was evaporated to obtain the IL as a viscous liquid. In the case of [Ch][Gly], the fi ltrate was further fi ltered through a pad of aluminum oxide. The resulting solution was then evaporated to yield the IL as a pale yellow liquid."
+    },
+    {
+      "id": "b553c377-89d9-5c4d-a34a-c250fb5db726",
+      "text": "Cholinium Lysinate [Ch][Lys]. [Ch][Lys] was prepared from the corresponding chloride salt by anion exchange on a resin, according to a reported procedure. 30 To this aim, a column packed with anionexchange Amberlite resin IRA-400 (15.9 g) was fi rst washed with an aqueous solution of NaOH (20 mL, 10% w/v) and subsequently washed with water until the eluate was neutral, to convert the chloride form of the resin into the hydroxide form. Cholinium chloride (0.037 mol) was dissolved in 25 mL of a methanol/water (70:30, v/v) mixture, and the resulting solution was eluted onto the column, using the same methanol/water mixture as an eluent. The eluate, containing the salt in the hydroxide form, was collected in a fl ask containing a solution of lysine (1.2 equiv). The resulting solution was kept at 4 ° C overnight; then, the solvent was concentrated until a small volume remained. To the residue, acetonitrile/methanol (9:1, v/v) was added and the resulting mixture was kept under stirring overnight. Subsequently, unreacted lysine was fi ltered o ff and the solvent was removed from the fi ltrate, obtaining a pale yellow liquid."
+    },
+    {
+      "id": "a199122d-483f-5bdd-bd86-0927afe94447",
+      "text": "Glycolysis of PET. In a screw-cap bottle, 100 mg of PET, the suitable amount of IL, and 0.4 g of ethylene glycol were added. The reaction mixture was heated at the chosen temperature in a sand bath for a suitable reaction time. Workup of the reaction was carried out according to a reported procedure. 31 To this aim, the reaction mixture was allowed to cool down at room temperature; then, 5 mL of water was added. The resulting mixture was vigorously stirred and fi ltered o ff to separate unreacted PET. The fi ltrate was concentrated to a small volume ( ∼ 1 mL), and to the residue, 3 mL of water was added. The solution obtained was stored at 4 ° C overnight, during which white crystals of BHET separate. The precipitate, constituted by pure BHET, was then fi ltered and weighed."
+    },
+    {
+      "id": "c3b39af4-9f78-5f60-abc8-a4e9892493e1",
+      "text": "For the glycolysis of postconsumer PET waste, samples were fi rst washed with water and detergent to remove super fi cial impurities and then dried. Subsequently, the polymer was fi rst manually cut into small pieces ( ∼ 1 cm) and then subjected to glycolysis as described above. The conversion of PET and the yield in BHET were determined as shown in eqs 1 and 2, respectively"
+    },
+    {
+      "id": "5c8ea0ea-9227-5c90-923e-a6a0e56dd408",
+      "text": "The theoretical weight of BHET was calculated by eq 3"
+    },
+    {
+      "id": "b038cf22-b074-5607-ac0f-cdacba5c444c",
+      "text": "where MWPET is the molecular weight of the PET repeating unit and MWBHET is the molecular weight of BHET."
+    },
+    {
+      "id": "fc9cf23b-5de4-5c5a-b657-23796024837a",
+      "text": "■ RESULTS AND DISCUSSION"
+    },
+    {
+      "id": "c8df3082-1f5e-5175-a591-621875756d51",
+      "text": "Firstly, we optimized the reaction temperature by carrying out the glycolysis of commercial PET pellets in the presence of TBA(OH) · 30 H2O as well as [Ch][Gly]. In particular, the reactions were carried out at temperatures of 120 - 180 ° C in the presence of 20 mol % catalyst, for 6 and 4 h, respectively. Conversions of PET were obtained by the weight of unreacted PET, while yields were determined from the amount of BHET isolated by crystallization, as described in detail in the Experimental Section. Conversions and yields in BHET obtained are reported in Figure 1 and Table S1."
+    },
+    {
+      "id": "8584bdea-acbc-5d96-8457-883a78631ea7",
+      "text": "A perusal of results reported in Figure 1a reveals that in the presence of TBA · 30 H2O at 120 ° C, the polymer remained unaltered, while good conversion of PET was observed on increasing the temperature to 150 and 180 ° C, with conversions of 64 and 88%, respectively. However, this increase in conversion is not accompanied by an increase in yield, which stays practically constant at 30%. This suggests that a higher temperature helps break down the polymer into oligomers, but the reaction system is not able to further break down these oligomers into BHET. Higher conversions resulted from the preliminary glycolysis tests in the presence of [Ch][Gly], in which case, already at 120 ° C, a very good conversion of 83% is detected. Further increasing the temperature to 180 ° C led to a quantitative conversion of the polymer, although with no increase in yield. On the grounds of these results, we chose 150 ° C as the optimal reaction temperature. To optimize the reaction time, we carried out the glycolysis of PET, in the presence of both catalysts, at 150 ° C, for reaction times ranging from 4 to 8 h. The results obtained are reported in Figure 2 and Table S2."
+    },
+    {
+      "id": "578dc937-7bfb-5978-bd06-087c0d1ac1d9",
+      "text": "Figure 2. Conversion and yield for the glycolysis of PET at di ff erent reaction times in the presence of (a) TBA · 30 H2O and (b) [Ch][Gly] at 150 ° C, in the presence of a catalyst:polymer mole ratio of 1:5. Conversions and yields are reproducible within ± 5%, based on triplicate experiments."
+    },
+    {
+      "id": "1fb6a6f1-620f-5f22-9885-df83864c95b6",
+      "text": "Figure 3. Conversion and yield for the glycolysis of PET after 6 h at 150 ° C in the presence of (a) TBA · 30 H2O and (b) [Ch][Gly], employing di ff erent amounts of catalyst. Conversions and yields are reproducible within ± 5%, based on triplicate experiments."
+    },
+    {
+      "id": "9ca9a18b-3304-5ab0-9ec8-9613f6f7d3bf",
+      "text": "The results reported in Figure 2 show once again the di ff erent behavior of the two catalysts. In particular, in the presence of TBA(OH) · 30 H2O, prolonging reaction time from 6 to 8 h signi fi cantly improves conversion, which increases from 64 to 92%, and also yield increases from a modest 28% to a much better 63%. On the other hand, when [Ch][Gly] was used as a catalyst, both conversion and yield underwent only moderate changes with increasing reaction time. In this case, a good conversion of 83% is already detected at 4 h and reaches 90% after 8 h. Similarly, the yield has a modest increase from 29 to 38% upon doubling the reaction time from 4 to 8 h. Based on these considerations, it is apparent that 8 h is the best reaction time for the reaction promoted by TBA(OH) · 30 H2O, whereas 6 h is the optimal reaction time in the presence of [Ch][Gly]. However, from the viewpoint of energy saving and to better compare the e ffi ciencies of the catalysts, we chose a common reaction time for both catalysts, equal to 6 h. Consequently, for the rest of the study, we conducted PET glycolysis for 6 h in the presence of both TBA(OH) · 30 H2O and [Ch][Gly]."
+    },
+    {
+      "id": "2e8293fa-3e95-5a5b-a360-9648a3c84a24",
+      "text": "Having set the optimal reaction temperature and times, we went on to investigate the optimal catalyst loading. To this aim, we performed PET glycolysis under the optimized conditions, in the presence of increasing amounts of both catalysts, ranging from 1:10 to 1:5 molar ratios, expressed as moles of catalyst:moles of repeating unit of PET. The results obtained are reported in Figure 3 and Table S3."
+    },
+    {
+      "id": "76ef778c-c242-5f90-999b-856bbfa77a56",
+      "text": "The results reported in Figure 3 clearly show a di ff erent behavior of the two catalysts as a function of their amount in the reacting mixture. In particular, for TBA(OH) · 30 H2O, an initial increase in catalyst loading is bene fi cial since conversion signi fi cantly increases from 70 to 85% and so does the yield, in BHET, which increases from 49 to 61%. On the other hand, further increasing the amount of catalyst to 1:5 causes a steep drop in conversion, to 64% and even more on yield, which practically halves, decreasing from 61 to 28%. This reduction in yield can result from the increase of water content in the reaction mixture, and the consequent catalyst inactivation, resulting from the higher amount of hydrated salt in solution. Since the yield in BHET depends on the crystallization of BHET during the workup phase, a higher amount of water could increase its solubility, thus leading to a reduction in the amount of crystallized BHET. This perfectly agrees with the drop in yield observed in the literature for the glycolysis of PET promoted by imidazolium carboxylate salts. 32"
+    },
+    {
+      "id": "85119ded-015f-53d4-be8f-ebcbe5f7628b",
+      "text": "Overall, in the presence of TBA(OH) · 30 H2O, the optimal molar ratio between catalyst and repetitive units of polymer is 1:7.5."
+    },
+    {
+      "id": "1b27ae5d-0a6c-555f-8c6c-61d46121dcb8",
+      "text": "As already mentioned, the results reported in Figure 3b show a di ff erent trend upon employing [Ch][Gly] as a catalyst. In this case, yield and conversion increased on increasing the amount of catalyst, reaching a good conversion of 90% in the presence of a catalyst:polymer molar ratio equal to 1:5, whereas the yield showed a more modest increase, from 23 to 36% on increasing the catalyst amount from 1:7.5 to 1:5, with respect to the moles of PET. It is worth noting that no appreciable conversion of PET occurred when a catalyst:polymer molar ratio equal to 1:10 was employed. To sum up, when the glycolysis of PET was promoted by [Ch][Gly], the optimal reaction conditions employed a catalyst to polymer molar ratio of 1:5 at 150 ° C for 6 h. The occurrence of much higher values of conversions, compared to the yields in BHET, suggests that the polymer is indeed broken down to oligomers, but these latter are converted to BHET with more di ffi culty. It is indeed reported that the scission of shorter oligomers is generally slower than the breakdown of longer polymer chains and that the conversion of dimer to BHET is the ratedetermining step. 13 Moreover, in the presence of excess EG, BHET can revert back to the dimer, giving rise to equilibrium."
+    },
+    {
+      "id": "d8cb7fff-a02f-53f4-9c8d-b20cbdba869e",
+      "text": "All of these factors contribute to the di ff erence between conversion and yield observed."
+    },
+    {
+      "id": "cbd43037-542f-5286-aa4b-71801e2c0499",
+      "text": "Since we want to explore for milder conditions and greener catalysts for the glycolysis of PET, we went on to use other cholinium salts, under the optimal reaction conditions found for [Ch][Gly]. In particular, to investigate the e ff ect exerted by the anion of the cholinium salt on the extent of PET depolymerization, we conducted the reaction in the presence of [Ch][Ala], [Ch][Lys], [Ch][OH], [Ch][Im] and [Ch]3[PO4]. It is worth noting that all of these salts are thermally stable at the temperature used for glycolysis since their decomposition temperatures are in the range of 170 - 180 ° C, as determined by thermogravimetric analysis (TGA). 27,33 The results obtained are reported in Figure 4 and Table S4."
+    },
+    {
+      "id": "e0a2808a-d98e-5168-9579-03494a1e04c9",
+      "text": "Figure 4. Conversion and yield for the glycolysis of PET after 6 h at 150 ° C in the presence of di ff erent cholinium salts. Conversions and yields are reproducible within ± 5% based on triplicate experiments."
+    },
+    {
+      "id": "8caefa37-7fb3-5d93-b72e-ea1dc3c2065a",
+      "text": "A fi rst glance at the results reported in Figure 4 reveals a pronounced e ff ect exerted by the ionic liquid anion. In particular, no evidence of BHET formation was observed in the presence of [Ch][Ala] and [Ch][Im], associated with very low conversions, lower than 10%. In the other cases, both conversion and yield increased along the series [Ch][Lys] < [Ch]3[PO4] < [Ch][Gly]."
+    },
+    {
+      "id": "f2fe325f-d0c4-5f67-a425-24f1e82363d3",
+      "text": "To further verify that the best-performing catalyst, [Ch]- [Gly], did not undergo decomposition under the reaction conditions used, we recorded the 1 H NMR spectrum of a solution of catalyst in EG, at the same ratio used in the reactions. Then, we treated the solution under the same reaction conditions described, 6 h at 150 ° C, and subsequently, we recorded the 1 H NMR spectrum of the resulting solution. Comparing the expanded spectra, reported in Figure S2a,b, reveals that there is no signi fi cant di ff erence between the spectra, and no extra peaks are detected. Therefore, we are reasonably con fi dent that the catalyst does not undergo signi fi cant decomposition under the experimental conditions used. We also investigated in the same way what happens when the same mixture is heated at 180 ° C for 6 h. In this case, some degradation occurs as can be seen from the expanded spectrum reported in Figure S2c. In this case, we added a known amount of maleic acid as internal standard. Integration of the peaks of maleic acid ole fi nic protons and the methyl protons of cholinium cations show that the amount of salt degraded amounts to 22%."
+    },
+    {
+      "id": "c5fa9291-b515-5a5c-887d-53603e594944",
+      "text": "The outcome of PET glycolysis to BHET arises from the interplay of several factors. 34 - 36 In particular, both basicity of the catalyst and steric e ff ects concur to the reactivity observed as evidenced in the metal-catalyzed glycolysis of PET in deep eutectic solvents. 37"
+    },
+    {
+      "id": "6a7ea910-a9a0-57a1-8a92-c3a7cc5c88ea",
+      "text": "Finally, we investigated the possibility of recycling the IL catalyst [Ch][Gly] by following a reported procedure. 38 The resulting mixture containing the recovered catalyst and EG was then charged with a fresh batch of PET, which was subjected to glycolysis under the same experimental conditions described. Unfortunately, no signi fi cant formation of BHET was detected."
+    },
+    {
+      "id": "f23dea73-1594-572d-b6c1-e957f0929fe6",
+      "text": "It is apparent that any protocol aiming at the chemical recycling of PET or other plastic material, to meet the requirements of sustainable chemistry in the real world, must be addressed to the depolymerization of postconsumer PET waste samples. This is indeed a more di ffi cult task because the material used in bottles or packages is not pure crystalline PET but is blended with coloring or stabilizing additives, which could pollute the obtained monomer, reducing its purity and thus preventing its repolymerization. To this aim, we studied the glycolysis of PET deriving from plastic bottles, transparent, white opaque, or colored, as well as PET deriving from food package, under the same reaction conditions described above. Prior to reaction, each sample was cut manually to small pieces (average size, 1 cm). Representative pictures of the transparent bottle and the relevant pieces subjected to glycolysis are reported in Figure 5, whereas the ones relevant to the other samples are reported in Figure S1."
+    },
+    {
+      "id": "2c5b7d9f-f941-516b-99ff-be90f121c1c2",
+      "text": "I"
+    },
+    {
+      "id": "e2238a65-fc59-5426-b4ae-71c16c71a06e",
+      "text": "Figure 5. Transparent colorless bottle (left) and relevant portions subjected to glycolysis (right) at 150 ° C for 6 h in the presence of [Ch][Gly] as a catalyst."
+    },
+    {
+      "id": "2660558d-b8a4-5ebe-b457-42cc98727ae7",
+      "text": "The results obtained from these reactions are reported in Table 1."
+    },
+    {
+      "id": "98a0d9a2-0667-51c4-ad4e-4c617d51d334",
+      "text": "Looking at the results reported in Table 1 reveals that the optimized reaction conditions allowed the depolymerization of PET deriving from a transparent bottle. In particular, a conversion of 85% and a yield of 51% were obtained, which are in close agreement with those obtained using pristine PET, which amount to 81 and 43%, respectively. The higher yield obtained from the PET deriving from the plastic bottle can be ascribed to its lower thickness, which favors the dissolution of the polymer. 39 To assess the purity of BHET obtained, we recorded the 1 H NMR spectrum of the product obtained, as reported in Figure 6."
+    },
+    {
+      "id": "3df9dcac-673e-56e4-9d6a-46bb403326bb",
+      "text": "The spectrum reported in Figure 6 shows that the product obtained is practically pure BHET, con fi rming the suitability of our protocol, for real-life samples of plastic waste. Encouraged by these results, we went on to carry out the glycolysis of PET deriving from the other plastic waste samples considered. In all"
+    },
+    {
+      "id": "0d8b951c-a917-5116-858e-88ad67701879",
+      "text": "Table 1. Conversions, Yields, and Reaction Temperatures for the Glycolysis of PET Deriving from Plastic Waste, in the Presence of [Ch][Gly], at a 1:5 Molar Ratio with respect to the Polymer, after 6 h a\n\n| PET waste sample               |   temperature ( ° C) |   conversion (%) |   yield (%) |\n|--------------------------------|----------------------|------------------|-------------|\n| 1 colorless transparent bottle |                  150 |               85 |          51 |\n| 2 colored transparent bottle   |                  150 |               62 |          31 |\n| 3 opaque bottle                |                  150 |               84 |          20 |\n| 4                              |                  180 |               91 |          61 |\n| 5 bakery package               |                  150 |               75 |          28 |\n| 6                              |                  180 |               61 |          36 |\n| 7 processed meat package       |                  150 |               38 |             |"
+    },
+    {
+      "id": "bc51b92f-9ae5-51f8-a64e-5b61460b3b67",
+      "text": "Table 1. Conversions, Yields, and Reaction Temperatures for the Glycolysis of PET Deriving from Plastic Waste, in the Presence of [Ch][Gly], at a 1:5 Molar Ratio with respect to the Polymer, after 6 h a"
+    },
+    {
+      "id": "ca0baa6e-94d3-51b2-beb0-1439a2ad4aef",
+      "text": "a Conversions and yields are reproducible within ± 5% based on triplicate experiments."
+    },
+    {
+      "id": "fcd57932-4ea6-55cd-90d2-b438c8cab008",
+      "text": "cases, we recorded the 1 H NMR spectra of the BHET obtained and reported them in Figure S3."
+    },
+    {
+      "id": "31746d8d-dc6d-5525-bd69-293379d78ac6",
+      "text": "When we carried out the glycolysis on PET deriving from the colored bottle, we obtained lower conversion and yield, 62 and 31% respectively, compared with that observed using a transparent bottle as a starting material (entries 1 and 2 of Table 1). It is worth noting that in all of these cases, conversions and yields are calculated under the assumption that additives are present in the plastic material in a negligible amount with respect to PET. For instance, coloring agents are usually employed in very low concentrations, typically lower than 500 ppm, 10 while additives are generally present in ∼ 5 wt %, in simpler PET-based packaging. 40 Besides the lower yield in BHET, the 1 H NMR spectrum of the monomer obtained, reported in Figure S3a, shows that the amount of impurities present is limited. Notably, this entails the advantage of achieving PET depolymerization without the need for a further discoloration step."
+    },
+    {
+      "id": "9f48e883-13fd-5e56-8a45-5c0697ba7506",
+      "text": "PET deriving from opaque plastic waste samples is widely recognized as more recalcitrant to glycolysis than transparent ones, due to the presence of additional additives as, for instance, mineral nanoparticles as UV blockers. 41 Notably, in our case, glycolysis of PET from an opaque bottle occurred with a conversion comparable to the one observed for the colorless transparent bottle (entries 1 and 3 of Table 1). Conversely, the yield in BHET was much lower, amounting to only 20% compared with the 51% yield obtained using the colorless transparent bottle, and even lower than the yield a ff orded when plastic from the colored bottle was used as a starting material, i.e., 31% (entries 2 and 4 of Table 1). Notably, the NMR spectrum of BHET, reported in Figure S3b, shows that the monomer was obtained with a good degree of purity. The sharp drop in yield could be hypothetically explained with inactivation of the catalyst by the additives, or alternatively to kinetic e ff ect by the latter, leading to a reduction in rate. To distinguish between these two hypotheses, we carried out the glycolysis of the PET deriving from the opaque bottle, at a higher temperature, 180 ° C, keeping the other operational parameters constant. As a result, a signi fi cant increase in yield was obtained, reaching 61%, coupled with a slightly increased conversion, 91% (entry 4 of Table 1). However, the purity of the monomer obtained worsened, as shown in the 1 H NMR spectrum reported in Figure S3c. In the light of this result, we can infer that the drop in yield, observed at 150 ° C, with respect to the postconsumer PET samples previously described, can be attributed to a kinetic e ff ect. Lower rates of PET breakdown induced by additives have been previously reported in the literature. 39"
+    },
+    {
+      "id": "1f931f75-2451-5b6a-8395-c60fb907af0d",
+      "text": "Figure 6. 1 H NMR spectrum in CD3OD of BHET obtained from the glycolysis of PET deriving from a clear plastic bottle."
+    },
+    {
+      "id": "a2198462-fecf-5717-a19b-bde621fa7c7a",
+      "text": "The results obtained from the glycolysis of PET deriving from di ff erent food packages highlight a di ff erent behavior. In particular, using the bakery package reported in Figure S1c, glycolysis a ff orded a good conversion, 75%, but a much lower yield, 28%, compared with the results obtained when using bottles as a starting material (entry 5 of Table 1). Increasing the temperature to 180 ° C was not successful, resulting in a practically constant conversion and a slightly higher yield, 36% (entries 5 and 6 of Table 1). Despite the lower yield, the NMR spectra of the BHET obtained at 150 ° C, reported in Figure S3d, shows that the purity of the product is still comparable to the ones obtained from the glycolysis of postconsumer PET bottles. Conversely, increasing the reaction temperature to 180 ° C a ff ords a product with lower purity as evidenced by the integral relevant to the impurity at 3.61 ppm, in the spectrum reported in Figure S3e. Regarding these impurities, the absence of extra peaks in the aromatic protons region allows us to rule out that they could be oligomers. Moreover, the fact that these impurities were found only during glycolysis of postconsumer waste and not from pristine PET induces us to rule out that they may be due to residual reactants, which are removed during the fi ltration step within the aqueous phase. Therefore, we hypothesize that these extra peaks derive from additives in the polymeric blend, which we were not able to further identify, as the composition of the polymeric material is not known. In these cases, yields are calculated assuming that the amount of such impurities is negligible, and so they should be considered as a limit value."
+    },
+    {
+      "id": "b1b27d0e-2875-5c66-9f04-c49d7f235374",
+      "text": "Finally, the last sample of postconsumer PET waste considered was a package for processed meat. In this case, we observed the worst results, as a low conversion was associated with a nondetectable yield in BHET (entry 7 of Table 1). Overall, our results show that the present protocol is well suited to carry out the glycolysis of PET, under relatively mild conditions, and in the presence of low-impacting catalysts. However, an important testing ground for a protocol aiming at the chemical recycling of PET is its application to postconsumer waste. In this regard, glycolysis promoted by [Ch][Gly] performs best when bottles are used as starting materials, either clear or opaque, a ff ording a pure product. A lower yield, but still acceptable, has been observed from a bakery package, a ff ording a product with good purity. However, the performance of the present catalytic system worsened, when a thicker package was used as a starting material."
+    },
+    {
+      "id": "bbc440af-eca6-5b4e-b63c-c658cc594a76",
+      "text": "To better assess the performance of our catalytic system, we compared the reaction outcome obtained by us, with other systems and protocols reported in the literature, dealing with the same process."
+    },
+    {
+      "id": "8213d4eb-c257-571e-ba8f-b3188f5904e2",
+      "text": "In addition, we will compare the results obtained using the same type of PET source as the starting material. These results are reported in Table 2."
+    },
+    {
+      "id": "0a543db0-3a66-5c15-a158-5d16af7ad327",
+      "text": "In general, most of the works reported use pristine PET as the substrate, and the ones that address the glycolysis of postconsumer waste focus mainly on water bottles. With regard to glycolysis of pristine PET, our results are in line with early work by Li et al. 42 In both cases, an IL is the catalyst, but our protocol achieves the same yield in a lower time and at a much lower temperature (entries 1 and 4). In the other cases, we obtained a lower yield compared with other works using pristine PET pellets as a substrate for glycolysis. However, yield is not the only parameter to consider in assessing the sustainability of a given process. In particular, comparing our"
+    },
+    {
+      "id": "91107cb2-4b8c-517f-abd9-9e5fe7884fb6",
+      "text": "Table 2. Reaction Conditions, Catalysts, and Yields in BHET for the Glycolysis of PET in This Work and Other Systems Reported in the Literature\n\n| entry        | PET source           | catalyst                         |   temperature ( ° C) |   time (h) |   yield (%) |\n|--------------|----------------------|----------------------------------|----------------------|------------|-------------|\n| 1            | pellets a            | [Ch][Gly]                        |                  150 |          6 |          43 |\n| 2            | clear bottle a       | [Ch][Gly]                        |                  150 |          6 |          51 |\n| 3            | opaque bottle a      | [Ch][Gly]                        |                  180 |          6 |          61 |\n| 4            | pellets 42           | [bmim][Cl]                       |                  180 |          8 |          42 |\n| 5            | pellets 37           | Zn(OAc) 2 and 1,3- DMU           |                  190 |        0.3 |          82 |\n| 6            | pellets 43           | [bmim] 2 [CoCl 4 ]               |                  175 |        1.5 |          81 |\n| 7            | pellets 28           | [Ch][OAc]                        |                  180 |          4 |          85 |\n| 8            | clear bottle 32      | imidazolium zwitterion           |                  180 |          1 |          60 |\n| 9            | clear bottle 27      | [Ch] 3 [PO 4 ]                   |                  120 |          3 |          61 |\n| 10           | commercial bottle 44 | ultrasmall cobalt NP             |                  180 |          3 |          77 |\n| 11           | clear bottle 45      | Fe 3 O 4 boron nitride composite |                  200 |          5 |         100 |\n| a This work. | a This work.         |                                  |                      |            |             |"
+    },
+    {
+      "id": "0fcee172-4e27-5af2-8970-911fb824ff06",
+      "text": "Table 2. Reaction Conditions, Catalysts, and Yields in BHET for the Glycolysis of PET in This Work and Other Systems Reported in the Literature"
+    },
+    {
+      "id": "c7f77568-595a-56df-af79-7395ec6b7ca1",
+      "text": "results with the ones described by Lu 37 and Zhang, 43 our system, despite the lower yield, has the advantages of operating at lower temperatures (entries 1, 5, and 6) and not requiring metal-based catalysts. In one case, 37 glycolysis required applying a pressure of 3 MPa, whereas in our case, glycolysis is conducted at atmospheric pressure. Finally, the performance of our system, when using pristine PET pellets, is inferior to the one reported by Lu and Zhang 28 (entries 1 and 7), which employs a related ionic liquid as the catalyst and a higher reaction temperature."
+    },
+    {
+      "id": "0968953c-2988-51d6-a4a6-95c49e7ccba4",
+      "text": "Moving our comparison to works employing postconsumer PET waste as starting materials allows us to draw some interesting conclusions. In particular, our result employing clear bottle as PET source is only slightly lower than the one described by Holbrey, 32 employing an imidazolium zwitterion as a catalyst (entries 2 and 8), in which case the lower temperature used in the present work is counterbalanced by a shorter reaction time. Similar considerations can be made comparing our result with the one reported by Singh, 27 in which, however, also a lower temperature is used (entries 2 and 9). It is worth noting that our results become competitive with the ones here discussed, when the glycolysis was carried out on PET deriving from an opaque bottle (entries 3, 8, and 9) both in terms of yield and reaction temperature, with the exception of a system employing ultrasmall cobalt nanoparticles as a catalyst 44 (entries 3 and 10). Finally, the performance of our system is inferior to the one of a system employing a composite formed by Fe3O4 nanoparticles and boron nitride nanosheets (entries 3 and 11). 45 In this case, a quantitative yield in BHET was reported, although the reaction occurred under much harsher conditions, at 200 ° C, and under autogenous pressure. Finally, given the di ff erence of conditions between our work and those listed in Table 2, we carried out control experiments, performing glycolysis in the presence of two of the catalysts reported in Table 2, namely, cholinium acetate, [Ch][OAc] and [bmim][Cl], employing the optimized experimental conditions used in this work, i.e ., 6 h at 150 ° C. In both cases, we observed no appreciable conversions of PET."
+    },
+    {
+      "id": "2dc11d32-4155-51a8-871e-aebba84d3bae",
+      "text": "It is worth noting that, to the best of our knowledge, to date, there are no reports addressing the glycolysis of PET deriving from postconsumer waste di ff erent from bottles, like the ones studied by us. Although these appear more recalcitrant, we claim that our protocol shows good versatility, being applicable to a diverse range of PET waste."
+    },
+    {
+      "id": "5fd3dab6-749c-53c1-8ec6-875e44bac850",
+      "text": "■ CONCLUSIONS"
+    },
+    {
+      "id": "63d40723-48e2-5931-8f09-cf7393db5cde",
+      "text": "We studied the glycolysis of PET to BHET in the presence of di ff erent cholinium salts also comprising amino acid-based ones. To the best of our knowledge, this is one of the few reports in which amino acid-based cholinium salts are used to perform such a kind of process. The use of these catalysts perfectly ful fi lls the 3rd and 7th Principles of Green Chemistry. Indeed, according to previous reports in the literature, 46 these ILs can be obtained from renewable sources and should exert negligible toxicity e ff ects at the time of their disposal."
+    },
+    {
+      "id": "63ecdb27-89da-59e1-b6a6-d84457c6c07f",
+      "text": "Our results demonstrate that the best-performing catalyst is [Ch][Gly], in the presence of which we observed a conversion of 85% and a yield in BHET of 51%, at 150 ° C and after 6 h, using a clear PET bottle as a starting material. The above reaction conditions proved to be milder and competitive with respect to the ones so far reported in the literature, using metal-based catalysts or imidazolium-based ILs, having a more signi fi cant environmental impact. For the fi rst time, ILcatalyzed glycolysis of PET was applied to di ff erent postconsumer PET samples like colored and opaque bottles, and food packages. Results obtained clearly show the wide applicability of the proposed protocol and, even if the best results were collected in the case of bottles, the good quality of BHET obtained in the case of food packages open the way to further optimization of the procedure. This could be used in combination with nonconventional methodologies, like ultrasounds of microwaves irradiation, to further reduce the harshness of the experimental conditions and to attempt the catalyst recycling."
+    },
+    {
+      "id": "9c0c753f-b02e-5af0-9084-cdcf11c742c9",
+      "text": "■ ASSOCIATED CONTENT"
+    },
+    {
+      "id": "a60f5681-974c-5a6a-9d1c-029192e8eda1",
+      "text": "* s ı Supporting Information"
+    },
+    {
+      "id": "9c699ebe-e339-54a5-b2ca-02d45b5a2589",
+      "text": "The Supporting Information is available free of charge at https://pubs.acs.org/doi/10.1021/acssuschemeng.1c04060."
+    },
+    {
+      "id": "7fe7b0be-0a0f-51a6-bd0d-edb4e0565610",
+      "text": "Pictures of postconsumer PET waste, 1 H NMR spectra of [Ch][Gly] before and after heating, 1 H NMR spectra of BHET obtained from postconsumer waste, and conversions and yields observed at di ff erent temperatures, reaction times, catalyst loadings, and in the presence of di ff erent cholinium salts (PDF)"
+    },
+    {
+      "id": "13926cda-b1b8-53e8-9b19-8a047531a5f0",
+      "text": "■ AUTHOR INFORMATION"
+    },
+    {
+      "id": "df19d6d5-9069-5a6c-a54e-4761fdb60a7e",
+      "text": "Corresponding Author"
+    },
+    {
+      "id": "1d54455d-8a7a-5cf9-a4d4-7e2930451c52",
+      "text": "Francesca D ' Anna - Dipartimento di Scienze Biologiche, Chimiche e Farmaceutiche, Sezione di Chimica, Universita ̀ degli Studi di Palermo, 90128 Palermo, Italy; orcid.org/ 0000-0001-6171-8620; Email: francesca.danna@unipa.it"
+    },
+    {
+      "id": "d7137641-228f-5934-8209-e00c7b8542f5",
+      "text": "Authors"
+    },
+    {
+      "id": "c4f15592-369f-5aec-958f-ae749d3c6440",
+      "text": "Carla Rizzo - Dipartimento di Scienze Biologiche, Chimiche e Farmaceutiche, Sezione di Chimica, Universita ̀ degli Studi di Palermo, 90128 Palermo, Italy; orcid.org/0000-00025157-1773"
+    },
+    {
+      "id": "aa4f74b6-6b8b-523c-8352-fea1974f991f",
+      "text": "Salvatore Marullo - Dipartimento di Scienze Biologiche, Chimiche e Farmaceutiche, Sezione di Chimica, Universita ̀ degli Studi di Palermo, 90128 Palermo, Italy; orcid.org/ 0000-0001-9932-9823"
+    },
+    {
+      "id": "9d60209e-95fc-5967-8fb4-95a122b6445c",
+      "text": "Nadka T. Dintcheva - Dipartimento di Ingegneria, Universita degli Studi di Palermo, 90128 Palermo, Italy; orcid.org/ 0000-0003-3557-340X"
+    },
+    {
+      "id": "b6aa70ab-7e9d-5e3b-8537-9ea4f02ce3ae",
+      "text": "Complete contact information is available at: https://pubs.acs.org/10.1021/acssuschemeng.1c04060"
+    },
+    {
+      "id": "7668d574-c50e-52f5-8f48-7a80ed8c3532",
+      "text": "Author Contributions"
+    },
+    {
+      "id": "6a80fb73-d58d-5494-a260-ee8abc05cae3",
+      "text": "The manuscript was written through the contributions of all authors. All authors have given approval to the fi nal version of the manuscript."
+    },
+    {
+      "id": "30438b82-8773-5c2a-8ef4-9fb57c7b0219",
+      "text": "Notes"
+    },
+    {
+      "id": "512305f1-941c-5b99-8e8c-2d1e4e4b47ca",
+      "text": "The authors declare no competing fi nancial interest."
+    },
+    {
+      "id": "8af504c2-1300-53c1-9fa4-b36c2a5402db",
+      "text": "■ ACKNOWLEDGMENTS"
+    },
+    {
+      "id": "431d9db8-c7c8-566f-a033-b873a5fbefc9",
+      "text": "The authors thank the University of Palermo for fi nancial support (FFR 2020-D ' Anna and FFR 2020-Marullo)."
+    },
+    {
+      "id": "2dfd6c18-e503-5ce4-beff-d00fcc657ab7",
+      "text": "■ DEDICATION"
+    },
+    {
+      "id": "3a3fa785-5e3a-51c0-8605-26023021ad53",
+      "text": "This manuscript is in memory of Prof. Sergio Rosselli."
+    },
+    {
+      "id": "4726f466-9497-576b-8e1a-042e378d918d",
+      "text": "■ REFERENCES"
+    },
+    {
+      "id": "c2fc6726-7e79-54eb-89e3-5a2add06f405",
+      "text": "Lebreton, L.; Slat, B.; Ferrari, F.; Sainte-Rose, B.; Aitken, J.; Marthouse, R.; Hajbane, S.; Cunsolo, S.; Schwarz, A.; Levivier, A.; Noble, K.; Debeljak, P.; Maral, H.; Schoeneich-Argent, R.; Brambini, R.; Reisser, J. Evidence that the Great Pacific Garbage Patch is rapidly accumulating plastic. Sci. Rep. 2018 , 8 , No. 4666."
+    },
+    {
+      "id": "e0ac9893-3b3a-585c-a069-7dbcd8954d69",
+      "text": "Kosloski-Oh, S. C.; Wood, Z. A.; Manjarrez, Y.; de los Rios, J. P.; Fieser, M. E. Catalytic methods for chemical recycling or upcycling of commercial polymers. Mater. Horiz. 2021 , 8 , 1084 - 1129."
+    },
+    {
+      "id": "3f4b99c3-5f3f-5c31-8e96-7590254fad64",
+      "text": "Ragaert, K.; Delva, L.; Van Geem, K. Mechanical and chemical recycling of solid plastic waste. Waste Manage. 2017 , 69 , 24 - 58."
+    },
+    {
+      "id": "e79c01bc-e69d-5992-b035-dbeb5961bd3d",
+      "text": "Coates, G. W.; Getzler, Y. D. Y. L. Chemical recycling to monomer for an ideal, circular polymer economy. Nat. Rev. Mater. 2020 , 5 , 501 - 516."
+    },
+    {
+      "id": "2f8b5c17-b4d5-5a29-8587-cd063ec22186",
+      "text": "Vollmer, I.; Jenks, M. J. F.; Roelands, M. C. P.; White, R. J.; van Harmelen, T.; de Wild, P.; van der Laan, G. P.; Meirer, F.; Keurentjes, J. T. F.; Weckhuysen, B. M. Beyond Mechanical Recycling: Giving New Life to Plastic Waste. Angew. Chem., Int. Ed. 2020 , 59 , 15402 - 15423."
+    },
+    {
+      "id": "80deed48-6f40-5f8b-a6d7-382fa58af8cd",
+      "text": "Chen, H.; Wan, K.; Zhang, Y.; Wang, Y. Waste to Wealth: Chemical Recycling and Chemical Upcycling of Waste Plastics for a Great Future. ChemSusChem 2021 , 4123 - 4136."
+    },
+    {
+      "id": "7728f690-725d-565c-bd2b-bb18acbdeb3a",
+      "text": "Chen, X.; Wang, Y.; Zhang, L. Recent Progress in the Chemical Upcycling of Plastic Wastes. ChemSusChem 2021 , DOI: 10.1002/ cssc.202100868."
+    },
+    {
+      "id": "00b468f1-91a7-5a76-9d9f-84e2bc3e62b1",
+      "text": "Payne, J.; Jones, M. D. The Chemical Recycling of Polyesters for a Circular Plastics Economy: Challenges and Emerging Opportunities. ChemSusChem 2021 , DOI: 10.1002/cssc.202100400."
+    },
+    {
+      "id": "1a936af1-a7ea-5903-a004-27158dd25d09",
+      "text": "Nistico ̀ , R. Polyethylene terephthalate (PET) in the packaging industry. Polym. Test. 2020 , 90 , No. 106707."
+    },
+    {
+      "id": "f5406c59-27ec-5fa3-97c6-13ac077385bf",
+      "text": "Crippa, M.; Morico, B. Chapter 12 - PET depolymerization: a novel process for plastic waste chemical recycling. In Studies in Surface Science and Catalysis ; Basile, A.; Centi, G.; Falco, M. D.; Iaquaniello, G., Eds.; Elsevier, 2020; Vol. 179 , pp 215 - 229."
+    },
+    {
+      "id": "ecf378b6-507b-5e0b-857f-9b7c53a86e2c",
+      "text": "Sang, T.; Wallis, C. J.; Hill, G.; Britovsek, G. J. P. Polyethylene terephthalate degradation under natural and accelerated weathering conditions. Eur. Polym. J. 2020 , 136 , No. 109873."
+    },
+    {
+      "id": "422cf6f7-cebc-52af-bbac-8a102deaf541",
+      "text": "Raheem, A. B.; Noor, Z. Z.; Hassan, A.; Abd Hamid, M. K.; Samsudin, S. A.; Sabeen, A. H. Current developments in chemical recycling of post-consumer polyethylene terephthalate wastes for new materials production: A review. J. Cleaner Prod. 2019 , 225 , 1052 - 1064."
+    },
+    {
+      "id": "3e9f2c08-4470-5e5e-ab0c-ff131ed3ca68",
+      "text": "López-Fonseca, R.; Duque-Ingunza, I.; de Rivas, B.; FloresGiraldo, L.; Gutiérrez-Ortiz, J. I. Kinetics of catalytic glycolysis of PET wastes with sodium carbonate. Chem. Eng. J. 2011 , 168 , 312 - 320."
+    },
+    {
+      "id": "0a49a0e6-7af5-5207-8a3c-bc7e280c945c",
+      "text": "̀"
+    },
+    {
+      "id": "778539db-ab48-517a-ad02-0383d65c2142",
+      "text": "Shukla, S. R.; Harad, A. M. Glycolysis of polyethylene terephthalate waste fibers. J. Appl. Polym. Sci. 2005 , 97 , 513 - 517."
+    },
+    {
+      "id": "0a96b659-9304-5e66-9a09-33c5ebd6f21f",
+      "text": "Wang, H.; Li, Z.; Liu, Y.; Zhang, X.; Zhang, S. Degradation of poly(ethylene terephthalate) using ionic liquids. Green Chem. 2009 , 11 , 1568 - 1575."
+    },
+    {
+      "id": "3b52dc53-e673-559c-8492-66b21d8c1694",
+      "text": "Wang, Q.; Geng, Y.; Lu, X.; Zhang, S. First-Row Transition Metal-Containing Ionic Liquids as Highly Active Catalysts for the Glycolysis of Poly(ethylene terephthalate) (PET). ACS Sustainable Chem. Eng. 2015 , 3 , 340 - 348."
+    },
+    {
+      "id": "4af749e0-61cd-51a7-ba0a-14ebcc0cc683",
+      "text": "Wang, H.; Yan, R.; Li, Z.; Zhang, X.; Zhang, S. Fe-containing magnetic ionic liquid as an effective catalyst for the glycolysis of poly(ethylene terephthalate). Catal. Commun. 2010 , 11 , 763 - 767."
+    },
+    {
+      "id": "784cfd81-6f74-550c-aa25-444d2df74252",
+      "text": "Al-Sabagh, A. M.; Yehia, F. Z.; Eissa, A. M. F.; Moustafa, M. E.; Eshaq, G.; Rabie, A. M.; ElMetwally, A. E. Cuand Zn-acetatecontaining ionic liquids as catalysts for the glycolysis of poly(ethylene terephthalate). Polym. Degrad. Stab. 2014 , 110 , 364 - 377."
+    },
+    {
+      "id": "34f77888-3578-53d5-a91b-6dba08eaa3cb",
+      "text": "Zhou, X.; Lu, X.; Wang, Q.; Zhu, M.; Li, Z. Effective catalysis of poly(ethylene terephthalate) (PET) degradation by metallic acetate ionic liquids. Pure Appl. Chem. 2012 , 84 , 789 - 801."
+    },
+    {
+      "id": "212fea0c-1983-5c2c-8d4f-ad0a5ac24829",
+      "text": "Marullo, S.; Rizzo, C.; D ' Anna, F. Task-Specific Organic Salts and Ionic Liquids Binary Mixtures: A Combination to Obtain 5Hydroxymethylfurfural From Carbohydrates. Front. Chem. 2019 , 7 , 134."
+    },
+    {
+      "id": "4bf0ecd0-da3b-57a0-8788-0316c108ae94",
+      "text": "Marullo, S.; D ' Anna, F.; Rizzo, C.; Billeci, F. Ionic liquids: ' normal ' solvents or nanostructured fluids? Org. Biomol. Chem. 2021 , 19 , 2076 - 2095."
+    },
+    {
+      "id": "c9833cea-cae2-51d0-b6b6-4e8c8c6419e2",
+      "text": "Rizzo, C.; D ' Anna, F.; Marullo, S.; Noto, R. Task Specific Dicationic Ionic Liquids: Recyclable Reaction Media for the Mononuclear Rearrangement of Heterocycles. J. Org. Chem. 2014 , 79 , 8678 - 8683."
+    },
+    {
+      "id": "856cf396-e8f8-50bc-b8e2-c965dc59fcde",
+      "text": "Billeci, F.; D ' Anna, F.; Feroci, M.; Cancemi, P.; Feo, S.; Forlino, A.; Tonnelli, F.; Seddon, K. R.; Gunaratne, H. Q. N.; Plechkova, N. V. When Functionalization Becomes Useful: Ionic Liquids with a ' Sweet ' Appended Moiety Demonstrate Drastically Reduced Toxicological Effects. ACS Sustainable Chem. Eng. 2020 , 8 , 926 - 938. (24) Gadilohar, B. L.; Shankarling, G. S. Choline based ionic liquids and their applications in organic transformation. J. Mol. Liq. 2017 , 227 , 234 - 261."
+    },
+    {
+      "id": "377e7e17-8d6a-5830-9f8b-3cd0a9325407",
+      "text": "Costa, S. P. F.; Azevedo, A. M. O.; Pinto, P. C. A. G.; Saraiva, M. L. M. F. S. Environmental Impact of Ionic Liquids: Recent Advances in (Eco)toxicology and (Bio)degradability. ChemSusChem 2017 , 10 , 2321 - 2347."
+    },
+    {
+      "id": "f8eb441f-c30e-5fb4-9d28-f57d66f387cc",
+      "text": "Anastas, P.; Eghbali, N. Green Chemistry: Principles and Practice. Chem. Soc. Rev. 2010 , 39 , 301 - 312."
+    },
+    {
+      "id": "3be351fc-a00b-51d5-80e4-f9624f207a2b",
+      "text": "Sun, J.; Liu, D.; Young, R. P.; Cruz, A. G.; Isern, N. G.; Schuerg, T.; Cort, J. R.; Simmons, B. A.; Singh, S. Solubilization and Upgrading of High Polyethylene Terephthalate Loadings in a LowCosting Bifunctional Ionic Liquid. ChemSusChem 2018 , 11 , 781 - 792."
+    },
+    {
+      "id": "5db3b5cf-d75b-5bec-89e4-49b8e5339b4e",
+      "text": "Liu, Y.; Yao, X.; Yao, H.; Zhou, Q.; Xin, J.; Lu, X.; Zhang, S. Degradation of poly(ethylene terephthalate) catalyzed by metal-free choline-based ionic liquids. Green Chem. 2020 , 22 , 3122 - 3131."
+    },
+    {
+      "id": "6437addf-5b91-5ab9-8803-5bed1a497199",
+      "text": "De Santis, S.; Masci, G.; Casciotta, F.; Caminiti, R.; Scarpellini, E.; Campetella, M.; Gontrani, L. Cholinium-amino acid based ionic liquids: a new method of synthesis and physico-chemical characterization. Phys. Chem. Chem. Phys. 2015 , 17 , 20687 - 20698."
+    },
+    {
+      "id": "cb1c88fd-eb70-5e90-b91f-53d058c66406",
+      "text": "Dinare ̀ s, I.; Garcia de Miguel, C.; Ibán ̃ ez, A.; Mesquida, N.; Alcalde, E. Imidazolium ionic liquids: A simple anion exchange protocol. Green Chem. 2009 , 11 , 1507 - 1510."
+    },
+    {
+      "id": "ccb44e7f-1b39-51e3-9628-bb3c0ce9f1ad",
+      "text": "Ghaemy, M.; Mossaddegh, K. Depolymerisation of poly(ethylene terephthalate) fibre wastes using ethylene glycol. Polym. Degrad. Stab. 2005 , 90 , 570 - 576."
+    },
+    {
+      "id": "4eb8603e-98a4-5afd-8d82-890f2ff082a6",
+      "text": "Wang, L.; Nelson, G. A.; Toland, J.; Holbrey, J. D. Glycolysis of PET Using 1,3-Dimethylimidazolium-2-Carboxylate as an Organocatalyst. ACS Sustainable Chem. Eng. 2020 , 8 , 13362 - 13368."
+    },
+    {
+      "id": "d18157a9-001a-50e5-a718-c4ec53b4b9d1",
+      "text": "Tao, D.-J.; Cheng, Z.; Chen, F.-F.; Li, Z.-M.; Hu, N.; Chen, X.- S. Synthesis and Thermophysical Properties of Biocompatible Cholinium-Based Amino Acid Ionic Liquids. J. Chem. Eng. Data 2013 , 58 , 1542 - 1548."
+    },
+    {
+      "id": "1ef74d5f-084d-56f3-a144-956d7c8b6c81",
+      "text": "Chen, F.; Wang, G.; Li, W.; Yang, F. Glycolysis of Poly(ethylene terephthalate) over Mg - Al Mixed Oxides Catalysts Derived from Hydrotalcites. Ind. Eng. Chem. Res. 2013 , 52 , 565 - 571."
+    },
+    {
+      "id": "1554d5c7-7d59-5709-922b-bec8bc54ef9a",
+      "text": "Delle Chiaie, K. R.; McMahon, F. R.; Williams, E. J.; Price, M. J.; Dove, A. P. Dual-catalytic depolymerization of polyethylene terephthalate (PET). Polym. Chem. 2020 , 11 , 1450 - 1453."
+    },
+    {
+      "id": "4e45d2b3-b081-561c-925b-d78a09cfba36",
+      "text": "Fukushima, K.; Coady, D. J.; Jones, G. O.; Almegren, H. A.; Alabdulrahman, A. M.; Alsewailem, F. D.; Horn, H. W.; Rice, J. E.; Hedrick, J. L. Unexpected efficiency of cyclic amidine catalysts in depolymerizing poly(ethylene terephthalate). J. Polym. Sci., Part A: Polym. Chem. 2013 , 51 , 1606 - 1611."
+    },
+    {
+      "id": "af27f3c7-4cf0-58df-bd7c-3e5173dc9914",
+      "text": "Liu, B.; Fu, W.; Lu, X.; Zhou, Q.; Zhang, S. Lewis Acid - Base Synergistic Catalysis for Polyethylene Terephthalate Degradation by 1,3-Dimethylurea/Zn(OAc)2 Deep Eutectic Solvent. ACS Sustainable Chem. Eng. 2019 , 7 , 3292 - 3300."
+    },
+    {
+      "id": "8260fd84-868e-54a7-8b0c-9229355219cb",
+      "text": "Al-Sabagh, A. M.; Yehia, F. Z.; Eissa, A.-M. M. F.; Moustafa, M. E.; Eshaq, G.; Rabie, A.-R. M.; ElMetwally, A. E. Glycolysis of Poly(ethylene terephthalate) Catalyzed by the Lewis Base Ionic Liquid [Bmim][OAc]. Ind. Eng. Chem. Res. 2014 , 53 , 18443 - 18451."
+    },
+    {
+      "id": "c0c832ed-4036-59d3-acf3-f9e81831f75c",
+      "text": "U ̈ gdu ̈ ler, S.; Van Geem, K. M.; Roosen, M.; Delbeke, E. I. P.; De Meester, S. Challenges and opportunities of solvent-based additive extraction methods for plastic recycling. Waste Manage. 2020 , 104 , 148 - 182."
+    },
+    {
+      "id": "0611a7bc-84dc-5c4a-a6cb-d79681a9f304",
+      "text": "U ̈ gdu ̈ ler, S.; Van Geem, K. M.; Denolf, R.; Roosen, M.; Mys, N.; Ragaert, K.; De Meester, S. Towards closed-loop recycling of multilayer and coloured PET plastic waste by alkaline hydrolysis. Green Chem. 2020 , 22 , 5376 - 5394."
+    },
+    {
+      "id": "4f7a6152-1453-5e41-bcb0-88829aa8328e",
+      "text": "Tramis, O.; Garnier, C.; Yus, C.; Irusta, S.; Chabert, F. Enhancement of the fatigue life of recycled PP by incorporation of recycled opaque PET collected from household milk bottle wastes. Waste Manage. 2021 , 125 , 49 - 57."
+    },
+    {
+      "id": "081b83f3-226f-595e-820e-949f80fdd513",
+      "text": "Wang, H.; Liu, Y.; Li, Z.; Zhang, X.; Zhang, S.; Zhang, Y. Glycolysis of poly(ethylene terephthalate) catalyzed by ionic liquids. Eur. Polym. J. 2009 , 45 , 1535 - 1544."
+    },
+    {
+      "id": "06883358-cc48-5212-a5ad-902462403c46",
+      "text": "Wang, Q.; Geng, Y.; Lu, X.; Zhang, S. First-Row Transition Metal-Containing Ionic Liquids as Highly Active Catalysts for the Glycolysis of Poly(ethylene terephthalate) (PET). ACS Sustainable Chem. Eng. 2015 , 3 , 340 - 348."
+    },
+    {
+      "id": "f46ebff5-e96f-57f9-a483-0d6d49a73b8b",
+      "text": "Veregue, F. R.; Pereira da Silva, C. T.; Moisés, M. P.; Meneguin, J. G.; Guilherme, M. R.; Arroyo, P. A.; Favaro, S. L.; Radovanovic, E.; Girotto, E. M.; Rinaldi, A. W. Ultrasmall Cobalt Nanoparticles as a Catalyst for PET Glycolysis: A Green Protocol for Pure Hydroxyethyl Terephthalate Precipitation without Water. ACS Sustainable Chem. Eng. 2018 , 6 , 12017 - 12024."
+    },
+    {
+      "id": "4bebce64-5483-51d9-95f1-c8a0ba749c35",
+      "text": "Nabid, M. R.; Bide, Y.; Jafari, M. Boron nitride nanosheets decorated with Fe3O4 nanoparticles as a magnetic bifunctional catalyst for post-consumer PET wastes recycling. Polym. Degrad. Stab. 2019 , 169 , No. 108962."
+    },
+    {
+      "id": "0a686d2e-1a9e-59b8-9fca-a641828ea0c3",
+      "text": "de Morais, P.; Gonc ̧ alves, F.; Coutinho, J. A. P.; Ventura, S. P. M. Ecotoxicity of Cholinium-Based Deep Eutectic Solvents. ACS Sustainable Chem. Eng. 2015 , 3 , 3398 - 3404."
+    }
+  ]
+}

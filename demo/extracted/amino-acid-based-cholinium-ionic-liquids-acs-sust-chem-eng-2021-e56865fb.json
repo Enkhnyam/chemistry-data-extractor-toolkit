@@ -1,0 +1,184 @@
+{
+  "id": "amino-acid-based-cholinium-ionic-liquids-acs-sust-chem-eng-2021-e56865fb",
+  "records": [
+    {
+      "catalyst": "[Ch][Gly]",
+      "solvent": "ethylene glycol",
+      "temperature_c": 150.0,
+      "reaction_time_min": 360.0,
+      "catalyst_amount_g": 0.0186,
+      "substrate_amount_g": 0.1,
+      "solvent_amount_g": 0.4,
+      "yield_percent": 51.0,
+      "selectivity_percent": null,
+      "conversion_percent": 85.0,
+      "source_chunk_ids": [
+        "a199122d-483f-5bdd-bd86-0927afe94447",
+        "0d8b951c-a917-5116-858e-88ad67701879",
+        "bc51b92f-9ae5-51f8-a64e-5b61460b3b67"
+      ]
+    },
+    {
+      "catalyst": "[Ch][Gly]",
+      "solvent": "ethylene glycol",
+      "temperature_c": 150.0,
+      "reaction_time_min": 360.0,
+      "catalyst_amount_g": 0.0186,
+      "substrate_amount_g": 0.1,
+      "solvent_amount_g": 0.4,
+      "yield_percent": 31.0,
+      "selectivity_percent": null,
+      "conversion_percent": 62.0,
+      "source_chunk_ids": [
+        "a199122d-483f-5bdd-bd86-0927afe94447",
+        "0d8b951c-a917-5116-858e-88ad67701879",
+        "bc51b92f-9ae5-51f8-a64e-5b61460b3b67"
+      ]
+    },
+    {
+      "catalyst": "[Ch][Gly]",
+      "solvent": "ethylene glycol",
+      "temperature_c": 150.0,
+      "reaction_time_min": 360.0,
+      "catalyst_amount_g": 0.0186,
+      "substrate_amount_g": 0.1,
+      "solvent_amount_g": 0.4,
+      "yield_percent": 20.0,
+      "selectivity_percent": null,
+      "conversion_percent": 84.0,
+      "source_chunk_ids": [
+        "a199122d-483f-5bdd-bd86-0927afe94447",
+        "0d8b951c-a917-5116-858e-88ad67701879",
+        "bc51b92f-9ae5-51f8-a64e-5b61460b3b67"
+      ]
+    },
+    {
+      "catalyst": "[Ch][Gly]",
+      "solvent": "ethylene glycol",
+      "temperature_c": 180.0,
+      "reaction_time_min": 360.0,
+      "catalyst_amount_g": 0.0186,
+      "substrate_amount_g": 0.1,
+      "solvent_amount_g": 0.4,
+      "yield_percent": 61.0,
+      "selectivity_percent": null,
+      "conversion_percent": 91.0,
+      "source_chunk_ids": [
+        "a199122d-483f-5bdd-bd86-0927afe94447",
+        "0d8b951c-a917-5116-858e-88ad67701879",
+        "bc51b92f-9ae5-51f8-a64e-5b61460b3b67"
+      ]
+    },
+    {
+      "catalyst": "[Ch][Gly]",
+      "solvent": "ethylene glycol",
+      "temperature_c": 150.0,
+      "reaction_time_min": 360.0,
+      "catalyst_amount_g": 0.0186,
+      "substrate_amount_g": 0.1,
+      "solvent_amount_g": 0.4,
+      "yield_percent": 28.0,
+      "selectivity_percent": null,
+      "conversion_percent": 75.0,
+      "source_chunk_ids": [
+        "a199122d-483f-5bdd-bd86-0927afe94447",
+        "0d8b951c-a917-5116-858e-88ad67701879",
+        "bc51b92f-9ae5-51f8-a64e-5b61460b3b67"
+      ]
+    },
+    {
+      "catalyst": "[Ch][Gly]",
+      "solvent": "ethylene glycol",
+      "temperature_c": 180.0,
+      "reaction_time_min": 360.0,
+      "catalyst_amount_g": 0.0186,
+      "substrate_amount_g": 0.1,
+      "solvent_amount_g": 0.4,
+      "yield_percent": 36.0,
+      "selectivity_percent": null,
+      "conversion_percent": 61.0,
+      "source_chunk_ids": [
+        "a199122d-483f-5bdd-bd86-0927afe94447",
+        "0d8b951c-a917-5116-858e-88ad67701879",
+        "bc51b92f-9ae5-51f8-a64e-5b61460b3b67"
+      ]
+    },
+    {
+      "catalyst": "[Ch][Gly]",
+      "solvent": "ethylene glycol",
+      "temperature_c": 150.0,
+      "reaction_time_min": 360.0,
+      "catalyst_amount_g": 0.0186,
+      "substrate_amount_g": 0.1,
+      "solvent_amount_g": 0.4,
+      "yield_percent": null,
+      "selectivity_percent": null,
+      "conversion_percent": 38.0,
+      "source_chunk_ids": [
+        "a199122d-483f-5bdd-bd86-0927afe94447",
+        "0d8b951c-a917-5116-858e-88ad67701879",
+        "bc51b92f-9ae5-51f8-a64e-5b61460b3b67"
+      ]
+    },
+    {
+      "catalyst": "[Ch][Gly]",
+      "solvent": "ethylene glycol",
+      "temperature_c": 150.0,
+      "reaction_time_min": 360.0,
+      "catalyst_amount_g": 0.0186,
+      "substrate_amount_g": 0.1,
+      "solvent_amount_g": 0.4,
+      "yield_percent": 43.0,
+      "selectivity_percent": null,
+      "conversion_percent": null,
+      "source_chunk_ids": [
+        "a199122d-483f-5bdd-bd86-0927afe94447",
+        "91107cb2-4b8c-517f-abd9-9e5fe7884fb6",
+        "2e8293fa-3e95-5a5b-a360-9648a3c84a24",
+        "1b27ae5d-0a6c-555f-8c6c-61d46121dcb8"
+      ]
+    },
+    {
+      "catalyst": "[Ch][Gly]",
+      "solvent": "ethylene glycol",
+      "temperature_c": 150.0,
+      "reaction_time_min": 360.0,
+      "catalyst_amount_g": 0.0186,
+      "substrate_amount_g": 0.1,
+      "solvent_amount_g": 0.4,
+      "yield_percent": 51.0,
+      "selectivity_percent": null,
+      "conversion_percent": 85.0,
+      "source_chunk_ids": [
+        "a199122d-483f-5bdd-bd86-0927afe94447",
+        "91107cb2-4b8c-517f-abd9-9e5fe7884fb6",
+        "0d8b951c-a917-5116-858e-88ad67701879",
+        "bc51b92f-9ae5-51f8-a64e-5b61460b3b67"
+      ]
+    },
+    {
+      "catalyst": "[Ch][Gly]",
+      "solvent": "ethylene glycol",
+      "temperature_c": 180.0,
+      "reaction_time_min": 360.0,
+      "catalyst_amount_g": 0.0186,
+      "substrate_amount_g": 0.1,
+      "solvent_amount_g": 0.4,
+      "yield_percent": 61.0,
+      "selectivity_percent": null,
+      "conversion_percent": 91.0,
+      "source_chunk_ids": [
+        "a199122d-483f-5bdd-bd86-0927afe94447",
+        "91107cb2-4b8c-517f-abd9-9e5fe7884fb6",
+        "0d8b951c-a917-5116-858e-88ad67701879",
+        "bc51b92f-9ae5-51f8-a64e-5b61460b3b67"
+      ]
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 17995,
+    "completion_tokens": 2726,
+    "cost_usd": 0.0
+  },
+  "model": "azure/gpt-5.6-luna"
+}

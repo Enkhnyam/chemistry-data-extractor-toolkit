@@ -429,3 +429,19 @@ nav a.active .navcount{background:var(--accent);color:#fff}
 .fixkind{flex-basis:100%;font-size:.6875rem;color:var(--dim);margin-top:2px;
   display:flex;align-items:center}
 .fixkind.sharp{color:var(--warn);font-weight:600}
+
+/* ---- the demo banner ----
+   A seeded workspace has to say so. The same strip as the getting-started guide, because it is
+   the same job -- tell someone what they are looking at and what to do next -- but the steps are
+   replaced by the one thing that is actually missing, which is a key. */
+.guide.demo .guidehead b{color:var(--accent)}
+.guide.demo.needskey{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.keycta{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;
+  padding:10px 12px;border-radius:var(--radius);background:var(--accent-soft);
+  border:1px solid var(--accent);margin-bottom:10px}
+.keycta > div{display:flex;flex-direction:column;gap:2px;min-width:260px;flex:1}
+.keycta b{font-size:.875rem}
+.keycta .muted{font-size:.8125rem}
+.keycta button{flex-shrink:0}
+.guidefoot{display:flex;gap:12px;align-items:baseline;justify-content:space-between;
+  flex-wrap:wrap;font-size:.8125rem}

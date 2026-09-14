@@ -1,0 +1,268 @@
+{
+  "id": "lewis-acidic-ionic-liquids-for-pet-glycolysis-polymers-2013-bc017719",
+  "records": [
+    {
+      "catalyst": "[Bmim]Cl",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 120.0,
+      "catalyst_amount_g": 0.1,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": null,
+      "selectivity_percent": null,
+      "conversion_percent": 3.3,
+      "source_chunk_ids": [
+        "f4590f4b-203c-5e9c-949a-57b3a09f0f4b",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "[Bmim]Cl",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 240.0,
+      "catalyst_amount_g": 0.1,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 8.8,
+      "selectivity_percent": null,
+      "conversion_percent": 35.4,
+      "source_chunk_ids": [
+        "f4590f4b-203c-5e9c-949a-57b3a09f0f4b",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "[Bmim]Cl",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 360.0,
+      "catalyst_amount_g": 0.1,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 14.0,
+      "selectivity_percent": null,
+      "conversion_percent": 57.2,
+      "source_chunk_ids": [
+        "f4590f4b-203c-5e9c-949a-57b3a09f0f4b",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "[Bmim]Cl",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 480.0,
+      "catalyst_amount_g": 0.1,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 57.1,
+      "selectivity_percent": null,
+      "conversion_percent": 100.0,
+      "source_chunk_ids": [
+        "f4590f4b-203c-5e9c-949a-57b3a09f0f4b",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "[Bmim]ZnCl3",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 120.0,
+      "catalyst_amount_g": 0.1,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 82.6,
+      "selectivity_percent": null,
+      "conversion_percent": 100.0,
+      "source_chunk_ids": [
+        "f4590f4b-203c-5e9c-949a-57b3a09f0f4b",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "[Bmim]ZnCl3",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 120.0,
+      "catalyst_amount_g": 0.05,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 83.0,
+      "selectivity_percent": null,
+      "conversion_percent": 100.0,
+      "source_chunk_ids": [
+        "f4590f4b-203c-5e9c-949a-57b3a09f0f4b",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "[Bmim]ZnCl3",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 120.0,
+      "catalyst_amount_g": 0.025,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 84.9,
+      "selectivity_percent": null,
+      "conversion_percent": 100.0,
+      "source_chunk_ids": [
+        "f4590f4b-203c-5e9c-949a-57b3a09f0f4b",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "[Bmim]ZnCl3",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 120.0,
+      "catalyst_amount_g": 0.0126,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 83.4,
+      "selectivity_percent": null,
+      "conversion_percent": 100.0,
+      "source_chunk_ids": [
+        "f4590f4b-203c-5e9c-949a-57b3a09f0f4b",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "[Bmim]ZnCl3",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 120.0,
+      "catalyst_amount_g": 0.0062,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 79.5,
+      "selectivity_percent": null,
+      "conversion_percent": 100.0,
+      "source_chunk_ids": [
+        "f4590f4b-203c-5e9c-949a-57b3a09f0f4b",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "[Bmim]ZnCl3",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 120.0,
+      "catalyst_amount_g": 0.0032,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 36.0,
+      "selectivity_percent": null,
+      "conversion_percent": 52.2,
+      "source_chunk_ids": [
+        "f4590f4b-203c-5e9c-949a-57b3a09f0f4b",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "ZnCl2",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 120.0,
+      "catalyst_amount_g": 0.0436,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 78.6,
+      "selectivity_percent": null,
+      "conversion_percent": 100.0,
+      "source_chunk_ids": [
+        "f4590f4b-203c-5e9c-949a-57b3a09f0f4b",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "a4bb6a40-5e74-5519-b827-f5af4c1b631f",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "[Bmim]MnCl3",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 120.0,
+      "catalyst_amount_g": 0.1,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 83.3,
+      "selectivity_percent": null,
+      "conversion_percent": 100.0,
+      "source_chunk_ids": [
+        "f4590f4b-203c-5e9c-949a-57b3a09f0f4b",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "[Bmim]MnCl3",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 120.0,
+      "catalyst_amount_g": 0.0062,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 38.2,
+      "selectivity_percent": null,
+      "conversion_percent": 64.5,
+      "source_chunk_ids": [
+        "f4590f4b-203c-5e9c-949a-57b3a09f0f4b",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "[Bmim]ZnCl3",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 30.0,
+      "catalyst_amount_g": 0.0032,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 1.33,
+      "selectivity_percent": null,
+      "conversion_percent": 7.04,
+      "source_chunk_ids": [
+        "b49b7659-dce8-5e92-9b53-fbc801295f98",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "[Bmim]ZnCl3",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 300.0,
+      "catalyst_amount_g": 0.0032,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 83.8,
+      "selectivity_percent": null,
+      "conversion_percent": 100.0,
+      "source_chunk_ids": [
+        "b49b7659-dce8-5e92-9b53-fbc801295f98",
+        "e802229c-194f-52f6-9e74-d3d08b9cb8a2",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 11325,
+    "completion_tokens": 2992,
+    "cost_usd": 0.0
+  },
+  "model": "azure/gpt-5.6-luna"
+}

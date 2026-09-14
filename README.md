@@ -21,9 +21,33 @@ uv run uvicorn server.main:app
 Open <http://localhost:8000>. The first `uv sync` downloads PyTorch and takes a few minutes
 (~6 GB on disk).
 
+## What you see first
+
+A finished project, not an empty form. The workspace is seeded with two open-access PET papers
+that are already parsed, extracted and judged — 25 records, the judge's verdict on each, a full
+report — so you can read the output before deciding whether the tool is worth setting up. No API
+key is needed to look at any of it.
+
+**The one thing you have to supply is an API key.** The schema, both prompts and the papers are
+already in place; the app will not call a model without a key, and that is the only thing
+standing between the demo and running it yourself. Settings → Models.
+
+When you are ready to use your own papers, **Clear the demo and start my own project** empties
+the workspace — papers, records and the demo's schema and prompts together, so nothing of the
+PET example is left to be silently applied to your chemistry.
+
+The demo lives in `demo/` and is copied in only when the workspace is empty, so it can never
+overwrite your work or come back after you clear it. `demo/NOTICE.md` says which papers they are
+and under what licence they are redistributed. To rebuild its records from the PDFs:
+
+```bash
+OPENAI_API_KEY=sk-... uv run python scripts/build_demo.py
+```
+
 ## Using it
 
-The app shows a checklist of what it still needs, and refuses to run until it has it.
+The app shows a checklist of what it still needs, and refuses to run until it has it. On a fresh
+clone only the first item is outstanding.
 
 **1. Add a model** — Settings → Models. A name, a model string (`gpt-4o-mini`,
 `anthropic/claude-sonnet-4-5`, `ollama/llama3`, `azure/your-deployment`), and its API key. Add an
@@ -31,11 +55,11 @@ endpoint and API version only if your provider needs them; Azure does, most do n
 connection** checks it works. Extraction and judging pick their model separately, so you can
 extract with one and audit with another.
 
-**2. Define your schema** — Settings → Schema. The fields one record should have, with a
+**2. Define your schema** — Settings → Schema. *(the demo fills this in; replace it with your own)* The fields one record should have, with a
 description of each. The model reads those descriptions, so say what you mean. Grey rows are an
 example you can type over, keep, or delete.
 
-**3. Write the extraction prompt** — in Settings, or from the Extract page. What to pull out of
+**3. Write the extraction prompt** — in Settings, or from the Extract page. *(the demo fills this in too)* What to pull out of
 each paper and what to skip. The box shows a real working prompt in grey as an illustration;
 **Use the example** copies it in to adapt. Optionally add a worked example: one paper's text
 paired with the records it should produce, which teaches conventions a prompt cannot.
@@ -66,6 +90,8 @@ and CSV/JSON export of every record with its verdict and your notes.
   leave the machine are calls to your LLM provider, and a one-time OCR model download on the
   first parse.
 - API keys are written to a local `.env` and never sent back to the browser.
+- The two demo PDFs are CC BY 4.0 and redistributed with attribution; everything else here is
+  MIT. See `demo/NOTICE.md`.
 - There is no authentication, so keep it on localhost.
 
 Docker: `cp .env.example .env && docker compose up --build` (the build wants ~8 GB of RAM free).

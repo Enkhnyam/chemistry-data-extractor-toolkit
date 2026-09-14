@@ -1,0 +1,354 @@
+{
+  "id": "amino-acid-based-cholinium-ionic-liquids-acs-sust-chem-eng-2021-e56865fb",
+  "verdicts": [
+    {
+      "record_index": 0,
+      "parsed_ok": true,
+      "critique": "This is the colorless transparent bottle experiment in Table 1, reported at 150 °C for 6 h with 85% conversion and 51% yield (ID: 0d8b951c-a917-5116-858e-88ad67701879). The procedure specifies 100 mg PET and 0.4 g ethylene glycol (ID: a199122d-483f-5bdd-bd86-0927afe94447), and the catalyst mass is consistent with the stated 1:5 catalyst:PET-repeat-unit ratio. Selectivity is not tabulated, but it is derivable as 51/85 × 100 = 60%.",
+      "bad_fields": [
+        "selectivity_percent"
+      ],
+      "verdict": "correct",
+      "fixes": [
+        {
+          "field": "selectivity_percent",
+          "value": 60.0,
+          "evidence": "Derived from the Table 1 conversion of 85% and yield of 51% (ID: 0d8b951c-a917-5116-858e-88ad67701879)."
+        }
+      ],
+      "drop_record": false
+    },
+    {
+      "record_index": 1,
+      "parsed_ok": true,
+      "critique": "This matches the colored transparent bottle entry in Table 1: 150 °C, 6 h, 62% conversion, and 31% yield (ID: 0d8b951c-a917-5116-858e-88ad67701879). The PET, ethylene glycol, and catalyst quantities follow the general procedure and the table footnote's 1:5 molar ratio (IDs: a199122d-483f-5bdd-bd86-0927afe94447, 0d8b951c-a917-5116-858e-88ad67701879). Selectivity is derivable as 31/62 × 100 = 50%.",
+      "bad_fields": [
+        "selectivity_percent"
+      ],
+      "verdict": "correct",
+      "fixes": [
+        {
+          "field": "selectivity_percent",
+          "value": 50.0,
+          "evidence": "Derived from the Table 1 conversion of 62% and yield of 31% (ID: 0d8b951c-a917-5116-858e-88ad67701879)."
+        }
+      ],
+      "drop_record": false
+    },
+    {
+      "record_index": 2,
+      "parsed_ok": true,
+      "critique": "This matches the opaque bottle experiment at 150 °C for 6 h, for which Table 1 reports 84% conversion and 20% yield (IDs: 0d8b951c-a917-5116-858e-88ad67701879, 9f48e883-13fd-5e56-8a45-5c0697ba7506). The general procedure supplies 100 mg PET and 0.4 g ethylene glycol, while the 1:5 ratio supports the catalyst amount (IDs: a199122d-483f-5bdd-bd86-0927afe94447, 0d8b951c-a917-5116-858e-88ad67701879). Selectivity is derivable as approximately 23.81%.",
+      "bad_fields": [
+        "selectivity_percent"
+      ],
+      "verdict": "correct",
+      "fixes": [
+        {
+          "field": "selectivity_percent",
+          "value": 23.8095,
+          "evidence": "Derived from the Table 1 conversion of 84% and yield of 20% (ID: 0d8b951c-a917-5116-858e-88ad67701879)."
+        }
+      ],
+      "drop_record": false
+    },
+    {
+      "record_index": 3,
+      "parsed_ok": true,
+      "critique": "This is the opaque-bottle experiment at 180 °C for 6 h, reported with 91% conversion and 61% yield in Table 1 (IDs: 0d8b951c-a917-5116-858e-88ad67701879, 9f48e883-13fd-5e56-8a45-5c0697ba7506). The general procedure and the table's 1:5 catalyst ratio support the listed PET, EG, and catalyst quantities (IDs: a199122d-483f-5bdd-bd86-0927afe94447, 0d8b951c-a917-5116-858e-88ad67701879). Selectivity is derivable as approximately 67.03%.",
+      "bad_fields": [
+        "selectivity_percent"
+      ],
+      "verdict": "correct",
+      "fixes": [
+        {
+          "field": "selectivity_percent",
+          "value": 67.033,
+          "evidence": "Derived from the Table 1 conversion of 91% and yield of 61% (ID: 0d8b951c-a917-5116-858e-88ad67701879)."
+        }
+      ],
+      "drop_record": false
+    },
+    {
+      "record_index": 4,
+      "parsed_ok": true,
+      "critique": "This matches the bakery-package run at 150 °C for 6 h, for which Table 1 reports 75% conversion and 28% yield (IDs: 0d8b951c-a917-5116-858e-88ad67701879, a2198462-fecf-5717-a19b-bde621fa7c7a). The listed reaction quantities are consistent with the general procedure and 1:5 catalyst:PET-repeat-unit ratio (IDs: a199122d-483f-5bdd-bd86-0927afe94447, 0d8b951c-a917-5116-858e-88ad67701879). Selectivity is derivable as approximately 37.33%.",
+      "bad_fields": [
+        "selectivity_percent"
+      ],
+      "verdict": "correct",
+      "fixes": [
+        {
+          "field": "selectivity_percent",
+          "value": 37.3333,
+          "evidence": "Derived from the Table 1 conversion of 75% and yield of 28% (ID: 0d8b951c-a917-5116-858e-88ad67701879)."
+        }
+      ],
+      "drop_record": false
+    },
+    {
+      "record_index": 5,
+      "parsed_ok": true,
+      "critique": "This matches the bakery-package run at 180 °C for 6 h, reported with 61% conversion and 36% yield in Table 1 (IDs: 0d8b951c-a917-5116-858e-88ad67701879, a2198462-fecf-5717-a19b-bde621fa7c7a). The PET, EG, and catalyst amounts are supported by the general procedure and 1:5 molar ratio (IDs: a199122d-483f-5bdd-bd86-0927afe94447, 0d8b951c-a917-5116-858e-88ad67701879). Selectivity is derivable as approximately 59.02%.",
+      "bad_fields": [
+        "selectivity_percent"
+      ],
+      "verdict": "correct",
+      "fixes": [
+        {
+          "field": "selectivity_percent",
+          "value": 59.0164,
+          "evidence": "Derived from the Table 1 conversion of 61% and yield of 36% (ID: 0d8b951c-a917-5116-858e-88ad67701879)."
+        }
+      ],
+      "drop_record": false
+    },
+    {
+      "record_index": 6,
+      "parsed_ok": true,
+      "critique": "This matches the processed-meat-package experiment in Table 1: [Ch][Gly], 150 °C, 6 h, and 38% conversion, with a nondetectable BHET yield (IDs: 0d8b951c-a917-5116-858e-88ad67701879, b1b27d0e-2875-5c66-9f04-c49d7f235374). Because the paper gives no numerical yield or selectivity for this run, both null outcome fields are appropriate; the reaction quantities are supported by the general procedure and 1:5 ratio (IDs: a199122d-483f-5bdd-bd86-0927afe94447, 0d8b951c-a917-5116-858e-88ad67701879).",
+      "bad_fields": [],
+      "verdict": "correct",
+      "fixes": [],
+      "drop_record": false
+    },
+    {
+      "record_index": 7,
+      "parsed_ok": true,
+      "critique": "This is the pristine PET-pellet, this-work entry in Table 2, reported as [Ch][Gly] at 150 °C for 6 h with 43% yield (ID: 91107cb2-4b8c-517f-abd9-9e5fe7884fb6). The paper separately states that pristine PET under these conditions gives 81% conversion and 43% yield (ID: 98a0d9a2-0667-51c4-ad4e-4c617d51d334), so conversion is missing rather than legitimately null. Once conversion is included, selectivity is also derivable as 43/81 × 100 ≈ 53.09%.",
+      "bad_fields": [
+        "conversion_percent",
+        "selectivity_percent"
+      ],
+      "verdict": "incorrect",
+      "fixes": [
+        {
+          "field": "conversion_percent",
+          "value": 81.0,
+          "evidence": "The paper states that pristine PET gives 81% conversion and 43% yield under the optimized conditions (ID: 98a0d9a2-0667-51c4-ad4e-4c617d51d334)."
+        },
+        {
+          "field": "selectivity_percent",
+          "value": 53.0864,
+          "evidence": "Derived from the reported pristine-PET conversion of 81% and yield of 43% (ID: 98a0d9a2-0667-51c4-ad4e-4c617d51d334)."
+        }
+      ],
+      "drop_record": false
+    },
+    {
+      "record_index": 8,
+      "parsed_ok": true,
+      "critique": "This duplicates the clear transparent bottle experiment in Table 1, with 150 °C, 6 h, 85% conversion, and 51% yield (ID: 0d8b951c-a917-5116-858e-88ad67701879). The general procedure gives 100 mg PET and 0.4 g EG, and the 1:5 ratio supports the catalyst mass (IDs: a199122d-483f-5bdd-bd86-0927afe94447, 0d8b951c-a917-5116-858e-88ad67701879). Selectivity is derivable as 60%.",
+      "bad_fields": [
+        "selectivity_percent"
+      ],
+      "verdict": "correct",
+      "fixes": [
+        {
+          "field": "selectivity_percent",
+          "value": 60.0,
+          "evidence": "Derived from the Table 1 conversion of 85% and yield of 51% (ID: 0d8b951c-a917-5116-858e-88ad67701879)."
+        }
+      ],
+      "drop_record": false
+    },
+    {
+      "record_index": 9,
+      "parsed_ok": true,
+      "critique": "This matches the opaque-bottle run at 180 °C for 6 h, reported with 91% conversion and 61% yield in Table 1 (IDs: 0d8b951c-a917-5116-858e-88ad67701879, 9f48e883-13fd-5e56-8a45-5c0697ba7506). The listed quantities are consistent with the general procedure and the 1:5 catalyst loading (IDs: a199122d-483f-5bdd-bd86-0927afe94447, 0d8b951c-a917-5116-858e-88ad67701879). Selectivity is derivable as approximately 67.03%.",
+      "bad_fields": [
+        "selectivity_percent"
+      ],
+      "verdict": "correct",
+      "fixes": [
+        {
+          "field": "selectivity_percent",
+          "value": 67.033,
+          "evidence": "Derived from the Table 1 conversion of 91% and yield of 61% (ID: 0d8b951c-a917-5116-858e-88ad67701879)."
+        }
+      ],
+      "drop_record": false
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 21068,
+    "completion_tokens": 3519,
+    "cost_usd": 0.0
+  },
+  "model": "azure/gpt-5.6-luna",
+  "judged_records": [
+    {
+      "catalyst": "[Ch][Gly]",
+      "solvent": "ethylene glycol",
+      "temperature_c": 150.0,
+      "reaction_time_min": 360.0,
+      "catalyst_amount_g": 0.0186,
+      "substrate_amount_g": 0.1,
+      "solvent_amount_g": 0.4,
+      "yield_percent": 51.0,
+      "selectivity_percent": null,
+      "conversion_percent": 85.0,
+      "source_chunk_ids": [
+        "a199122d-483f-5bdd-bd86-0927afe94447",
+        "0d8b951c-a917-5116-858e-88ad67701879",
+        "bc51b92f-9ae5-51f8-a64e-5b61460b3b67"
+      ]
+    },
+    {
+      "catalyst": "[Ch][Gly]",
+      "solvent": "ethylene glycol",
+      "temperature_c": 150.0,
+      "reaction_time_min": 360.0,
+      "catalyst_amount_g": 0.0186,
+      "substrate_amount_g": 0.1,
+      "solvent_amount_g": 0.4,
+      "yield_percent": 31.0,
+      "selectivity_percent": null,
+      "conversion_percent": 62.0,
+      "source_chunk_ids": [
+        "a199122d-483f-5bdd-bd86-0927afe94447",
+        "0d8b951c-a917-5116-858e-88ad67701879",
+        "bc51b92f-9ae5-51f8-a64e-5b61460b3b67"
+      ]
+    },
+    {
+      "catalyst": "[Ch][Gly]",
+      "solvent": "ethylene glycol",
+      "temperature_c": 150.0,
+      "reaction_time_min": 360.0,
+      "catalyst_amount_g": 0.0186,
+      "substrate_amount_g": 0.1,
+      "solvent_amount_g": 0.4,
+      "yield_percent": 20.0,
+      "selectivity_percent": null,
+      "conversion_percent": 84.0,
+      "source_chunk_ids": [
+        "a199122d-483f-5bdd-bd86-0927afe94447",
+        "0d8b951c-a917-5116-858e-88ad67701879",
+        "bc51b92f-9ae5-51f8-a64e-5b61460b3b67"
+      ]
+    },
+    {
+      "catalyst": "[Ch][Gly]",
+      "solvent": "ethylene glycol",
+      "temperature_c": 180.0,
+      "reaction_time_min": 360.0,
+      "catalyst_amount_g": 0.0186,
+      "substrate_amount_g": 0.1,
+      "solvent_amount_g": 0.4,
+      "yield_percent": 61.0,
+      "selectivity_percent": null,
+      "conversion_percent": 91.0,
+      "source_chunk_ids": [
+        "a199122d-483f-5bdd-bd86-0927afe94447",
+        "0d8b951c-a917-5116-858e-88ad67701879",
+        "bc51b92f-9ae5-51f8-a64e-5b61460b3b67"
+      ]
+    },
+    {
+      "catalyst": "[Ch][Gly]",
+      "solvent": "ethylene glycol",
+      "temperature_c": 150.0,
+      "reaction_time_min": 360.0,
+      "catalyst_amount_g": 0.0186,
+      "substrate_amount_g": 0.1,
+      "solvent_amount_g": 0.4,
+      "yield_percent": 28.0,
+      "selectivity_percent": null,
+      "conversion_percent": 75.0,
+      "source_chunk_ids": [
+        "a199122d-483f-5bdd-bd86-0927afe94447",
+        "0d8b951c-a917-5116-858e-88ad67701879",
+        "bc51b92f-9ae5-51f8-a64e-5b61460b3b67"
+      ]
+    },
+    {
+      "catalyst": "[Ch][Gly]",
+      "solvent": "ethylene glycol",
+      "temperature_c": 180.0,
+      "reaction_time_min": 360.0,
+      "catalyst_amount_g": 0.0186,
+      "substrate_amount_g": 0.1,
+      "solvent_amount_g": 0.4,
+      "yield_percent": 36.0,
+      "selectivity_percent": null,
+      "conversion_percent": 61.0,
+      "source_chunk_ids": [
+        "a199122d-483f-5bdd-bd86-0927afe94447",
+        "0d8b951c-a917-5116-858e-88ad67701879",
+        "bc51b92f-9ae5-51f8-a64e-5b61460b3b67"
+      ]
+    },
+    {
+      "catalyst": "[Ch][Gly]",
+      "solvent": "ethylene glycol",
+      "temperature_c": 150.0,
+      "reaction_time_min": 360.0,
+      "catalyst_amount_g": 0.0186,
+      "substrate_amount_g": 0.1,
+      "solvent_amount_g": 0.4,
+      "yield_percent": null,
+      "selectivity_percent": null,
+      "conversion_percent": 38.0,
+      "source_chunk_ids": [
+        "a199122d-483f-5bdd-bd86-0927afe94447",
+        "0d8b951c-a917-5116-858e-88ad67701879",
+        "bc51b92f-9ae5-51f8-a64e-5b61460b3b67"
+      ]
+    },
+    {
+      "catalyst": "[Ch][Gly]",
+      "solvent": "ethylene glycol",
+      "temperature_c": 150.0,
+      "reaction_time_min": 360.0,
+      "catalyst_amount_g": 0.0186,
+      "substrate_amount_g": 0.1,
+      "solvent_amount_g": 0.4,
+      "yield_percent": 43.0,
+      "selectivity_percent": null,
+      "conversion_percent": null,
+      "source_chunk_ids": [
+        "a199122d-483f-5bdd-bd86-0927afe94447",
+        "91107cb2-4b8c-517f-abd9-9e5fe7884fb6",
+        "2e8293fa-3e95-5a5b-a360-9648a3c84a24",
+        "1b27ae5d-0a6c-555f-8c6c-61d46121dcb8"
+      ]
+    },
+    {
+      "catalyst": "[Ch][Gly]",
+      "solvent": "ethylene glycol",
+      "temperature_c": 150.0,
+      "reaction_time_min": 360.0,
+      "catalyst_amount_g": 0.0186,
+      "substrate_amount_g": 0.1,
+      "solvent_amount_g": 0.4,
+      "yield_percent": 51.0,
+      "selectivity_percent": null,
+      "conversion_percent": 85.0,
+      "source_chunk_ids": [
+        "a199122d-483f-5bdd-bd86-0927afe94447",
+        "91107cb2-4b8c-517f-abd9-9e5fe7884fb6",
+        "0d8b951c-a917-5116-858e-88ad67701879",
+        "bc51b92f-9ae5-51f8-a64e-5b61460b3b67"
+      ]
+    },
+    {
+      "catalyst": "[Ch][Gly]",
+      "solvent": "ethylene glycol",
+      "temperature_c": 180.0,
+      "reaction_time_min": 360.0,
+      "catalyst_amount_g": 0.0186,
+      "substrate_amount_g": 0.1,
+      "solvent_amount_g": 0.4,
+      "yield_percent": 61.0,
+      "selectivity_percent": null,
+      "conversion_percent": 91.0,
+      "source_chunk_ids": [
+        "a199122d-483f-5bdd-bd86-0927afe94447",
+        "91107cb2-4b8c-517f-abd9-9e5fe7884fb6",
+        "0d8b951c-a917-5116-858e-88ad67701879",
+        "bc51b92f-9ae5-51f8-a64e-5b61460b3b67"
+      ]
+    }
+  ]
+}

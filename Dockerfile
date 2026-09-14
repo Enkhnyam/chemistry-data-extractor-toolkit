@@ -25,6 +25,9 @@ RUN uv pip install --system --no-cache \
 COPY pyproject.toml uv.lock README.md ./
 COPY server ./server
 COPY web ./web
+# Without this the image has no demo/ to seed from and a container's first screen is empty,
+# which is the thing the demo exists to prevent.
+COPY demo ./demo
 RUN uv pip install --system --no-cache .
 
 ENV WORKSPACE_DIR=/data

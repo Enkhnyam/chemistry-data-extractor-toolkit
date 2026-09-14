@@ -15,6 +15,7 @@ from pathlib import Path
 
 WORKSPACE = tempfile.mkdtemp(prefix="toolkit-test-")
 os.environ["WORKSPACE_DIR"] = WORKSPACE          # must be set before server.storage is imported
+os.environ["TOOLKIT_SEED_DEMO"] = "0"            # these test the empty workspace, not the demo
 
 from fastapi.testclient import TestClient        # noqa: E402
 
@@ -351,3 +352,57 @@ class AppTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DemoTests(unittest.TestCase):
+    """The demo seeds a workspace and gets out of the way again.
+
+    What matters is not that it copies files but that it cannot do so over anyone's work, and
+    that clearing it takes the schema and prompts with it -- a demo schema left behind is the
+    silent default the rest of this design refuses to have.
+    """
+
+    def setUp(self):
+        import tempfile
+        from server import demo
+        self.demo = demo
+        self.dir = Path(tempfile.mkdtemp(prefix="toolkit-demo-"))
+        for name in demo.STAGES:
+            (self.dir / name).mkdir(parents=True, exist_ok=True)
+        self._real = {k: v for k, v in demo.STAGES.items()}
+        demo.STAGES.update({name: self.dir / name for name in demo.STAGES})
+        self._marker = demo.MARKER
+        demo.MARKER = self.dir / ".demo"
+        # The module-level opt-out is for the other tests; these are the ones about seeding.
+        self._optout = os.environ.pop("TOOLKIT_SEED_DEMO", None)
+
+    def tearDown(self):
+        import shutil
+        self.demo.STAGES.update(self._real)
+        self.demo.MARKER = self._marker
+        if self._optout is not None:
+            os.environ["TOOLKIT_SEED_DEMO"] = self._optout
+        shutil.rmtree(self.dir, ignore_errors=True)
+
+    @unittest.skipUnless(Path("demo/pdfs").is_dir(), "no demo/ in this checkout")
+    def test_it_seeds_an_empty_workspace_and_says_so(self):
+        self.assertTrue(self.demo.seed_if_empty())
+        self.assertTrue(self.demo.state()["is_demo"])
+        self.assertTrue(list((self.dir / "pdfs").glob("*.pdf")))
+        self.assertTrue((self.dir / "config" / "schema.json").exists())
+
+    @unittest.skipUnless(Path("demo/pdfs").is_dir(), "no demo/ in this checkout")
+    def test_it_refuses_to_seed_over_anything(self):
+        (self.dir / "pdfs" / "mine.pdf").write_bytes(b"%PDF-1.4 not really")
+        self.assertFalse(self.demo.seed_if_empty(), "seeded on top of a user's own paper")
+        self.assertEqual([p.name for p in (self.dir / "pdfs").glob("*")], ["mine.pdf"])
+
+    @unittest.skipUnless(Path("demo/pdfs").is_dir(), "no demo/ in this checkout")
+    def test_clearing_takes_the_config_too(self):
+        self.demo.seed_if_empty()
+        self.demo.clear()
+        self.assertTrue(self.demo.is_empty())
+        self.assertFalse(self.demo.state()["is_demo"])
+        self.assertFalse((self.dir / "config" / "schema.json").exists(),
+                         "a demo schema survived the clear and would be applied silently")
+

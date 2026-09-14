@@ -1,0 +1,54 @@
+{
+  "fields": [
+    {
+      "name": "catalyst",
+      "type": "string",
+      "description": "Catalyst name exactly as written"
+    },
+    {
+      "name": "solvent",
+      "type": "string",
+      "description": "Solvent name exactly as written"
+    },
+    {
+      "name": "temperature_c",
+      "type": "number",
+      "description": "Temperature in Celsius"
+    },
+    {
+      "name": "reaction_time_min",
+      "type": "number",
+      "description": "Reaction time in minutes"
+    },
+    {
+      "name": "catalyst_amount_g",
+      "type": "number",
+      "description": "Catalyst amount in grams"
+    },
+    {
+      "name": "substrate_amount_g",
+      "type": "number",
+      "description": "Substrate amount in grams"
+    },
+    {
+      "name": "solvent_amount_g",
+      "type": "number",
+      "description": "Solvent amount in grams"
+    },
+    {
+      "name": "yield_percent",
+      "type": "number",
+      "description": "Yield %"
+    },
+    {
+      "name": "selectivity_percent",
+      "type": "number",
+      "description": "Selectivity %"
+    },
+    {
+      "name": "conversion_percent",
+      "type": "number",
+      "description": "Conversion %"
+    }
+  ]
+}

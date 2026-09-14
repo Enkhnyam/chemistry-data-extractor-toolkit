@@ -1,0 +1,517 @@
+{
+  "id": "lewis-acidic-ionic-liquids-for-pet-glycolysis-polymers-2013-bc017719",
+  "verdicts": [
+    {
+      "record_index": 0,
+      "parsed_ok": true,
+      "critique": "Table 1 entry 1 reports [Bmim]Cl, 5.00 wt% catalyst, 2 h, 3.3% PET conversion, and a dash for BHET yield (ID: f4590f4b-203c-5e9c-949a-57b3a09f0f4b). The table footnote specifies PET 2.0 g, EG 22.0 g, and 190 °C (ID: 2bf45973-36d5-5ac5-b895-fa51ba86466b); 5 wt% of 2.0 g gives 0.1 g catalyst, so the record is accurate.",
+      "bad_fields": [],
+      "verdict": "correct",
+      "fixes": [],
+      "drop_record": false
+    },
+    {
+      "record_index": 1,
+      "parsed_ok": true,
+      "critique": "Table 1 entry 2 reports [Bmim]Cl at 5.00 wt%, 4 h, 35.4% conversion, and 8.8% BHET yield (ID: f4590f4b-203c-5e9c-949a-57b3a09f0f4b). The common conditions are PET 2.0 g, EG 22.0 g, and 190 °C (ID: 2bf45973-36d5-5ac5-b895-fa51ba86466b), and the missing selectivity is derivable as 8.8/35.4 × 100.",
+      "bad_fields": [
+        "selectivity_percent"
+      ],
+      "verdict": "correct",
+      "fixes": [
+        {
+          "field": "selectivity_percent",
+          "value": 24.858757,
+          "evidence": "Derived from Table 1 entry 2: yield 8.8% and conversion 35.4% (ID: f4590f4b-203c-5e9c-949a-57b3a09f0f4b)."
+        }
+      ],
+      "drop_record": false
+    },
+    {
+      "record_index": 2,
+      "parsed_ok": true,
+      "critique": "Table 1 entry 3 reports [Bmim]Cl at 5.00 wt%, 6 h, 57.2% conversion, and 14.0% BHET yield (ID: f4590f4b-203c-5e9c-949a-57b3a09f0f4b). The stated common conditions give 0.1 g catalyst from 5 wt% of 2.0 g PET, with 22.0 g EG at 190 °C (ID: 2bf45973-36d5-5ac5-b895-fa51ba86466b); selectivity is derivable from the reported yield and conversion.",
+      "bad_fields": [
+        "selectivity_percent"
+      ],
+      "verdict": "correct",
+      "fixes": [
+        {
+          "field": "selectivity_percent",
+          "value": 24.475524,
+          "evidence": "Derived from Table 1 entry 3: yield 14.0% and conversion 57.2% (ID: f4590f4b-203c-5e9c-949a-57b3a09f0f4b)."
+        }
+      ],
+      "drop_record": false
+    },
+    {
+      "record_index": 3,
+      "parsed_ok": true,
+      "critique": "Table 1 entry 4 reports [Bmim]Cl at 5.00 wt%, 8 h, complete conversion, and 57.1% BHET yield (ID: f4590f4b-203c-5e9c-949a-57b3a09f0f4b). PET, EG, and temperature are specified as 2.0 g, 22.0 g, and 190 °C in the table note (ID: 2bf45973-36d5-5ac5-b895-fa51ba86466b), making the 0.1 g catalyst amount correct; selectivity is derivable as 57.1%.",
+      "bad_fields": [
+        "selectivity_percent"
+      ],
+      "verdict": "correct",
+      "fixes": [
+        {
+          "field": "selectivity_percent",
+          "value": 57.1,
+          "evidence": "Derived from Table 1 entry 4: 57.1% yield and 100% conversion (ID: f4590f4b-203c-5e9c-949a-57b3a09f0f4b)."
+        }
+      ],
+      "drop_record": false
+    },
+    {
+      "record_index": 4,
+      "parsed_ok": true,
+      "critique": "Table 1 entry 5 reports [Bmim]ZnCl3 at 5.00 wt%, 2 h, 100% conversion, and 82.6% BHET yield (ID: f4590f4b-203c-5e9c-949a-57b3a09f0f4b). The common conditions are PET 2.0 g, EG 22.0 g, and 190 °C (ID: 2bf45973-36d5-5ac5-b895-fa51ba86466b), so the 0.1 g catalyst amount is correct; selectivity is derivable as 82.6%.",
+      "bad_fields": [
+        "selectivity_percent"
+      ],
+      "verdict": "correct",
+      "fixes": [
+        {
+          "field": "selectivity_percent",
+          "value": 82.6,
+          "evidence": "Derived from Table 1 entry 5: 82.6% yield and 100% conversion (ID: f4590f4b-203c-5e9c-949a-57b3a09f0f4b)."
+        }
+      ],
+      "drop_record": false
+    },
+    {
+      "record_index": 5,
+      "parsed_ok": true,
+      "critique": "Table 1 entry 6 reports [Bmim]ZnCl3 at 2.50 wt%, 2 h, 100% conversion, and 83.0% BHET yield (ID: f4590f4b-203c-5e9c-949a-57b3a09f0f4b). With 2.0 g PET, 2.50 wt% corresponds to 0.05 g catalyst, and the table note gives 22.0 g EG at 190 °C (ID: 2bf45973-36d5-5ac5-b895-fa51ba86466b); the missing selectivity is derivable as 83.0%.",
+      "bad_fields": [
+        "selectivity_percent"
+      ],
+      "verdict": "correct",
+      "fixes": [
+        {
+          "field": "selectivity_percent",
+          "value": 83.0,
+          "evidence": "Derived from Table 1 entry 6: 83.0% yield and 100% conversion (ID: f4590f4b-203c-5e9c-949a-57b3a09f0f4b)."
+        }
+      ],
+      "drop_record": false
+    },
+    {
+      "record_index": 6,
+      "parsed_ok": true,
+      "critique": "Table 1 entry 7 reports [Bmim]ZnCl3 at 1.25 wt%, 2 h, 100% conversion, and 84.9% BHET yield (ID: f4590f4b-203c-5e9c-949a-57b3a09f0f4b). The 1.25 wt% loading is 0.025 g for 2.0 g PET, with the common 22.0 g EG and 190 °C conditions (ID: 2bf45973-36d5-5ac5-b895-fa51ba86466b); selectivity is derivable as 84.9%.",
+      "bad_fields": [
+        "selectivity_percent"
+      ],
+      "verdict": "correct",
+      "fixes": [
+        {
+          "field": "selectivity_percent",
+          "value": 84.9,
+          "evidence": "Derived from Table 1 entry 7: 84.9% yield and 100% conversion (ID: f4590f4b-203c-5e9c-949a-57b3a09f0f4b)."
+        }
+      ],
+      "drop_record": false
+    },
+    {
+      "record_index": 7,
+      "parsed_ok": true,
+      "critique": "Table 1 entry 8 reports [Bmim]ZnCl3 at 0.63 wt%, 2 h, 100% conversion, and 83.4% BHET yield (ID: f4590f4b-203c-5e9c-949a-57b3a09f0f4b). For 2.0 g PET, 0.63 wt% gives 0.0126 g catalyst; the stated EG and temperature are 22.0 g and 190 °C (ID: 2bf45973-36d5-5ac5-b895-fa51ba86466b), and selectivity is derivable as 83.4%.",
+      "bad_fields": [
+        "selectivity_percent"
+      ],
+      "verdict": "correct",
+      "fixes": [
+        {
+          "field": "selectivity_percent",
+          "value": 83.4,
+          "evidence": "Derived from Table 1 entry 8: 83.4% yield and 100% conversion (ID: f4590f4b-203c-5e9c-949a-57b3a09f0f4b)."
+        }
+      ],
+      "drop_record": false
+    },
+    {
+      "record_index": 8,
+      "parsed_ok": true,
+      "critique": "Table 1 entry 9 reports [Bmim]ZnCl3 at 0.31 wt%, 2 h, 100% conversion, and 79.5% BHET yield (ID: f4590f4b-203c-5e9c-949a-57b3a09f0f4b). The catalyst amount of 0.0062 g is the correct conversion of 0.31 wt% of 2.0 g PET, with 22.0 g EG at 190 °C (ID: 2bf45973-36d5-5ac5-b895-fa51ba86466b); selectivity is derivable as 79.5%.",
+      "bad_fields": [
+        "selectivity_percent"
+      ],
+      "verdict": "correct",
+      "fixes": [
+        {
+          "field": "selectivity_percent",
+          "value": 79.5,
+          "evidence": "Derived from Table 1 entry 9: 79.5% yield and 100% conversion (ID: f4590f4b-203c-5e9c-949a-57b3a09f0f4b)."
+        }
+      ],
+      "drop_record": false
+    },
+    {
+      "record_index": 9,
+      "parsed_ok": true,
+      "critique": "Table 1 entry 10 reports [Bmim]ZnCl3 at 0.16 wt%, 2 h, 52.2% conversion, and 36.0% BHET yield (IDs: f4590f4b-203c-5e9c-949a-57b3a09f0f4b and ca79acbd-6433-570b-a54a-eef081e20da4). The 0.0032 g catalyst amount correctly represents 0.16 wt% of 2.0 g PET under the common 22.0 g EG and 190 °C conditions (ID: 2bf45973-36d5-5ac5-b895-fa51ba86466b); selectivity is derivable.",
+      "bad_fields": [
+        "selectivity_percent"
+      ],
+      "verdict": "correct",
+      "fixes": [
+        {
+          "field": "selectivity_percent",
+          "value": 68.965517,
+          "evidence": "Derived from Table 1 entry 10: 36.0% yield and 52.2% conversion (ID: f4590f4b-203c-5e9c-949a-57b3a09f0f4b)."
+        }
+      ],
+      "drop_record": false
+    },
+    {
+      "record_index": 10,
+      "parsed_ok": true,
+      "critique": "Table 1 entry 11 reports ZnCl2 at 2.18 wt%, 2 h, 100% conversion, and 78.6% BHET yield (ID: f4590f4b-203c-5e9c-949a-57b3a09f0f4b). The note states that this is the ZnCl2 content corresponding to the same amount of [Bmim]ZnCl3 as entry 5 (ID: a4bb6a40-5e74-5519-b827-f5af4c1b631f), and 2.18 wt% of 2.0 g is 0.0436 g; selectivity is derivable as 78.6%.",
+      "bad_fields": [
+        "selectivity_percent"
+      ],
+      "verdict": "correct",
+      "fixes": [
+        {
+          "field": "selectivity_percent",
+          "value": 78.6,
+          "evidence": "Derived from Table 1 entry 11: 78.6% yield and 100% conversion (ID: f4590f4b-203c-5e9c-949a-57b3a09f0f4b)."
+        }
+      ],
+      "drop_record": false
+    },
+    {
+      "record_index": 11,
+      "parsed_ok": true,
+      "critique": "Table 1 entry 12 reports [Bmim]MnCl3 at 5.00 wt%, 2 h, 100% conversion, and 83.3% BHET yield (ID: f4590f4b-203c-5e9c-949a-57b3a09f0f4b). The common conditions specify 2.0 g PET, 22.0 g EG, and 190 °C, so 0.1 g catalyst is correct (ID: 2bf45973-36d5-5ac5-b895-fa51ba86466b); selectivity is derivable as 83.3%.",
+      "bad_fields": [
+        "selectivity_percent"
+      ],
+      "verdict": "correct",
+      "fixes": [
+        {
+          "field": "selectivity_percent",
+          "value": 83.3,
+          "evidence": "Derived from Table 1 entry 12: 83.3% yield and 100% conversion (ID: f4590f4b-203c-5e9c-949a-57b3a09f0f4b)."
+        }
+      ],
+      "drop_record": false
+    },
+    {
+      "record_index": 12,
+      "parsed_ok": true,
+      "critique": "Table 1 entry 13 reports [Bmim]MnCl3 at 0.31 wt%, 2 h, 64.5% conversion, and 38.2% BHET yield (ID: f4590f4b-203c-5e9c-949a-57b3a09f0f4b). The 0.0062 g catalyst amount is correct for 0.31 wt% of 2.0 g PET, with 22.0 g EG at 190 °C (ID: 2bf45973-36d5-5ac5-b895-fa51ba86466b); selectivity is derivable as approximately 59.225%.",
+      "bad_fields": [
+        "selectivity_percent"
+      ],
+      "verdict": "correct",
+      "fixes": [
+        {
+          "field": "selectivity_percent",
+          "value": 59.224806,
+          "evidence": "Derived from Table 1 entry 13: 38.2% yield and 64.5% conversion (ID: f4590f4b-203c-5e9c-949a-57b3a09f0f4b)."
+        }
+      ],
+      "drop_record": false
+    },
+    {
+      "record_index": 13,
+      "parsed_ok": true,
+      "critique": "The text describing Figure 4 explicitly reports that with 0.16 wt% [Bmim]ZnCl3, conversion was 7.04% and BHET yield was 1.33% within 0.5 h (ID: b49b7659-dce8-5e92-9b53-fbc801295f98). The catalyst amount of 0.0032 g follows from 0.16 wt% of 2.0 g PET, and the common conditions give 22.0 g EG at 190 °C (ID: 2bf45973-36d5-5ac5-b895-fa51ba86466b); selectivity is derivable as approximately 18.892%.",
+      "bad_fields": [
+        "selectivity_percent"
+      ],
+      "verdict": "correct",
+      "fixes": [
+        {
+          "field": "selectivity_percent",
+          "value": 18.892045,
+          "evidence": "Derived from the explicitly reported Figure 4 experiment: 1.33% yield and 7.04% conversion at 0.5 h (ID: b49b7659-dce8-5e92-9b53-fbc801295f98)."
+        }
+      ],
+      "drop_record": false
+    },
+    {
+      "record_index": 14,
+      "parsed_ok": true,
+      "critique": "The text explicitly reports that at 0.16 wt% [Bmim]ZnCl3 and 5.0 h, PET was completely glycolyzed and BHET yield was 83.8% (ID: b49b7659-dce8-5e92-9b53-fbc801295f98). The 0.0032 g catalyst amount is correct for 0.16 wt% of 2.0 g PET, while the common conditions specify 22.0 g EG at 190 °C (ID: 2bf45973-36d5-5ac5-b895-fa51ba86466b); selectivity is derivable as 83.8%.",
+      "bad_fields": [
+        "selectivity_percent"
+      ],
+      "verdict": "correct",
+      "fixes": [
+        {
+          "field": "selectivity_percent",
+          "value": 83.8,
+          "evidence": "Derived from the explicitly reported experiment with 83.8% yield and complete (100%) conversion (ID: b49b7659-dce8-5e92-9b53-fbc801295f98)."
+        }
+      ],
+      "drop_record": false
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 15442,
+    "completion_tokens": 4685,
+    "cost_usd": 0.0
+  },
+  "model": "azure/gpt-5.6-luna",
+  "judged_records": [
+    {
+      "catalyst": "[Bmim]Cl",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 120.0,
+      "catalyst_amount_g": 0.1,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": null,
+      "selectivity_percent": null,
+      "conversion_percent": 3.3,
+      "source_chunk_ids": [
+        "f4590f4b-203c-5e9c-949a-57b3a09f0f4b",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "[Bmim]Cl",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 240.0,
+      "catalyst_amount_g": 0.1,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 8.8,
+      "selectivity_percent": null,
+      "conversion_percent": 35.4,
+      "source_chunk_ids": [
+        "f4590f4b-203c-5e9c-949a-57b3a09f0f4b",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "[Bmim]Cl",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 360.0,
+      "catalyst_amount_g": 0.1,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 14.0,
+      "selectivity_percent": null,
+      "conversion_percent": 57.2,
+      "source_chunk_ids": [
+        "f4590f4b-203c-5e9c-949a-57b3a09f0f4b",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "[Bmim]Cl",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 480.0,
+      "catalyst_amount_g": 0.1,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 57.1,
+      "selectivity_percent": null,
+      "conversion_percent": 100.0,
+      "source_chunk_ids": [
+        "f4590f4b-203c-5e9c-949a-57b3a09f0f4b",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "[Bmim]ZnCl3",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 120.0,
+      "catalyst_amount_g": 0.1,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 82.6,
+      "selectivity_percent": null,
+      "conversion_percent": 100.0,
+      "source_chunk_ids": [
+        "f4590f4b-203c-5e9c-949a-57b3a09f0f4b",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "[Bmim]ZnCl3",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 120.0,
+      "catalyst_amount_g": 0.05,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 83.0,
+      "selectivity_percent": null,
+      "conversion_percent": 100.0,
+      "source_chunk_ids": [
+        "f4590f4b-203c-5e9c-949a-57b3a09f0f4b",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "[Bmim]ZnCl3",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 120.0,
+      "catalyst_amount_g": 0.025,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 84.9,
+      "selectivity_percent": null,
+      "conversion_percent": 100.0,
+      "source_chunk_ids": [
+        "f4590f4b-203c-5e9c-949a-57b3a09f0f4b",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "[Bmim]ZnCl3",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 120.0,
+      "catalyst_amount_g": 0.0126,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 83.4,
+      "selectivity_percent": null,
+      "conversion_percent": 100.0,
+      "source_chunk_ids": [
+        "f4590f4b-203c-5e9c-949a-57b3a09f0f4b",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "[Bmim]ZnCl3",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 120.0,
+      "catalyst_amount_g": 0.0062,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 79.5,
+      "selectivity_percent": null,
+      "conversion_percent": 100.0,
+      "source_chunk_ids": [
+        "f4590f4b-203c-5e9c-949a-57b3a09f0f4b",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "[Bmim]ZnCl3",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 120.0,
+      "catalyst_amount_g": 0.0032,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 36.0,
+      "selectivity_percent": null,
+      "conversion_percent": 52.2,
+      "source_chunk_ids": [
+        "f4590f4b-203c-5e9c-949a-57b3a09f0f4b",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "ZnCl2",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 120.0,
+      "catalyst_amount_g": 0.0436,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 78.6,
+      "selectivity_percent": null,
+      "conversion_percent": 100.0,
+      "source_chunk_ids": [
+        "f4590f4b-203c-5e9c-949a-57b3a09f0f4b",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "a4bb6a40-5e74-5519-b827-f5af4c1b631f",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "[Bmim]MnCl3",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 120.0,
+      "catalyst_amount_g": 0.1,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 83.3,
+      "selectivity_percent": null,
+      "conversion_percent": 100.0,
+      "source_chunk_ids": [
+        "f4590f4b-203c-5e9c-949a-57b3a09f0f4b",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "[Bmim]MnCl3",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 120.0,
+      "catalyst_amount_g": 0.0062,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 38.2,
+      "selectivity_percent": null,
+      "conversion_percent": 64.5,
+      "source_chunk_ids": [
+        "f4590f4b-203c-5e9c-949a-57b3a09f0f4b",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "[Bmim]ZnCl3",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 30.0,
+      "catalyst_amount_g": 0.0032,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 1.33,
+      "selectivity_percent": null,
+      "conversion_percent": 7.04,
+      "source_chunk_ids": [
+        "b49b7659-dce8-5e92-9b53-fbc801295f98",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    },
+    {
+      "catalyst": "[Bmim]ZnCl3",
+      "solvent": "EG",
+      "temperature_c": 190.0,
+      "reaction_time_min": 300.0,
+      "catalyst_amount_g": 0.0032,
+      "substrate_amount_g": 2.0,
+      "solvent_amount_g": 22.0,
+      "yield_percent": 83.8,
+      "selectivity_percent": null,
+      "conversion_percent": 100.0,
+      "source_chunk_ids": [
+        "b49b7659-dce8-5e92-9b53-fbc801295f98",
+        "e802229c-194f-52f6-9e74-d3d08b9cb8a2",
+        "2bf45973-36d5-5ac5-b895-fa51ba86466b",
+        "d62203ab-0ed4-5464-978a-7524ffb2e33c"
+      ]
+    }
+  ]
+}

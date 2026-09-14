@@ -11,6 +11,10 @@ dependencies = [
     "python-multipart>=0.0.12",
     "docling>=2.110.0",
     "litellm>=1.91.0",
+    # litellm.completion(num_retries=...) imports tenacity lazily and litellm does not declare
+    # it, so every model call on a clean install died with "tenacity import failed". We pass
+    # num_retries on every call, which made that every call.
+    "tenacity>=8.0",
     "pydantic>=2.0",
     "python-dotenv>=1.0.1",
     "markdown-it-py>=4.0.0",

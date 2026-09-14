@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ENV_FILE = ROOT / ".env"
 load_dotenv(ENV_FILE)
 
-from . import config, extraction, judge, llm, models, parsing, report, timings  # noqa: E402  (after load_dotenv)
+from . import config, demo, extraction, judge, llm, models, parsing, report, timings  # noqa: E402  (after load_dotenv)
 from .storage import (EXTRACTED, JUDGED, PARSED, PDFS, list_papers, paper_id_for, read_json,  # noqa: E402
                       require, version_of, write_json)
 
@@ -283,6 +283,31 @@ def get_readiness():
     return {stage: _blockers(stage) for stage in ("extract", "judge")}
 
 
+# A clone arrives with an empty workspace and an eight-step checklist, which tells a new user
+# what to do but not what they would get. Seeding the demo means the first screen is a finished
+# project instead: two open-access papers, parsed, extracted and judged. It runs once, only into
+# an empty workspace, and writes real files rather than installing defaults -- see server/demo.py
+# for why that distinction is the whole design.
+_SEEDED = demo.seed_if_empty()
+
+
+@app.get("/api/demo")
+def get_demo():
+    return demo.state()
+
+
+@app.post("/api/demo/clear")
+def clear_demo():
+    """Empty the workspace so a real project can start. Takes the config with it: a schema left
+    over from the demo is exactly the silent default this tool refuses to have."""
+    single_flight("a clear")
+    try:
+        demo.clear()
+    finally:
+        STAGE_LOCK.release()
+    return {"cleared": True, **demo.state()}
+
+
 @app.get("/api/status")
 def get_status():
     """One call describing where this workspace is in the pipeline.
@@ -304,6 +329,9 @@ def get_status():
         "has_extract_prompt": bool(config.get_extract_prompt().strip()),
         "has_judge_prompt": bool(config.get_judge_prompt().strip()),
         "blockers": {stage: _blockers(stage) for stage in ("extract", "judge")},
+        # The interface says so out loud rather than letting someone mistake the demo's PET
+        # chemistry for something it inferred from their own papers.
+        "is_demo": demo.state()["is_demo"],
     }
 
 
