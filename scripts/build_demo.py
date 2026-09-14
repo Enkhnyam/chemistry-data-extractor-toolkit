@@ -48,7 +48,7 @@ def call_params() -> dict:
 SOURCES = {
     "liu-2021-cholinium-amino-acid-ils.pdf":
         "Amino Acid-Based Cholinium Ionic Liquids (ACS Sust. Chem. Eng. 2021).pdf",
-    "al-sabagh-2013-lewis-acidic-ils.pdf":
+    "yue-2013-lewis-acidic-ils.pdf":
         "Lewis Acidic Ionic Liquids for PET Glycolysis (Polymers 2013).pdf",
 }
 
