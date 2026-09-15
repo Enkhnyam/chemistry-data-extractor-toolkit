@@ -773,6 +773,8 @@ async function loadReview(paperId, withJudgment) {
   if (withJudgment) wants.push(get(`/api/papers/${paperId}/judgment`));
   const [paper, extraction, schema, judgment] = await Promise.all(wants);
   Object.assign(review, {
+    extractModel: extraction.model || null,
+    judgeModel: judgment ? judgment.model : null,
     paperId,
     chunks: paper.chunks,
     sourceTracking: paper.source_tracking,
@@ -787,6 +789,12 @@ async function loadReview(paperId, withJudgment) {
   });
   paintText(null);
   paintRecords();
+  const prov = document.getElementById('review-provenance');
+  if (prov) {
+    const bit = (label, name) => name
+      ? `<span>${label} <code>${esc(name)}</code></span>` : '';
+    prov.innerHTML = bit('extracted by', review.extractModel) + bit('judged by', review.judgeModel);
+  }
 }
 
 function reviewPanelHTML(title) {
@@ -803,6 +811,7 @@ function reviewPanelHTML(title) {
     </div>
     <p class="lede">Click a record to shade the chunks it cites; click a field to find its value
       in the text, again for the next match. Corrections save beside the model's original.</p>
+    <div id="review-provenance" class="provenance"></div>
     <div class="split">
       <div id="text-pane"><p class="muted">Pick a paper above.</p></div>
       <div id="rec-pane"></div>
@@ -1096,12 +1105,22 @@ async function openExamplesEditor(onSaved) {
 
 // ---------- Parse page ----------
 
+// Which model wrote this paper's records, and which audited them. Two different models is the
+// normal case here, so they are shown as two lines rather than one crowded string.
+function modelCell(models) {
+  const m = models || {};
+  if (!m.extract && !m.judge) return '<span class="muted">&mdash;</span>';
+  const line = (label, name) => name
+    ? `<div class="modelline"><span>${label}</span> <code>${esc(name)}</code></div>` : '';
+  return `<div class="models">${line('extracted', m.extract)}${line('judged', m.judge)}</div>`;
+}
+
 function papersTableHTML(papers) {
   const spent = papers.reduce((n, p) => n + ((p.spend || {}).cost_usd || 0), 0);
   const totalTokens = papers.reduce((n, p) => n + ((p.spend || {}).tokens || 0), 0);
   return `<table>
-    <thead><tr><th>File</th><th>Chunks</th><th>Source</th><th>Records</th><th>Judged</th>
-      <th style="text-align:right">Cost</th><th></th></tr></thead>
+    <thead><tr><th>File</th><th>Chunks</th><th>Source</th><th>Records</th>
+      <th>Model</th><th style="text-align:right">Cost</th><th></th></tr></thead>
     <tbody>${papers.map(p => {
       const spend = p.spend || {};
       return `<tr data-id="${p.id}">
@@ -1113,7 +1132,7 @@ function papersTableHTML(papers) {
               : p.n_records === 0
                 ? '<span class="tag warn" title="the model found nothing matching your prompt and schema">0 &mdash; nothing found</span>'
                 : `<span class="tag yes">${p.n_records}</span>`}</td>
-        <td><span class="tag ${p.judged ? 'yes' : 'no'}">${p.judged ? 'yes' : 'no'}</span></td>
+        <td>${modelCell(p.models)}</td>
         ${spendCell(spend.cost_usd, spend.tokens)}
         <td class="nowrap"><span class="row-actions">
           <button class="view-btn iconly" title="View the parsed text">${icon('view')}</button>

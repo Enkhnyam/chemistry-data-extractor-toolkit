@@ -345,6 +345,14 @@ dialog.modal::backdrop{background:rgba(16,24,32,.42)}
 .jsonside code{background:none;border:none;padding:0;font-size:.72rem;color:var(--ink-2)}
 .jsonside button{margin-top:6px;font-size:.72rem;padding:4px 8px}
 .jsonnote{margin-top:6px;font-size:.75rem}
+/* Provenance: quiet, but always present. Which model wrote these records is part of what
+   the records mean, not a detail to go hunting for. */
+.provenance{display:flex;gap:16px;flex-wrap:wrap;margin:-6px 0 12px;font-size:.75rem;
+  color:var(--dim)}
+.provenance:empty{display:none}
+.models{display:flex;flex-direction:column;gap:1px;line-height:1.35}
+.modelline{font-size:.7rem;color:var(--dim);white-space:nowrap}
+.modelline code{font-size:.95em}
 .modelpick{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;padding-top:8px;
   border-top:1px dashed var(--line)}
 .modelpick .pick{font-size:.72rem;padding:3px 9px;border-radius:99px;color:var(--accent);

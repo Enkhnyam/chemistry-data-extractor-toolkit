@@ -175,6 +175,33 @@ class ConfigTests(unittest.TestCase):
         client.put("/api/models", json=[])
         config.save_settings({"extract_model": "", "judge_model": ""})
 
+    def test_the_version_token_survives_a_browsers_json_parser(self):
+        """The bug this pins: version was st_mtime_ns, about 1.8e18. JavaScript's JSON.parse
+        turns any number past 2^53 into the nearest float, so the browser sent back a rounded
+        token and EVERY review save was refused as a conflict with an edit that never happened.
+        Python's big ints round-tripped it perfectly, so the API tests saw nothing -- which is
+        why this test parses the response the way a browser would."""
+        import json
+        from server.storage import EXTRACTED, PARSED, write_json
+        write_json(PARSED / "vp.json", {"id": "vp", "filename": "vp.pdf", "source_tracking": True,
+                                        "chunks": [{"id": "c1", "text": "t", "html": "<p>t</p>"}]})
+        write_json(EXTRACTED / "vp.json", {"id": "vp", "records": [{"a": 1}], "usage": {}})
+
+        raw = client.get("/api/papers/vp/extraction").text
+        # parse_int=float is what a browser does to every integer in a JSON document
+        as_browser_sees_it = json.loads(raw, parse_int=float)["version"]
+        self.assertIsInstance(as_browser_sees_it, str, "a number here loses precision in the browser")
+
+        r = client.put("/api/papers/vp/extraction",
+                       json={"records": [{"a": 2}], "notes": {}, "version": as_browser_sees_it})
+        self.assertEqual(r.status_code, 200, r.text)
+        # and a genuinely stale token is still refused
+        stale = client.put("/api/papers/vp/extraction",
+                           json={"records": [{"a": 3}], "notes": {}, "version": as_browser_sees_it})
+        self.assertEqual(stale.status_code, 409)
+        (EXTRACTED / "vp.json").unlink()
+        (PARSED / "vp.json").unlink()
+
     def test_a_worked_example_is_saved_as_typed(self):
         """Examples are global -- the same one or two go to every paper -- so the text is the
         example, not a pointer to a paper that may since have been deleted."""

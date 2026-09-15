@@ -599,7 +599,10 @@ def get_extraction(paper_id: str):
 class ReviewedExtraction(BaseModel):
     records: list[dict]
     notes: dict[str, dict] = Field(default_factory=dict, description="record index -> {flag, note}")
-    version: int | None = Field(None, description="the version this edit was based on")
+    # int is accepted only so a browser tab left open across this change fails as a conflict
+    # -- "reload the page" -- rather than as an unexplained 422.
+    version: str | int | None = Field(None, description="the version this edit was based on; an "
+                                                        "opaque string, never parsed as a number")
 
 
 @app.put("/api/papers/{paper_id}/extraction")
@@ -617,7 +620,7 @@ def put_extraction(paper_id: str, body: ReviewedExtraction):
     # Refuse to overwrite an edit this one never saw -- another tab, or a second server on the
     # same workspace. Silently winning that race loses a reviewer's corrections, which is the
     # one kind of data this tool cannot regenerate.
-    if body.version is not None and body.version != version_of(path):
+    if body.version is not None and str(body.version) != version_of(path):
         raise HTTPException(409, "This paper changed somewhere else since you opened it. "
                                  "Reload the page to pick up those edits before saving yours.")
 

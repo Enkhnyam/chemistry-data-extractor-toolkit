@@ -153,6 +153,10 @@ def flat_records() -> tuple[list[str], list[dict]]:
         judgment = read_json(JUDGED / f"{pid}.json")
         by_index = {v["record_index"]: v for v in (judgment or {}).get("verdicts", [])}
         notes = extraction.get("notes", {})
+        # Provenance belongs in the exported file, not only in the app: a CSV that cannot say
+        # which model wrote a row is not evidence of anything.
+        extract_model = extraction.get("model") or ""
+        judge_model = (judgment or {}).get("model") or ""
         for i, record in enumerate(extraction.get("records", [])):
             verdict = by_index.get(i, {})
             note = notes.get(str(i), {})
@@ -162,7 +166,9 @@ def flat_records() -> tuple[list[str], list[dict]]:
                    "judge_verdict": verdict.get("verdict", ""),
                    "judge_bad_fields": " ".join(verdict.get("bad_fields") or []),
                    "reviewer_flag": note.get("flag") or "",
-                   "reviewer_note": note.get("note") or ""}
+                   "reviewer_note": note.get("note") or "",
+                   "extract_model": extract_model,
+                   "judge_model": judge_model}
             for key in row:
                 if key not in columns:
                     columns.append(key)

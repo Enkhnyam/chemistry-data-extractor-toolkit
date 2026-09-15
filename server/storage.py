@@ -69,6 +69,13 @@ def list_papers() -> list[dict]:
             "n_records": (lambda d: None if d is None else len(d.get("records", [])))(
                 read_json(EXTRACTED / f"{pid}.json")),
             "spend": spend_on(pid),
+            # Which model produced each stage. Recorded since the beginning but never shown,
+            # which made two runs of the same paper by different models indistinguishable
+            # afterwards -- exactly the comparison anyone choosing a model needs to make.
+            "models": {
+                "extract": (read_json(EXTRACTED / f"{pid}.json", {}) or {}).get("model"),
+                "judge": (read_json(JUDGED / f"{pid}.json", {}) or {}).get("model"),
+            },
         })
     return papers
 
@@ -80,7 +87,15 @@ def require(path: Path, what: str) -> dict:
     return data
 
 
-def version_of(path: Path) -> int:
+def version_of(path: Path) -> str:
     """A token that changes whenever the file does, so a save can refuse to overwrite work it
-    never saw. Cheaper and more honest than a hash: mtime_ns moves on every write."""
-    return path.stat().st_mtime_ns if path.exists() else 0
+    never saw. Cheaper and more honest than a hash: mtime_ns moves on every write.
+
+    A string, not the integer it looks like. st_mtime_ns is around 1.8e18, and JavaScript's
+    JSON.parse turns any number past 2^53 into the nearest float -- so the browser read this
+    token, rounded it, sent the rounded value back, and every single save was rejected as a
+    conflict with an edit that had never happened. Python's arbitrary-precision ints meant the
+    API tests round-tripped it perfectly and saw nothing. As a string it is opaque to both
+    sides and compared, correctly, for equality.
+    """
+    return str(path.stat().st_mtime_ns) if path.exists() else "0"
