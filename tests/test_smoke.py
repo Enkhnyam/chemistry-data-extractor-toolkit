@@ -224,7 +224,7 @@ class ConfigTests(unittest.TestCase):
 
         r = client.post("/api/demo/load?replace=true").json()
         self.assertTrue(r["is_demo"], "the demo did not load into a non-empty workspace")
-        self.assertEqual(len(list(PDFS.glob("*.pdf"))), 3, "two demo papers plus yours")
+        self.assertEqual(len(list(PDFS.glob("*.pdf"))), 2, "the demo paper plus yours")
         self.assertTrue((PDFS / "mine.pdf").exists(), "your paper must survive a demo load")
         self.assertTrue(config.get_schema(), "the demo's schema comes with it")
 
@@ -253,7 +253,7 @@ class ConfigTests(unittest.TestCase):
         config.save_settings({"extract_model": "chosen-by-me"})
 
         removed = client.post("/api/demo/clear").json()["removed"]
-        self.assertEqual(removed["papers"], 2)
+        self.assertEqual(removed["papers"], 1)
         self.assertTrue((PDFS / "mine.pdf").exists(), "your own paper must survive")
         self.assertEqual([f["name"] for f in config.get_schema()], ["my_field"],
                          "a schema you edited is yours and stays")

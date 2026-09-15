@@ -359,7 +359,7 @@ def get_readiness():
 
 # A clone arrives with an empty workspace and an eight-step checklist, which tells a new user
 # what to do but not what they would get. Seeding the demo means the first screen is a finished
-# project instead: two open-access papers, parsed, extracted and judged. It runs once, only into
+# project instead: an open-access paper, parsed, extracted and judged. It runs once, only into
 # an empty workspace, and writes real files rather than installing defaults -- see server/demo.py
 # for why that distinction is the whole design.
 _SEEDED = demo.seed_if_empty()

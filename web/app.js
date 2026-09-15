@@ -299,7 +299,7 @@ function demoBannerHTML(status) {
   return `<div class="guide demo${needsKey ? ' needskey' : ''}">
     <div class="guidehead">
       <b>This is the demo, not your data</b>
-      <span class="muted">two open-access papers, already parsed, extracted and judged</span>
+      <span class="muted">an open-access paper, already parsed, extracted and judged</span>
     </div>
     ${needsKey ? `<div class="keycta">
       <div>
@@ -337,7 +337,7 @@ function guideHTML(status) {
   // The offer has to be here, because this is the screen they are on.
   const offer = state.status?.demo_available
     ? `<div class="guidefoot"><span class="muted">Or look at a worked example first:</span>
-         <button class="linkish" id="loaddemo">Load the demo &mdash; two papers, already
+         <button class="linkish" id="loaddemo">Load the demo &mdash; one paper, already
          extracted and judged</button></div>`
     : '';
 
@@ -360,7 +360,7 @@ function guideHTML(status) {
 
 async function loadDemo() {
   const empty = state.status?.workspace_empty;
-  if (!empty && !confirm('Add the two demo papers to your workspace?\n\n'
+  if (!empty && !confirm('Add the demo paper to your workspace?\n\n'
       + 'Your own papers and their records are kept — the demo\'s papers have their own names '
       + 'and land beside them.\n\nThe demo\'s schema and prompts DO replace yours, because the '
       + 'demo records only make sense against them. Export a bundle first if you want a copy.'))
@@ -371,7 +371,7 @@ async function loadDemo() {
 }
 
 async function clearDemo() {
-  if (!confirm('Remove the two demo papers and their records?\n\n'
+  if (!confirm('Remove the demo paper and its records?\n\n'
              + 'Papers you added yourself are kept. The demo schema and prompts go only if you '
              + 'have not edited them — once you have, they are yours and they stay.\n\n'
              + 'This cannot be undone, but the demo stays in demo/ and Load the demo brings it back.'))

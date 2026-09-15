@@ -45,8 +45,8 @@ then offers **Load the demo**, which asks before replacing anything.
 
 ## What you see first
 
-A finished project, not an empty form. The workspace is seeded with two open-access PET papers
-that are already parsed, extracted and judged — 25 records, the judge's verdict on each, a full
+A finished project, not an empty form. The workspace is seeded with an open-access PET paper
+that is already parsed, extracted and judged — 15 records, the judge's verdict on each, a full
 report — so you can read the output before deciding whether the tool is worth setting up. No API
 key is needed to look at any of it.
 
@@ -118,8 +118,8 @@ wrote it, under which prompt, is not evidence of anything.
   leave the machine are calls to your LLM provider, and a one-time OCR model download on the
   first parse.
 - API keys are written to a local `.env` and never sent back to the browser.
-- The two demo PDFs are CC BY 4.0 and redistributed with attribution; everything else here is
-  MIT. See `demo/NOTICE.md`.
+- The demo PDF is CC BY and redistributed with attribution; everything else here is MIT.
+  See `demo/NOTICE.md`.
 - There is no authentication, so keep it on localhost.
 
 Docker: `cp .env.example .env && docker compose up --build` (the build wants ~8 GB of RAM free).

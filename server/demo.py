@@ -1,7 +1,7 @@
-"""The demo workspace: two open-access papers, already parsed, extracted and judged.
+"""The demo workspace: an open-access paper, already parsed, extracted and judged.
 
 A fresh clone used to open on an empty app behind an eight-step checklist, which is a poor way
-to find out what the thing does. It now opens on a finished project -- two papers, their records,
+to find out what the thing does. It now opens on a finished project -- a paper, its records,
 the judge's verdicts on them, a full report -- so the first thing a new user sees is the output,
 and the only thing they have to supply to make it *theirs* is an API key.
 
