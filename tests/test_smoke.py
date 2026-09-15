@@ -234,6 +234,49 @@ class ConfigTests(unittest.TestCase):
         config.save_schema([])
         config.save_settings({"extract_model": "", "judge_model": ""})
 
+    def test_the_bundle_carries_the_data_the_config_and_no_keys(self):
+        """A CSV of records cannot say which model wrote it, under which prompt, against which
+        schema, or which rows a human corrected. The bundle is the answer to that."""
+        import io, json, zipfile
+        from server.storage import EXTRACTED, PARSED, write_json
+        with configured():
+            write_json(PARSED / "bp.json", {"id": "bp", "filename": "bp.pdf", "chunks": [
+                {"id": "11111111-1111-5111-8111-111111111111", "text": "t"}],
+                "source_tracking": True})
+            write_json(EXTRACTED / "bp.json", {"id": "bp", "model": "gpt-4o-mini",
+                                               "records": [{"compound": "ZnCl2"}],
+                                               "usage": {"prompt_tokens": 10}})
+            body = client.get("/api/export.zip").content
+            z = zipfile.ZipFile(io.BytesIO(body))
+            names = set(z.namelist())
+            for expected in ("manifest.json", "README.md", "data/records.csv", "data/papers.csv",
+                             "config/schema.json", "config/extract_prompt.txt",
+                             "config/models.json", "extracted/bp.json", "parsed/bp.json"):
+                self.assertIn(expected, names)
+
+            manifest = json.loads(z.read("manifest.json"))
+            self.assertEqual(manifest["papers"], 1)
+            self.assertEqual(manifest["records"], 1)
+            self.assertEqual(manifest["models"]["per_paper"]["bp"]["extract"], "gpt-4o-mini")
+
+            # the one thing that must never be in a bundle
+            whole = b"".join(z.read(n) for n in names)
+            self.assertNotIn(b"sk-test-not-a-real-key", whole)
+            self.assertNotIn(b"api_key", whole)
+            self.assertNotIn(b"key_var", whole)
+
+            self.assertIn("compound", z.read("data/records.csv").decode())
+            (EXTRACTED / "bp.json").unlink()
+            (PARSED / "bp.json").unlink()
+
+    def test_static_files_must_be_revalidated(self):
+        """Without this the browser guesses a freshness window in hours, and a fix ships to a
+        server whose users keep running the old app.js -- which looks exactly like the fix not
+        working."""
+        r = client.get("/app.js")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers.get("cache-control"), "no-cache")
+
     def test_chunks_are_tagged_short_and_citations_resolve_back(self):
         """The model is shown c1, c2, ... and what gets stored is still the chunk's real uuid.
 

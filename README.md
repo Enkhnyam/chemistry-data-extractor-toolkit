@@ -103,7 +103,11 @@ match. Edit anything, or apply the judge's proposed fix. Each proposal is labell
 would change, because some kinds are far more reliable than others.
 
 **8. Report** — completeness by field, what the judge changed, the distribution of any field,
-and CSV/JSON export of every record with its verdict and your notes.
+and export. Records alone come out as CSV or JSON; **Full bundle** is a zip of the dataset
+together with what produced it — a row per paper with its model and cost, the schema, both
+prompts, the worked examples, the parsed chunks each value cites, and a manifest pinning the
+models and the tool's git commit. API keys are never in it. A CSV that cannot say which model
+wrote it, under which prompt, is not evidence of anything.
 
 ## Notes
 

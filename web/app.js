@@ -1708,8 +1708,12 @@ async function renderReport(gen) {
             ${t.papers_judged} audited by the judge.</p>
         </div>
         <span class="grow"></span>
-        <a href="/api/export.csv" download><button>${icon('download')}CSV</button></a>
-        <a href="/api/export.json" download><button>${icon('download')}JSON</button></a>
+        <a href="/api/export.csv" download><button>${icon('download')}Records CSV</button></a>
+        <a href="/api/export.json" download><button>${icon('download')}Records JSON</button></a>
+        <a href="/api/export.zip" download><button class="go"
+          title="A zip holding the records, a row per paper, the schema and prompts that produced them, and a manifest. No API keys.">${icon('download')}Full bundle</button></a>
+        <a href="/api/export.zip?pdfs=true" download><button
+          title="The same bundle with the source PDFs included. Check you may redistribute them.">${icon('download')}Bundle + PDFs</button></a>
       </div>
 
       <div class="cards">

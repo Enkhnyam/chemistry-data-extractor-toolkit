@@ -174,3 +174,32 @@ def flat_records() -> tuple[list[str], list[dict]]:
                     columns.append(key)
             rows.append(row)
     return columns, rows
+
+
+def papers_table() -> tuple[list[str], list[dict]]:
+    """One row per paper: what went in, what came out, which model, what it cost."""
+    columns = ["paper_id", "filename", "chunks", "source_tracking", "records", "judged",
+               "extract_model", "judge_model", "prompt_tokens", "completion_tokens", "cost_usd",
+               "edited_at"]
+    rows = []
+    for path in sorted(PARSED.glob("*.json")):
+        pid = path.stem
+        paper = read_json(path, {})
+        extraction = read_json(EXTRACTED / f"{pid}.json") or {}
+        judgment = read_json(JUDGED / f"{pid}.json") or {}
+        usage = [(extraction.get("usage") or {}), (judgment.get("usage") or {})]
+        rows.append({
+            "paper_id": pid,
+            "filename": paper.get("filename", pid),
+            "chunks": len(paper.get("chunks", [])),
+            "source_tracking": paper.get("source_tracking", True),
+            "records": len(extraction.get("records", [])) if extraction else "",
+            "judged": bool(judgment),
+            "extract_model": extraction.get("model") or "",
+            "judge_model": judgment.get("model") or "",
+            "prompt_tokens": sum(u.get("prompt_tokens", 0) for u in usage),
+            "completion_tokens": sum(u.get("completion_tokens", 0) for u in usage),
+            "cost_usd": round(sum(u.get("cost_usd", 0.0) for u in usage), 6),
+            "edited_at": extraction.get("edited_at") or "",
+        })
+    return columns, rows

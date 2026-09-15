@@ -10,6 +10,7 @@ import os
 import re
 import threading
 import time
+import zipfile
 from pathlib import Path
 from typing import Literal
 
@@ -724,6 +725,124 @@ def export_json():
                     headers={"Content-Disposition": 'attachment; filename="records.json"'})
 
 
+def _csv_bytes(columns, rows) -> bytes:
+    buffer = io.StringIO()
+    writer = csv.DictWriter(buffer, fieldnames=columns, extrasaction="ignore")
+    writer.writeheader()
+    writer.writerows(rows)
+    return buffer.getvalue().encode("utf-8")
+
+
+@app.get("/api/export.zip")
+def export_bundle(pdfs: bool = False):
+    """The whole project as one folder: the data, what produced it, and what it cost.
+
+    A CSV of records on its own is not reproducible -- it cannot say which model wrote it, under
+    which prompt, against which schema, or which rows a human then corrected. This is the same
+    shape the source project deposits: data beside the config and a manifest that pins both.
+
+    No key ever enters the bundle; the model profiles are copied without their key variables.
+    """
+    record_columns, record_rows = report.flat_records()
+    paper_columns, paper_rows = report.papers_table()
+    summary = report.build()
+    settings = config.get_settings()
+    profiles = models.listing(_key_is_set)
+
+    manifest = {
+        "exported_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "tool": "chemistry-data-extractor-toolkit",
+        "git_commit": _git_commit(),
+        "papers": len(paper_rows),
+        "records": len(record_rows),
+        "models": {
+            "extract": (models.get(settings.get("extract_model", "")) or {}).get("model"),
+            "judge": (models.get(settings.get("judge_model", "")) or {}).get("model"),
+            # per paper too: a corpus is often built across more than one model
+            "per_paper": {r["paper_id"]: {"extract": r["extract_model"], "judge": r["judge_model"]}
+                          for r in paper_rows},
+        },
+        "spend": summary.get("totals", {}).get("spend", {}),
+        "source_tracking_default": settings.get("source_tracking_default", True),
+    }
+
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as bundle:
+        bundle.writestr("manifest.json", json.dumps(manifest, indent=2, ensure_ascii=False))
+        bundle.writestr("README.md", _bundle_readme(manifest))
+        bundle.writestr("data/records.csv", _csv_bytes(record_columns, record_rows))
+        bundle.writestr("data/records.json", json.dumps(record_rows, indent=1, ensure_ascii=False))
+        bundle.writestr("data/papers.csv", _csv_bytes(paper_columns, paper_rows))
+        bundle.writestr("data/report.json", json.dumps(summary, indent=2, ensure_ascii=False))
+
+        # config: everything that decides what a run produces, and nothing that authenticates it
+        bundle.writestr("config/schema.json",
+                        json.dumps({"fields": config.get_schema()}, indent=2, ensure_ascii=False))
+        bundle.writestr("config/extract_prompt.txt", config.get_extract_prompt())
+        bundle.writestr("config/judge_prompt.txt", config.get_judge_prompt())
+        bundle.writestr("config/few_shot.json",
+                        json.dumps(config.get_few_shot(), indent=2, ensure_ascii=False))
+        bundle.writestr("config/models.json", json.dumps(
+            [{k: v for k, v in m.items()
+              if k in ("id", "name", "model", "api_base", "api_version")} for m in profiles],
+            indent=2, ensure_ascii=False))
+
+        # the per-paper working files, so a reviewer can trace any row back to its chunk
+        for stage, directory in (("extracted", EXTRACTED), ("judged", JUDGED),
+                                 ("parsed", PARSED)):
+            for path in sorted(directory.glob("*.json")):
+                bundle.write(path, f"{stage}/{path.name}")
+        if pdfs:
+            for path in sorted(PDFS.glob("*.pdf")):
+                bundle.write(path, f"papers/{path.name}")
+
+    stamp = time.strftime("%Y%m%d", time.gmtime())
+    return Response(buffer.getvalue(), media_type="application/zip",
+                    headers={"Content-Disposition":
+                             f'attachment; filename="extraction-bundle-{stamp}.zip"'})
+
+
+def _git_commit() -> str | None:
+    """Which version of the tool produced this. None outside a checkout, which is honest."""
+    import subprocess
+    try:
+        return subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "HEAD"],
+                                       text=True, stderr=subprocess.DEVNULL, timeout=5).strip()
+    except Exception:
+        return None
+
+
+def _bundle_readme(manifest: dict) -> str:
+    m = manifest["models"]
+    return f"""# Extraction bundle
+
+{manifest['records']} records from {manifest['papers']} paper(s), exported
+{manifest['exported_at']} by chemistry-data-extractor-toolkit.
+
+## What is here
+
+- `data/records.csv`, `data/records.json` — one row per record, with the judge's verdict and
+  any reviewer flag or note. `extract_model` and `judge_model` say what produced each row.
+- `data/papers.csv` — one row per paper: chunks in, records out, model, tokens, cost.
+- `data/report.json` — completeness by field, what the judge changed, totals.
+- `config/` — the schema, both prompts, the worked examples and the model settings that
+  produced this. API keys are not included.
+- `parsed/`, `extracted/`, `judged/` — the working files, so any row can be traced back to the
+  chunk it came from. `source_chunk_ids` on a record refers to `chunks[].id` in `parsed/`.
+- `papers/` — the source PDFs, if you exported with them.
+
+## Reading it
+
+Extraction model: `{m['extract'] or 'not set'}` · judge model: `{m['judge'] or 'not set'}`.
+Papers may differ from these if the corpus was built across more than one model; see
+`models.per_paper` in `manifest.json`.
+
+`model_records` in `extracted/*.json` is what the model originally said, kept beside the
+corrected records the moment anything was edited. A corrected dataset that cannot be diffed
+against the model's own output is not evidence of anything.
+"""
+
+
 # ---------- prompt authoring ----------
 
 class PromptRequest(BaseModel):
@@ -809,4 +928,20 @@ def generate_prompt(body: PromptRequest):
 
 # ---------- the SPA ----------
 
-app.mount("/", StaticFiles(directory=ROOT / "web", html=True), name="web")
+class RevalidatingStatic(StaticFiles):
+    """Static files that the browser must re-check before reusing.
+
+    Without a Cache-Control header a browser is free to guess how long a response stays fresh,
+    and it guesses in hours. That made every fix invisible until someone thought to hard-reload:
+    the server would be running new code while the tab ran the old app.js, which is a very
+    confusing thing to debug from the outside. "no-cache" means revalidate, not "do not store" --
+    the ETag above still turns an unchanged file into a 304 with no body.
+    """
+
+    def file_response(self, *args, **kwargs):
+        response = super().file_response(*args, **kwargs)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
+app.mount("/", RevalidatingStatic(directory=ROOT / "web", html=True), name="web")
