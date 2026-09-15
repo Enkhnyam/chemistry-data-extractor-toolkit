@@ -36,7 +36,7 @@ keys — stays there between runs.
 
 ```bash
 git pull
-uv sync          # picks up tenacity — without it every model call fails
+uv sync          # picks up new dependencies — without it model calls fail
 ```
 
 And if you had already opened Settings, your workspace is no longer empty, so the demo is not
@@ -73,9 +73,11 @@ clone only the first item is outstanding.
 
 **1. Add a model** — Settings → Models. A name, a model string (`gpt-4o-mini`,
 `anthropic/claude-sonnet-4-5`, `ollama/llama3`, `azure/your-deployment`), and its API key. Add an
-endpoint and API version only if your provider needs them; Azure does, most do not. **Test
-connection** checks it works. Extraction and judging pick their model separately, so you can
-extract with one and audit with another.
+endpoint and API version only if your provider needs them; Azure does, most do not. If you are
+pointing at an endpoint of your own, press **List models** rather than typing a name — it asks
+the server what it actually serves, and the answer is often not what you would guess. **Test
+connection** then proves the whole thing works. Extraction and judging pick their model
+separately, so you can extract with one and audit with another.
 
 **2. Define your schema** — Settings → Schema. *(the demo fills this in; replace it with your own)* The fields one record should have, with a
 description of each. The model reads those descriptions, so say what you mean. Grey rows are an

@@ -155,7 +155,7 @@ function runHTML(run) {
       <span class="sep">${clock}</span>
       ${spent ? `<span class="sep">$${spent.toFixed(4)}</span>` : ''}
       <span class="grow"></span>
-      ${run.finished ? '' : `<button id="run-stop" ${run.stopping ? 'disabled' : ''}>
+      ${run.finished ? '' : `<button class="danger" id="run-stop" ${run.stopping ? 'disabled' : ''}>${icon('stop')}
         ${run.stopping ? 'stopping after this one…' : 'Stop'}</button>`}
     </div>
     <div class="statuslist">${rows}</div>`;
@@ -213,6 +213,17 @@ const ICONS = {
   plus: '<path d="M8 3v10M3 8h10"/>',
   download: '<path d="M8 2v8M4.5 7 8 10.5 11.5 7M2.5 13h11"/>',
   check: '<path d="M3 8.5 6.5 12 13 4.5"/>',
+  play: '<path d="M5 3.2 12.5 8 5 12.8Z"/>',
+  stop: '<rect x="4" y="4" width="8" height="8" rx="1.2"/>',
+  upload: '<path d="M8 11V2.5M4.5 6 8 2.5 11.5 6M2.5 13h11"/>',
+  key: '<circle cx="5" cy="8" r="2.6"/><path d="M7.6 8H14M12 8v2.4M10 8v1.8"/>',
+  bolt: '<path d="M9 1.5 4 9h3.5L7 14.5 12 7H8.5Z"/>',
+  spark: '<path d="M8 2.2 9.3 6.2 13.3 7.5 9.3 8.8 8 12.8 6.7 8.8 2.7 7.5 6.7 6.2Z"/>',
+  undo: '<path d="M3 8h7a3 3 0 0 1 0 6H6.5M3 8l2.6-2.6M3 8l2.6 2.6"/>',
+  x: '<path d="M4 4l8 8M12 4l-8 8"/>',
+  arrow: '<path d="M2.5 8h10M9 4.5 12.5 8 9 11.5"/>',
+  eraser: '<path d="M2.5 13h11M3.5 10.5 8.5 5.5l3 3-5 5H5z"/><path d="M8.5 5.5 11 3l3 3-2.5 2.5"/>',
+  settings: '<circle cx="8" cy="8" r="2.2"/><path d="M8 1.5v1.8M8 12.7v1.8M14.5 8h-1.8M3.3 8H1.5M12.6 3.4l-1.3 1.3M4.7 11.3l-1.3 1.3M12.6 12.6l-1.3-1.3M4.7 4.7 3.4 3.4"/>',
 };
 const icon = (name) => `<svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor"
   stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${ICONS[name] || ''}</svg>`;
@@ -233,7 +244,7 @@ function openModal({ title, subtitle = '', body, width = '900px', onSave, saveLa
     <div class="modalfoot">
       <span class="muted" id="modal-status"></span>
       <span class="grow"></span>
-      <button id="modal-cancel">Cancel</button>
+      <button id="modal-cancel">${icon('x')}Cancel</button>
       ${onSave ? `<button class="primary" id="modal-save">${saveLabel}</button>` : ''}
     </div>
   </dialog>`);
@@ -283,7 +294,7 @@ function demoBannerHTML(status) {
         <span class="muted">Everything else is set up &mdash; the schema, both prompts and the
         papers. A key is the only thing missing, and nothing calls a model without one.</span>
       </div>
-      <button class="primary" id="gotokey">Add a key</button>
+      <button class="primary" id="gotokey">${icon('key')}Add a key</button>
     </div>` : ''}
     <div class="guidefoot">
       <span class="muted">Look around first: <a href="#/report">Report</a> and
@@ -631,14 +642,15 @@ function recordCardHTML(rec, i) {
       <span class="muted">${cites} cited chunk${cites === 1 ? '' : 's'}</span>
       <span class="grow"></span>
       ${editing
-        ? `<button class="primary" data-save="${i}">Save</button><button data-cancel="${i}">Cancel</button>`
-        : `<button data-edit-toggle="${i}">Edit</button>`}
+        ? `<button class="primary" data-save="${i}">${icon('check')}Save</button>
+           <button data-cancel="${i}">${icon('x')}Cancel</button>`
+        : `<button data-edit-toggle="${i}">${icon('edit')}Edit</button>`}
     </div>
     <div class="grid">${cells}</div>
     ${reasoning}
     <div class="feedback">
-      <button class="flag ok ${note.flag === 'ok' ? 'on' : ''}" data-flag="ok" data-i="${i}">looks right</button>
-      <button class="flag bad ${note.flag === 'bad' ? 'on' : ''}" data-flag="bad" data-i="${i}">looks wrong</button>
+      <button class="flag ok ${note.flag === 'ok' ? 'on' : ''}" data-flag="ok" data-i="${i}">${icon('check')}looks right</button>
+      <button class="flag bad ${note.flag === 'bad' ? 'on' : ''}" data-flag="bad" data-i="${i}">${icon('x')}looks wrong</button>
       <input class="note" data-note="${i}" placeholder="note for this record (optional)"
              value="${esc(note.note || '')}">
     </div>
@@ -785,8 +797,8 @@ function reviewPanelHTML(title) {
       <select id="review-pick"></select>
       <span class="grow"></span>
       <span class="muted" id="match-counter"></span>
-      <button id="delete-run">${icon('trash')}Delete this run</button>
-      <button class="primary" id="save-review" disabled>Save corrections</button>
+      <button class="danger" id="delete-run">${icon('trash')}Delete this run</button>
+      <button class="primary" id="save-review" disabled>${icon('check')}Save corrections</button>
       <span class="muted" id="save-status"></span>
     </div>
     <p class="lede">Click a record to shade the chunks it cites; click a field to find its value
@@ -900,10 +912,13 @@ async function openExamplesEditor(onSaved) {
       <b>What the model sees, in this order, for every paper you extract</b>
       <ol class="order">
         <li><span class="step">1</span> your <b>extraction prompt</b></li>
-        <li><span class="step">2</span> an example paper's <b>full text</b></li>
-        <li><span class="step">3</span> the <b>records</b> that paper should produce</li>
+        <li><span class="step">2</span> an example <b>text</b></li>
+        <li><span class="step">3</span> the <b>records</b> that text should produce</li>
         <li><span class="step">4</span> then the real paper, and it answers in the same shape</li>
       </ol>
+      <p><b>Every example goes to every paper.</b> These are not attached to one paper and are
+         not matched up with anything &mdash; the same one or two are re-sent, in full, with each
+         paper you extract. So write them to be typical of the whole corpus, not of one article.</p>
       <p><b>One good example is usually worth more than another paragraph of prompt.</b> It is
          the difference between describing your conventions and showing them &mdash; how you name a
          catalyst, which table rows count, what to do when a value is only in a footnote. Even a
@@ -919,7 +934,7 @@ async function openExamplesEditor(onSaved) {
     </div>
 
     <div id="ex-list"></div>
-    <button id="ex-add" style="margin-top:4px">+ Add an example</button>`;
+    <button id="ex-add" style="margin-top:4px">${icon('plus')}Add an example</button>`;
 
   const dialog = openModal({
     title: 'Worked examples',
@@ -930,21 +945,19 @@ async function openExamplesEditor(onSaved) {
       if (!prompt.trim()) throw new Error('The extraction prompt cannot be empty — nothing would tell the model what to pull out.');
       const built = [];
       for (const row of d.querySelectorAll('.ex-item')) {
-        const paperId = row.querySelector('.ex-paper').value;
-        const box = row.querySelector('.ex-records');
-        if (!paperId) throw new Error(`Example ${Number(row.dataset.i) + 1}: choose a paper.`);
+        const i = Number(row.dataset.i);
+        const text = row.querySelector('.ex-text').value.trim();
+        if (!text) throw new Error(`Example ${i + 1}: add the text the model should read, or remove the example.`);
         let records;
-        try { records = JSON.parse(box.value.trim() || '[]'); }
-        catch (e) { throw new Error(`Example ${Number(row.dataset.i) + 1}: the records are not valid JSON — ${e.message}`); }
+        try { records = JSON.parse(row.querySelector('.ex-records').value.trim() || '[]'); }
+        catch (e) { throw new Error(`Example ${i + 1}: the records are not valid JSON — ${e.message}`); }
         if (!Array.isArray(records) || !records.length)
-          throw new Error(`Example ${Number(row.dataset.i) + 1}: add at least one record, or remove the example.`);
-        const paper = await get('/api/papers/' + paperId);
-        built.push({
-          text: paper.chunks.map(c => (paper.source_tracking ? `ID: ${c.id}\n` : '') + c.text).join('\n\n'),
-          records,
-          source: paper.filename,
-          paper_id: paperId,
-        });
+          throw new Error(`Example ${i + 1}: add at least one record, or remove the example.`);
+        // Saved as typed. It was rebuilt from the chosen paper here, which meant edits to the
+        // text were silently discarded and an example outlived the paper it came from only by
+        // accident.
+        built.push({ text, records, source: (rows[i] || {}).source || 'typed in',
+                     paper_id: (rows[i] || {}).paper_id || null });
       }
       await put('/api/prompts', { extract: prompt });
       await put('/api/few-shot', built);
@@ -953,7 +966,18 @@ async function openExamplesEditor(onSaved) {
   });
 
   const list = dialog.querySelector('#ex-list');
-  let rows = examples.map(ex => ({ paper_id: ex.paper_id || '', records: ex.records || [], source: ex.source }));
+  let rows = examples.map(ex => ({ text: ex.text || '', records: ex.records || [],
+                                  source: ex.source || '', paper_id: ex.paper_id || '' }));
+
+  // paint() rebuilds every box from `rows`, so anything typed has to be read back first.
+  // Removing example 2 used to wipe what was typed into example 1.
+  function collect() {
+    [...list.querySelectorAll('.ex-item')].forEach((row, i) => {
+      rows[i].text = row.querySelector('.ex-text').value;
+      try { rows[i].records = JSON.parse(row.querySelector('.ex-records').value.trim() || '[]'); }
+      catch { /* leave the last good value */ }
+    });
+  }
 
   function paint() {
     list.innerHTML = rows.map((row, i) => `
@@ -961,17 +985,28 @@ async function openExamplesEditor(onSaved) {
         <div class="ex-head">
           <b>Example ${i + 1}</b>
           <span class="grow"></span>
-          <button class="ex-remove" data-i="${i}">remove</button>
+          <button class="ex-remove danger iconly" data-i="${i}" title="remove this example">${icon('trash')}</button>
         </div>
         <div class="field">
-          <label>2 &middot; The paper <span class="muted">its full text is sent as the example input</span></label>
-          <select class="ex-paper">
-            <option value="">Choose a parsed paper&hellip;</option>
-            ${parsed.map(p => `<option value="${p.id}" ${row.paper_id === p.id ? 'selected' : ''}>
-                ${esc(p.filename)} — ${p.n_chunks} chunks</option>`).join('')}
-          </select>
-          ${row.paper_id ? '' : `<p class="muted">${parsed.length ? 'Pick the paper this example is about.'
-              : 'No parsed papers yet — add one on the Parse page first.'}</p>`}
+          <div class="row" style="margin-bottom:4px">
+            <label style="margin:0">2 &middot; The text the model reads
+              <span class="muted">sent exactly as it appears here</span></label>
+            <span class="grow"></span>
+            <select class="ex-paper" title="Copy a parsed paper's text into the box below">
+              <option value="">${parsed.length ? 'Fill from a parsed paper&hellip;'
+                : 'No parsed papers to copy from'}</option>
+              ${parsed.map(p => `<option value="${p.id}">${esc(p.filename)} — ${p.n_chunks} chunks</option>`).join('')}
+            </select>
+          </div>
+          <textarea class="ex-text" rows="8" spellcheck="false"
+            placeholder="Paste the text this example is based on, or fill it from a parsed paper above. A trimmed excerpt works as well as a whole paper and costs less on every call.">${esc(row.text || '')}</textarea>
+          <div class="row" style="margin-top:4px">
+            <span class="ex-textnote muted"></span>
+            ${parsed.some(p => p.id === row.paper_id) ? `<span class="grow"></span>
+              <span class="warn-text">this is ${esc((parsed.find(p => p.id === row.paper_id) || {}).filename || '')},
+                which is still in your workspace \u2014 extracting it shows the model its own
+                answers, so exclude it from any run you mean to measure</span>` : ''}
+          </div>
         </div>
         <div class="field" style="margin-bottom:6px">
           <label>3 &middot; The records it should produce
@@ -984,7 +1019,7 @@ async function openExamplesEditor(onSaved) {
               ${fields.map(f => `<div><code>${esc(f.name)}</code> <span class="muted">${f.type}</span></div>`).join('')
                 || '<span class="muted">no fields defined</span>'}
               <button class="ex-fill" data-i="${i}"
-                title="Replace the box with one empty record containing every field in your schema, ready to fill in">start from a blank record</button>
+                title="Replace the box with one empty record containing every field in your schema, ready to fill in">${icon('plus')}blank record</button>
               <button class="ex-format" data-i="${i}"
                 title="Re-indent what is in the box so it is readable. Changes only the spacing, never the values.">re-indent</button>
             </div>
@@ -1000,10 +1035,43 @@ async function openExamplesEditor(onSaved) {
       box.addEventListener('input', check);
       check();
     });
-    list.querySelectorAll('.ex-paper').forEach((sel, i) =>
-      sel.addEventListener('change', () => { rows[i].paper_id = sel.value; }));
+    // Size matters here and nowhere else in the app: this text is re-sent with every paper,
+    // so a 60k-character example is a bill on every single call, not a one-off.
+    const sizeNote = (box) => {
+      const note = box.closest('.field').querySelector('.ex-textnote');
+      const n = box.value.length;
+      if (!n) { note.className = 'ex-textnote muted'; note.textContent = 'empty'; return; }
+      const k = Math.round(n / 4 / 100) / 10;
+      note.className = 'ex-textnote ' + (k > 12 ? 'warn-text' : 'muted');
+      note.textContent = `${n.toLocaleString()} characters \u00b7 roughly ${k}k tokens, added to ` +
+        `every extraction call` + (k > 12 ? ' \u2014 consider trimming to the tables that matter' : '');
+    };
+    list.querySelectorAll('.ex-text').forEach(box => {
+      box.addEventListener('input', () => sizeNote(box));
+      sizeNote(box);
+    });
+    list.querySelectorAll('.ex-paper').forEach((sel, i) => sel.addEventListener('change', async () => {
+      if (!sel.value) return;
+      const box = list.querySelectorAll('.ex-text')[i];
+      const was = box.value;
+      if (was.trim() && !confirm('Replace the text in this example with that paper\'s text?')) {
+        sel.value = ''; return;
+      }
+      box.value = 'loading\u2026';
+      try {
+        const paper = await get('/api/papers/' + sel.value);
+        box.value = paper.chunks
+          .map(c => (paper.source_tracking ? `ID: ${c.id}\n` : '') + c.text).join('\n\n');
+        rows[i].source = paper.filename;
+        rows[i].paper_id = paper.id;
+      } catch (e) { box.value = was; alert(e.message); }
+      sel.value = '';
+      sizeNote(box);
+    }));
     list.querySelectorAll('.ex-remove').forEach(b => b.addEventListener('click', () => {
-      rows.splice(Number(b.dataset.i), 1); paint();
+      collect();
+      rows.splice(Number(b.dataset.i), 1);
+      paint();
     }));
     list.querySelectorAll('.ex-fill').forEach(b => b.addEventListener('click', () => {
       const box = list.querySelectorAll('.ex-records')[Number(b.dataset.i)];
@@ -1020,13 +1088,8 @@ async function openExamplesEditor(onSaved) {
   paint();
 
   dialog.querySelector('#ex-add').addEventListener('click', () => {
-    // keep what is typed before repainting, or adding a second example wipes the first
-    [...list.querySelectorAll('.ex-item')].forEach((row, i) => {
-      rows[i].paper_id = row.querySelector('.ex-paper').value;
-      try { rows[i].records = JSON.parse(row.querySelector('.ex-records').value.trim() || '[]'); }
-      catch { /* leave the last good value */ }
-    });
-    rows.push({ paper_id: '', records: [] });
+    collect();
+    rows.push({ text: '', records: [], source: '', paper_id: '' });
     paint();
   });
 }
@@ -1054,7 +1117,7 @@ function papersTableHTML(papers) {
         ${spendCell(spend.cost_usd, spend.tokens)}
         <td class="nowrap"><span class="row-actions">
           <button class="view-btn iconly" title="View the parsed text">${icon('view')}</button>
-          <button class="del-btn iconly" title="Delete this paper and everything from it"
+          <button class="del-btn danger iconly" title="Delete this paper and everything from it"
             data-name="${esc(p.filename)}"
             data-has="${[p.extracted && 'extraction', p.judged && 'judgment'].filter(Boolean).join(' and ')}">${icon('trash')}</button>
         </span></td>
@@ -1082,13 +1145,13 @@ async function renderParse(gen) {
             <input type="file" id="pdf-files" accept="application/pdf" multiple hidden></label>
           <label class="pickbtn">Choose a whole folder
             <input type="file" id="pdf-folder" webkitdirectory multiple hidden></label>
-          <button id="clear-pick" hidden>Clear</button>
+          <button id="clear-pick" hidden>${icon('x')}Clear</button>
         </div>
         <div id="picked" class="picked muted">No files chosen yet.</div>
         <label style="margin-top:10px"><input type="checkbox" id="src-track" ${settings.source_tracking_default ? 'checked' : ''}>
           Source tracking &mdash; tag every chunk with an id so records can cite where a value came from</label>
         <div class="row" style="margin-top:10px">
-          <button class="primary" id="upload-btn" disabled>Parse</button>
+          <button class="primary" id="upload-btn" disabled>${icon('upload')}Parse</button>
           <span class="muted" id="upload-hint"></span>
         </div>
         <div id="run-progress"></div>
@@ -1226,7 +1289,7 @@ function wireViewButtons() {
 // or a one-click route to fixing it. The list comes from /api/readiness, the same function the
 // API refuses the run with, so the checklist and the error can never disagree.
 function stageSetupHTML(kind, state) {
-  const { prompts, examples, settings, schema, blockers } = state;
+  const { prompts, examples, schema, blockers, model } = state;
   const ok = (cond, label, detail, action, tip) => `
     <div class="setup-row ${cond ? '' : 'missing'}">
       <span class="dot">${cond ? icon('check') : ''}</span>
@@ -1243,12 +1306,17 @@ function stageSetupHTML(kind, state) {
   return `<div class="stage-setup">
     <h3>What this run needs${help('Every row must be green before the run button works. ' +
       'The same checks run on the server, so a run can never start half-configured.')}</h3>
-    ${ok(settings.model, 'Model', settings.model || 'not chosen',
-        '<a href="#/settings"><button>Choose</button></a>',
-        'Which LLM to call, in litellm format — and its API key must be set too.')}
+    ${ok(model && model.key_set && !model.provider_problem, 'Model',
+        model
+          ? `${esc(model.name)} — <code>${esc(model.model)}</code>` +
+            (model.key_set ? '' : ' · no API key yet')
+          : 'not chosen',
+        `<a href="#/settings"><button>${icon('settings')}${model ? 'Change' : 'Choose'}</button></a>`,
+        'Which named model this stage calls. Extraction and judging choose separately, so you ' +
+        'can extract with one model and audit with another.')}
     ${ok(schema.set, 'Schema',
         schema.set ? `${schema.fields.length} fields` : 'no fields defined',
-        '<a href="#/settings"><button>Define</button></a>',
+        `<a href="#/settings"><button>${icon('settings')}Define</button></a>`,
         'The fields one record has. Everything downstream — the prompt, the review pane, the ' +
         'report — is built from this list.')}
     ${ok(promptSet, kind === 'extract' ? 'Extraction prompt' : 'Judge rubric',
@@ -1263,9 +1331,10 @@ function stageSetupHTML(kind, state) {
     <div class="setup-row optional">
       <span class="dot optional"></span>
       <div class="grow">
-        <b>Worked examples${help('One paper\'s text paired with the records it should produce, ' +
-          'shown to the model before each paper. Optional — extraction works without them, and ' +
-          'each one is re-sent with every paper, so two or three is the ceiling.')}</b>
+        <b>Worked examples${help('A piece of text paired with the records it should produce, ' +
+          'shown to the model before every paper. They are not tied to one paper: the same one ' +
+          'or two go out with each, so write them to be typical of the corpus. Optional, and ' +
+          'each is re-sent on every call, so two or three is the ceiling.')}</b>
         <div class="muted">${examples.length
           ? `${examples.length} example${examples.length === 1 ? '' : 's'}` : 'none — optional'}</div>
       </div>
@@ -1288,7 +1357,7 @@ function openPromptEditor(kind, prompts, onSaved) {
         <span class="muted">The grey text is a real prompt from a PET depolymerisation corpus,
           shown as an illustration of the detail that works. It is never used as yours.</span>
         <span class="grow"></span>
-        <button id="prompt-copy-example">Start from the example</button>
+        <button class="go" id="prompt-copy-example">${icon('spark')}Start from the example</button>
       </div>
       <div class="field">
         <textarea id="prompt-box" rows="22" spellcheck="false"
@@ -1321,12 +1390,13 @@ function stageChecklistHTML(papers, doneKey, emptyMsg) {
 }
 
 async function renderExtract(gen) {
-  const [papers, timings, prompts, examples, settings, schema, readiness] = await Promise.all([
+  const [papers, timings, prompts, examples, schema, readiness] = await Promise.all([
     get('/api/papers'), get('/api/timings'), get('/api/prompts'), get('/api/few-shot'),
-    get('/api/settings'), get('/api/schema'), get('/api/readiness')]);
+    get('/api/schema'), get('/api/readiness')]);
   if (stale(gen)) return;
   state.timings = timings;
-  const setup = { prompts, examples, settings, schema, blockers: readiness.extract };
+  const setup = { prompts, examples, schema, blockers: readiness.extract.blockers,
+                  model: readiness.extract.model };
 
   view.innerHTML = `
     <section>
@@ -1339,7 +1409,7 @@ async function renderExtract(gen) {
               '<span class="muted">No parsed papers yet &mdash; start in <a href="#/parse">Parse</a>.</span>')}</div>
             <div class="muted" id="selection-summary" style="margin-top:8px"></div>
             <div class="row" style="margin-top:10px">
-              <button class="primary" id="run-btn">Run extraction on selected</button>
+              <button class="primary" id="run-btn">${icon('play')}Run extraction on selected</button>
               <span class="muted" id="select-hint"></span>
             </div>
           </div>
@@ -1354,7 +1424,7 @@ async function renderExtract(gen) {
   wireStageSetup('extract', prompts);
   wireStageRun(papers, 'extract', 'Extracting',
     (r) => `${r.n_records} records · ${humanSeconds(r.seconds)}${costOf(r)}`,
-    readiness.extract);
+    readiness.extract.blockers);
   await wireReviewPicker(papers.filter(p => p.extracted), false);
 }
 
@@ -1366,13 +1436,14 @@ function wireStageSetup(kind, prompts) {
 }
 
 async function renderJudge(gen) {
-  const [papers, timings, prompts, settings, schema, readiness] = await Promise.all([
+  const [papers, timings, prompts, schema, readiness] = await Promise.all([
     get('/api/papers'), get('/api/timings'), get('/api/prompts'),
-    get('/api/settings'), get('/api/schema'), get('/api/readiness')]);
+    get('/api/schema'), get('/api/readiness')]);
   if (stale(gen)) return;
   state.timings = timings;
   const extracted = papers.filter(p => p.extracted);
-  const setup = { prompts, examples: [], settings, schema, blockers: readiness.judge };
+  const setup = { prompts, examples: [], schema, blockers: readiness.judge.blockers,
+                  model: readiness.judge.model };
 
   view.innerHTML = `
     <section>
@@ -1386,7 +1457,7 @@ async function renderJudge(gen) {
               '<span class="muted">Nothing extracted yet &mdash; run <a href="#/extract">Extract</a> first.</span>')}</div>
             <div class="muted" id="selection-summary" style="margin-top:8px"></div>
             <div class="row" style="margin-top:10px">
-              <button class="primary" id="run-btn">Run judge on selected</button>
+              <button class="primary" id="run-btn">${icon('play')}Run judge on selected</button>
               <span class="muted" id="select-hint"></span>
             </div>
           </div>
@@ -1401,7 +1472,7 @@ async function renderJudge(gen) {
   wireStageSetup('judge', prompts);
   wireStageRun(extracted, 'judge', 'Judging',
     (r) => `${r.n_verdicts} verdicts · ${humanSeconds(r.seconds)}${costOf(r)}`,
-    readiness.judge);
+    readiness.judge.blockers);
   await wireReviewPicker(papers.filter(p => p.judged), true);
 }
 
@@ -1558,7 +1629,7 @@ async function renderReport(gen) {
       <p class="muted">Parse some papers and run an extraction; this page then describes the
         corpus you have built — completeness by field, what the judge changed, and the
         distribution of any field you pick.</p>
-      <a href="#/parse"><button class="primary">Go to Parse</button></a>
+      <a href="#/parse"><button class="primary">${icon('arrow')}Go to Parse</button></a>
     </div></section>`;
     paintRun();
     return;
@@ -1759,8 +1830,8 @@ async function renderSettings(gen) {
         </tr></thead><tbody id="schema-rows"></tbody></table>
         <div class="row" style="margin-top:10px">
           <button id="add-field">${icon('plus')}Add field</button>
-          <button id="use-example-schema">Use the example</button>
-          <button id="clear-schema">Clear all</button>
+          <button class="go" id="use-example-schema">${icon('spark')}Use the example</button>
+          <button class="danger" id="clear-schema">${icon('eraser')}Clear all</button>
         </div>
       </div>
 
@@ -1770,7 +1841,7 @@ async function renderSettings(gen) {
         <div class="row" style="margin-bottom:8px">
           <span class="muted">Grey text is a real prompt from a PET corpus, shown as an illustration.</span>
           <span class="grow"></span>
-          <button data-copy-example="extract">Use the example</button>
+          <button class="go" data-copy-example="extract">${icon('spark')}Use the example</button>
         </div>
         <textarea id="extract-prompt" rows="12" spellcheck="false"
           placeholder="${esc(prompts.placeholders.extract)}">${esc(prompts.extract)}</textarea>
@@ -1781,7 +1852,7 @@ async function renderSettings(gen) {
           ${prompts.judge_set ? '' : '<span class="tag no">required before judging</span>'}</h2>
         <div class="row" style="margin-bottom:8px">
           <span class="grow"></span>
-          <button data-copy-example="judge">Use the example</button>
+          <button class="go" data-copy-example="judge">${icon('spark')}Use the example</button>
         </div>
         <textarea id="judge-prompt" rows="12" spellcheck="false"
           placeholder="${esc(prompts.placeholders.judge)}">${esc(prompts.judge)}</textarea>
@@ -1811,7 +1882,7 @@ async function renderSettings(gen) {
         <span>Unsaved changes</span>
         <span class="grow"></span>
         <span class="muted" id="save-all-status"></span>
-        <button id="discard">Discard</button>
+        <button id="discard">${icon('undo')}Discard</button>
         <button class="primary" id="save-all">${icon('check')}Save changes</button>
       </div>
     </section>`;
@@ -1829,12 +1900,15 @@ async function renderSettings(gen) {
           <input class="m-name" value="${esc(m.name || '')}" placeholder="a name for this endpoint"
             style="flex:1;min-width:160px;font-weight:600">
           ${m.id ? `<span class="tag ${m.key_set ? 'yes' : 'no'}">${m.key_set ? 'key set' : 'no key'}</span>` : '<span class="tag no">unsaved</span>'}
-          <button class="m-remove iconly" data-i="${i}" title="remove this model">${icon('trash')}</button>
+          <button class="m-remove danger iconly" data-i="${i}" title="remove this model">${icon('trash')}</button>
         </div>
         <div class="modelgrid">
           <label>Model string${help('litellm format: gpt-4o-mini, anthropic/claude-sonnet-4-5, ' +
-            'ollama/llama3, azure/your-deployment-name.')}
-            <input class="m-model" value="${esc(m.model || '')}" placeholder="${esc(ph.model)}"></label>
+            'ollama/llama3, azure/your-deployment-name. With an endpoint of your own, use ' +
+            'List models below rather than guessing \u2014 the name is often not what you expect.')}
+            <input class="m-model" value="${esc(m.model || '')}" placeholder="${esc(ph.model)}"
+              list="ml-${i}" autocomplete="off">
+            <datalist id="ml-${i}"></datalist></label>
           <label>API key${help('Stored in .env under this entry\'s own variable, so two ' +
             'providers never fight over one OPENAI_API_KEY.')}
             <input class="m-key" type="password" placeholder="${m.key_set ? '•••••••• saved — type to replace' : 'paste the key'}"></label>
@@ -1845,17 +1919,61 @@ async function renderSettings(gen) {
             'almost nothing else does.')}
             <input class="m-version" value="${esc(m.api_version || '')}" placeholder="2024-12-01-preview"></label>
         </div>
+        ${m.provider_problem ? `<div class="warnbox">${esc(m.provider_problem)}</div>` : ''}
         <div class="row" style="margin-top:8px">
-          <button class="m-test" data-i="${i}" ${m.id ? '' : 'disabled'}>Test connection</button>
+          <button class="m-test" data-i="${i}" ${m.id ? '' : 'disabled'}>${icon('bolt')}Test connection</button>
+          <button class="m-list" data-i="${i}"
+            title="Ask this endpoint which models it serves, and pick from the answer">${icon('view')}List models</button>
           <span class="muted m-status">${m.id ? '' : 'save first, then test'}</span>
         </div>
+        <div class="modelpick" hidden></div>
       </div>`).join('') : '<p class="muted">No models yet. Add one to get started.</p>';
 
     modelList.querySelectorAll('input').forEach(inp => inp.addEventListener('input', markDirty));
+    modelList.querySelectorAll('.m-name, .m-model').forEach(inp => inp.addEventListener('input', () => {
+      collectModels(); paintStageSelects();
+    }));
     modelList.querySelectorAll('.m-remove').forEach(b => b.addEventListener('click', () => {
       collectModels();
       profiles.splice(Number(b.dataset.i), 1);
       paintModels(); paintStageSelects(); markDirty();
+    }));
+    // The endpoint knows its own model names; guessing them is how people end up with
+    // "Qwen3.8-27B" when the server calls it "Qwen 3.8 27B". Works before a save too, from
+    // whatever is typed in the boxes.
+    modelList.querySelectorAll('.m-list').forEach(b => b.addEventListener('click', async () => {
+      const i = Number(b.dataset.i);
+      const card = b.closest('.modelcard');
+      const status = card.querySelector('.m-status');
+      const picks = card.querySelector('.modelpick');
+      status.className = 'muted m-status';
+      status.textContent = 'Asking the endpoint\u2026';
+      const r = await post(`/api/models/${profiles[i].id || 'unsaved'}/discover`, {
+        api_base: card.querySelector('.m-base').value.trim(),
+        api_key: card.querySelector('.m-key').value.trim(),
+      }).catch(e => ({ ok: false, error: e.message }));
+      if (!r.ok) {
+        picks.hidden = true;
+        status.className = 'error m-status';
+        status.textContent = r.error;
+        return;
+      }
+      status.className = 'ok-text m-status';
+      status.textContent = `${r.models.length} model(s) available \u2014 click one`;
+      const box = card.querySelector('.m-model');
+      card.querySelector(`#ml-${i}`).innerHTML =
+        r.models.map(m => `<option value="${esc(m.string)}"></option>`).join('');
+      picks.hidden = false;
+      picks.innerHTML = r.models
+        .map(m => `<button type="button" class="pick" data-s="${esc(m.string)}">${esc(m.id)}</button>`).join('');
+      picks.querySelectorAll('.pick').forEach(pb => pb.addEventListener('click', () => {
+        box.value = pb.dataset.s;
+        collectModels();
+        paintStageSelects();
+        markDirty();
+        status.className = 'muted m-status';
+        status.textContent = 'Save, then test it.';
+      }));
     }));
     modelList.querySelectorAll('.m-test').forEach(b => b.addEventListener('click', async () => {
       const card = b.closest('.modelcard');
@@ -1882,14 +2000,25 @@ async function renderSettings(gen) {
     });
   }
 
+  // A model that has not been saved yet still belongs in these dropdowns. It used to be
+  // filtered out for want of an id, so the commonest path through this page -- add your first
+  // model, fill it in, save -- saved both stages as "nothing chosen", and the Extract page then
+  // asked for a model the user had just entered. Unsaved rows are offered under a placeholder
+  // value that is swapped for the real id the moment the save returns one.
+  const NEW = (i) => 'new:' + i;
   function paintStageSelects() {
-    for (const [stage, el2] of [['extract', document.getElementById('extract-model')],
+    for (const [stage, sel] of [['extract', document.getElementById('extract-model')],
                                 ['judge', document.getElementById('judge-model')]]) {
-      const chosen = el2.value || modelCfg[stage];
-      el2.innerHTML = '<option value="">choose a model&hellip;</option>' + profiles
-        .filter(m => m.id)
-        .map(m => `<option value="${m.id}" ${chosen === m.id ? 'selected' : ''}>${esc(m.name || m.model)}</option>`)
-        .join('');
+      const chosen = sel.value || modelCfg[stage];
+      sel.innerHTML = '<option value="">choose a model&hellip;</option>' + profiles
+        .map((m, i) => {
+          const v = m.id || NEW(i);
+          const label = m.name || m.model || 'new model';
+          return `<option value="${v}" ${chosen === v ? 'selected' : ''}>${esc(label)}</option>`;
+        }).join('');
+      // One model is not a choice. Leaving both stages blank when only one exists is a trap,
+      // not a decision, so the only option is selected and can still be changed.
+      if (!sel.value && profiles.length === 1) sel.value = profiles[0].id || NEW(0);
     }
   }
   paintModels(); paintStageSelects();
@@ -1908,7 +2037,7 @@ async function renderSettings(gen) {
         `<option ${f && f.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select></td>
       <td><input class="f-desc" value="${f && !grey ? esc(f.description || '') : ''}"
           placeholder="${grey && f ? esc(f.description || '') : 'what the model should put here'}"></td>
-      <td><button class="f-del iconly" title="remove this field">${icon('trash')}</button></td>
+      <td><button class="f-del danger iconly" title="remove this field">${icon('trash')}</button></td>
     </tr>`));
   const paintSchema = () => {
     rows.innerHTML = '';
@@ -1963,6 +2092,7 @@ async function renderSettings(gen) {
         api_base: m.api_base, api_version: m.api_version })));
       // ids come back in the order sent, so a brand new row learns its id here
       saved.ids.forEach((id, i) => { profiles[i].id = id; });
+      const resolve = (v) => /^new:\d+$/.test(v) ? (profiles[Number(v.slice(4))] || {}).id || '' : v;
       for (const m of profiles) {
         if (m.newKey) await put(`/api/models/${m.id}/key`, { value: m.newKey });
       }
@@ -1976,8 +2106,8 @@ async function renderSettings(gen) {
                                   judge: document.getElementById('judge-prompt').value });
       await put('/api/settings', {
         source_tracking_default: document.getElementById('src-default').checked,
-        extract_model: document.getElementById('extract-model').value,
-        judge_model: document.getElementById('judge-model').value,
+        extract_model: resolve(document.getElementById('extract-model').value),
+        judge_model: resolve(document.getElementById('judge-model').value),
       });
       status.className = 'ok-text';
       status.textContent = 'Saved.';
@@ -2003,5 +2133,9 @@ async function renderSettings(gen) {
 
 // ---------- boot ----------
 
-get('/api/settings').then(s => { document.getElementById('model-badge').textContent = 'model: ' + s.model; });
+get('/api/readiness').then(r => {
+  const m = r.extract.model;
+  document.getElementById('model-badge').textContent =
+    m ? 'extracting with ' + m.name : 'no model chosen';
+});
 router();

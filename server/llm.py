@@ -44,3 +44,26 @@ def complete(params: dict, messages: list[dict], **kwargs):
                            f"Use a longer-context model, or remove a few-shot example.") from e
     except litellm.APIError as e:
         raise RuntimeError(f"The provider returned an error: {e}") from e
+
+
+def provider_problem(model: str) -> str:
+    """Empty if litellm can route this model string; otherwise why it cannot, and what to write.
+
+    litellm decides which provider to call from a prefix on the model string, and a bare name it
+    does not recognise fails with "LLM Provider NOT provided" -- at the moment of the first real
+    call, after the papers are parsed and the prompt is written. Asking litellm's own router the
+    question up front turns that into a line in the checklist, and it is litellm answering, so
+    this can never disagree with what the call would do.
+    """
+    model = (model or "").strip()
+    if not model:
+        return ""
+    try:
+        litellm.get_llm_provider(model=model)
+        return ""
+    except Exception:
+        return (f'litellm cannot tell which provider "{model}" belongs to. Model strings carry '
+                f'their provider as a prefix: write "openai/{model}" for any OpenAI-compatible '
+                f'endpoint (most self-hosted servers, vLLM, Together, a proxy), '
+                f'"ollama/{model}" for a local Ollama, or "azure/{model}" for an Azure '
+                f'deployment.')

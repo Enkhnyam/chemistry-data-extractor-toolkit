@@ -95,7 +95,11 @@ class ConfigTests(unittest.TestCase):
         """Every blocker must clear before a run is possible: model, key, schema, prompt."""
         from server import config
         with configured():
-            self.assertEqual(client.get("/api/readiness").json(), {"extract": [], "judge": []})
+            ready = client.get("/api/readiness").json()
+            self.assertEqual(ready["extract"]["blockers"], [])
+            self.assertEqual(ready["judge"]["blockers"], [])
+            # and it names what it will call, so the checklist can stop saying "not chosen"
+            self.assertTrue(ready["extract"]["model"]["name"])
             r = client.post("/api/extract", json={"paper_ids": ["nope"]})
             self.assertEqual(r.status_code, 200)          # now fails per-paper, not as a gate
             self.assertIn("error", r.json()[0])
@@ -105,7 +109,7 @@ class ConfigTests(unittest.TestCase):
         config.save_settings({"extract_model": "", "judge_model": ""})
         config.save_schema([])
         config.EXTRACT_PROMPT_FILE.unlink(missing_ok=True)
-        blockers = " ".join(client.get("/api/readiness").json()["extract"])
+        blockers = " ".join(client.get("/api/readiness").json()["extract"]["blockers"])
         self.assertIn("model", blockers)
         self.assertIn("fields", blockers)
         self.assertIn("extraction prompt", blockers)
@@ -114,10 +118,73 @@ class ConfigTests(unittest.TestCase):
         from server import config
         pid = client.put("/api/models", json=[{"name": "Keyless", "model": "gpt-4o-mini"}]).json()["ids"][0]
         config.save_settings({"extract_model": pid})
-        blockers = " ".join(client.get("/api/readiness").json()["extract"])
+        blockers = " ".join(client.get("/api/readiness").json()["extract"]["blockers"])
         self.assertIn("Keyless", blockers)
         self.assertIn("API key", blockers)
         client.put("/api/models", json=[])
+
+    def test_a_model_string_with_no_provider_is_caught_before_the_call(self):
+        """The failure this replaces: "Qwen3.8-27B" saved, tested and configured without
+        complaint, then every extraction died on litellm's "LLM Provider NOT provided" -- after
+        the papers were parsed and paid for."""
+        from server import config, models
+        pid = client.put("/api/models", json=[{"name": "Local", "model": "Qwen3.8-27B"}]).json()["ids"][0]
+        os.environ[models.key_var(pid)] = "any"
+        config.save_settings({"extract_model": pid})
+        blockers = " ".join(client.get("/api/readiness").json()["extract"]["blockers"])
+        self.assertIn("openai/Qwen3.8-27B", blockers)
+        # and the model list says so where the model is being configured
+        profile = client.get("/api/models").json()["profiles"][0]
+        self.assertTrue(profile["provider_problem"])
+        # a prefixed string is accepted and the warning goes away
+        client.put("/api/models", json=[{"id": pid, "name": "Local", "model": "openai/Qwen3.8-27B"}])
+        self.assertEqual(client.get("/api/models").json()["profiles"][0]["provider_problem"], "")
+        os.environ.pop(models.key_var(pid), None)
+        client.put("/api/models", json=[])
+        config.save_settings({"extract_model": ""})
+
+    def test_the_only_model_is_used_without_a_second_decision(self):
+        """Adding your first model used to leave both stages pointing at nothing, so the Extract
+        page asked for a model you had just entered."""
+        from server import config
+        config.save_settings({"extract_model": "", "judge_model": ""})
+        pid = client.put("/api/models", json=[{"name": "Only", "model": "gpt-4o-mini"}]).json()["ids"][0]
+        settings = client.get("/api/settings").json()
+        self.assertEqual(settings["extract_model"], pid)
+        self.assertEqual(settings["judge_model"], pid)
+        # but a stage someone pointed somewhere on purpose is never moved
+        second = client.put("/api/models", json=[
+            {"id": pid, "name": "Only", "model": "gpt-4o-mini"},
+            {"name": "Other", "model": "gpt-4o"}]).json()["ids"][1]
+        self.assertEqual(client.get("/api/settings").json()["extract_model"], pid)
+        self.assertNotEqual(second, pid)
+        client.put("/api/models", json=[])
+        config.save_settings({"extract_model": "", "judge_model": ""})
+
+    def test_a_stage_never_keeps_pointing_at_a_deleted_model(self):
+        """Replace your only model and the stage used to keep naming the one you removed, which
+        reads on the Extract page as "the model you chose no longer exists" and no way forward."""
+        from server import config
+        config.save_settings({"extract_model": "", "judge_model": ""})
+        old = client.put("/api/models", json=[{"name": "Old", "model": "gpt-4o-mini"}]).json()["ids"][0]
+        self.assertEqual(client.get("/api/settings").json()["extract_model"], old)
+        new = client.put("/api/models", json=[{"name": "New", "model": "gpt-4o"}]).json()["ids"][0]
+        self.assertNotEqual(new, old)
+        self.assertEqual(client.get("/api/settings").json()["extract_model"], new)
+        self.assertEqual(client.get("/api/readiness").json()["extract"]["model"]["name"], "New")
+        client.put("/api/models", json=[])
+        config.save_settings({"extract_model": "", "judge_model": ""})
+
+    def test_a_worked_example_is_saved_as_typed(self):
+        """Examples are global -- the same one or two go to every paper -- so the text is the
+        example, not a pointer to a paper that may since have been deleted."""
+        client.put("/api/few-shot", json=[
+            {"text": "Table 1. entry 1, 190 C, 82% yield", "records": [{"yield_percent": 82}],
+             "source": "typed in"}])
+        got = client.get("/api/few-shot").json()
+        self.assertEqual(got[0]["text"], "Table 1. entry 1, 190 C, 82% yield")
+        self.assertIsNone(got[0]["paper_id"])
+        client.put("/api/few-shot", json=[])
 
     def test_extraction_and_judging_can_use_different_models(self):
         """The reason profiles exist: a strong extractor and a separate auditor, each with its

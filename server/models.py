@@ -22,7 +22,8 @@ def key_var(profile_id: str) -> str:
     return "MODEL_" + re.sub(r"[^A-Z0-9]+", "_", profile_id.upper()) + "_KEY"
 
 
-def _public(profile: dict, key_is_set) -> dict:
+def public(profile: dict, key_is_set) -> dict:
+    from . import llm
     return {
         "id": profile["id"],
         "name": profile.get("name") or profile.get("model") or "untitled",
@@ -31,11 +32,14 @@ def _public(profile: dict, key_is_set) -> dict:
         "api_version": profile.get("api_version", ""),
         "key_var": key_var(profile["id"]),
         "key_set": key_is_set(key_var(profile["id"])),
+        # Answered by litellm's own router, so the interface can say "this model string will not
+        # route" while the model is being configured, instead of at the first paid call.
+        "provider_problem": llm.provider_problem(profile.get("model", "")),
     }
 
 
 def listing(key_is_set) -> list[dict]:
-    return [_public(p, key_is_set) for p in read_json(FILE, [])]
+    return [public(p, key_is_set) for p in read_json(FILE, [])]
 
 
 def get(profile_id: str) -> dict | None:
@@ -89,6 +93,11 @@ def blockers(profile_id: str, stage_label: str) -> list[str]:
         return [f"The model chosen for {stage_label} no longer exists. Pick another in Settings."]
     if not profile.get("model"):
         return [f"The model for {stage_label} has no model string. Add one in Settings."]
+    missing = []
     if not os.environ.get(key_var(profile_id)):
-        return [f"{profile.get('name') or profile['model']} has no API key. Add it in Settings."]
-    return []
+        missing.append(f"{profile.get('name') or profile['model']} has no API key. "
+                       f"Add it in Settings.")
+    from . import llm
+    if problem := llm.provider_problem(profile["model"]):
+        missing.append(problem)
+    return missing

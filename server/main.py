@@ -13,6 +13,7 @@ import time
 from pathlib import Path
 from typing import Literal
 
+import httpx
 from dotenv import load_dotenv, set_key
 from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse, Response
@@ -92,6 +93,21 @@ def get_models():
 @app.put("/api/models")
 def put_models(profiles: list[ModelProfile]):
     saved = models.save_all([p.model_dump() for p in profiles])
+    settings = config.get_settings()
+    live = {m["id"] for m in saved}
+    # This is a whole-list replace, so a stage can be left pointing at a model that has just
+    # been deleted. Forgetting a dead pointer is what lets the rule below take over; without it
+    # you delete your only model, add its replacement, and the stage still names the ghost.
+    patch = {f"{st}_model": "" for st in ("extract", "judge")
+             if settings.get(f"{st}_model") and settings[f"{st}_model"] not in live}
+    # A workspace with exactly one model and a stage pointing at nothing is never what anyone
+    # meant -- the dropdown is a choice between one option. Only unset stages are filled, so
+    # this can never move a stage somebody deliberately pointed elsewhere.
+    if len(saved) == 1:
+        patch.update({f"{st}_model": saved[0]["id"] for st in ("extract", "judge")
+                      if not settings.get(f"{st}_model") or f"{st}_model" in patch})
+    if patch:
+        config.save_settings(patch)
     return {"profiles": models.listing(_key_is_set),
             "ids": [p["id"] for p in saved]}
 
@@ -107,6 +123,44 @@ def put_model_key(profile_id: str, body: ModelKey):
     return put_api_key(ApiKey(name=models.key_var(profile_id), value=body.value))
 
 
+class Discover(BaseModel):
+    api_base: str = ""
+    api_key: str = ""
+
+
+@app.post("/api/models/{profile_id}/discover")
+def discover_models(profile_id: str, body: Discover):
+    """Ask the endpoint which models it actually serves.
+
+    The failure this exists for: a model string that is right in spirit and wrong in every
+    character. An OpenAI-compatible server will happily report `Qwen 3.8 27B` -- spaces and
+    all -- and no amount of guessing gets there from "Qwen3.8-27B". Every such server answers
+    GET /models, so the honest answer is to ask it rather than make the user divine it.
+    """
+    profile = models.get(profile_id) or {}
+    base = (body.api_base or profile.get("api_base") or "").rstrip("/")
+    if not base:
+        return {"ok": False, "error": "This needs an endpoint. Providers with no endpoint "
+                                      "(OpenAI, Anthropic) publish their model names instead."}
+    key = body.api_key or os.environ.get(models.key_var(profile_id), "")
+    try:
+        r = httpx.get(f"{base}/models", timeout=20,
+                      headers={"Authorization": f"Bearer {key}"} if key else {})
+        r.raise_for_status()
+        payload = r.json()
+    except Exception as e:
+        return {"ok": False, "error": f"{type(e).__name__}: {str(e)[:200]}"}
+    entries = payload.get("data", payload) if isinstance(payload, dict) else payload
+    ids = [m.get("id") for m in entries if isinstance(m, dict) and m.get("id")] \
+        if isinstance(entries, list) else []
+    if not ids:
+        return {"ok": False, "error": f"{base}/models answered, but with nothing that looks "
+                                      f"like a model list."}
+    # Prefixed here, not in the browser: what makes a string callable is litellm's business,
+    # and the caller should not have to know that an endpoint implies the openai provider.
+    return {"ok": True, "models": [{"id": i, "string": f"openai/{i}"} for i in sorted(ids)]}
+
+
 @app.post("/api/models/{profile_id}/test")
 def test_model_profile(profile_id: str):
     """One tiny completion against this exact configuration -- the only way to find out whether
@@ -117,7 +171,8 @@ def test_model_profile(profile_id: str):
     params = models.call_params(profile_id)
     started = time.monotonic()
     try:
-        resp = llm.complete(params, [{"role": "user", "content": "Reply with OK."}], max_tokens=5)
+        resp = llm.complete(params, [{"role": "user", "content": "Reply with OK."}],
+                            max_tokens=64)
     except Exception as e:
         return {"ok": False, "error": f"{type(e).__name__}: {e}"}
     return {"ok": True, "model": params["model"],
@@ -284,9 +339,21 @@ def _blockers(stage: str) -> list[str]:
     return missing
 
 
+def _stage_readiness(stage: str) -> dict:
+    """Everything a stage page needs to say what is missing AND what is already chosen.
+
+    The checklist used to read a long-dead settings["model"] and so reported "Model: not chosen"
+    to people who had chosen one -- the row was describing a field nothing writes any more. It
+    now names the profile the stage will actually call, from the same lookup the run uses.
+    """
+    profile = models.get(config.get_settings().get(f"{stage}_model", "") or "")
+    return {"blockers": _blockers(stage),
+            "model": models.public(profile, _key_is_set) if profile else None}
+
+
 @app.get("/api/readiness")
 def get_readiness():
-    return {stage: _blockers(stage) for stage in ("extract", "judge")}
+    return {stage: _stage_readiness(stage) for stage in ("extract", "judge")}
 
 
 # A clone arrives with an empty workspace and an eight-step checklist, which tells a new user

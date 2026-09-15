@@ -13,7 +13,9 @@ JUDGE_PROMPT_FILE = CONFIG / "judge_prompt.txt"
 FEW_SHOT_FILE = CONFIG / "few_shot.json"
 
 DEFAULT_SETTINGS = {
-    "model": "",                      # no model until one is chosen; see placeholders()
+    # Which named model profile each stage calls; see server/models.py. Empty until chosen.
+    "extract_model": "",
+    "judge_model": "",
     "source_tracking_default": True,  # a real default: provenance on unless turned off
 }
 

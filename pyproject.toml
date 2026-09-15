@@ -18,6 +18,10 @@ dependencies = [
     "pydantic>=2.0",
     "python-dotenv>=1.0.1",
     "markdown-it-py>=4.0.0",
+    # Only for asking an endpoint which models it serves. It arrives anyway under litellm, but
+    # a direct import belongs in a direct dependency -- otherwise it vanishes the day litellm
+    # changes its HTTP client.
+    "httpx>=0.27",
 ]
 
 [build-system]
