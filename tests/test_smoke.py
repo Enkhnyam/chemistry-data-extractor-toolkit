@@ -21,6 +21,7 @@ from fastapi.testclient import TestClient        # noqa: E402
 
 from server import config                        # noqa: E402
 from server.main import app                      # noqa: E402
+from server.storage import EXTRACTED as EXTRACTED_DIR, JUDGED as JUDGED_DIR  # noqa: E402
 
 client = TestClient(app)
 
@@ -202,6 +203,36 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(stale.status_code, 409)
         (EXTRACTED / "vp.json").unlink()
         (PARSED / "vp.json").unlink()
+
+    def test_the_demo_can_be_loaded_back_beside_your_own_papers(self):
+        """The regression this pins: scoping clear() to the demo's own files meant one paper of
+        your own left the workspace permanently non-empty, and the seeder it called refused any
+        workspace that was not empty -- so "Load the demo" silently did nothing, for exactly the
+        person who had cleared it and wanted it back."""
+        from server import demo
+        from server.storage import PDFS, PARSED, CONFIG
+        if not demo.available():
+            self.skipTest("no demo/ in this checkout")
+        for d in (PDFS, PARSED, EXTRACTED_DIR, JUDGED_DIR, CONFIG):
+            for f in list(d.iterdir()):
+                if not f.name.startswith("."):
+                    f.unlink()
+        demo.MARKER.unlink(missing_ok=True)
+
+        (PDFS / "mine.pdf").write_bytes(b"%PDF-1.4 mine")
+        self.assertFalse(demo.is_empty())
+
+        r = client.post("/api/demo/load?replace=true").json()
+        self.assertTrue(r["is_demo"], "the demo did not load into a non-empty workspace")
+        self.assertEqual(len(list(PDFS.glob("*.pdf"))), 3, "two demo papers plus yours")
+        self.assertTrue((PDFS / "mine.pdf").exists(), "your paper must survive a demo load")
+        self.assertTrue(config.get_schema(), "the demo's schema comes with it")
+
+        # and it round-trips: clear again and only yours is left
+        client.post("/api/demo/clear")
+        self.assertEqual([p.name for p in PDFS.glob("*.pdf")], ["mine.pdf"])
+        (PDFS / "mine.pdf").unlink()
+        config.save_schema([])
 
     def test_clearing_the_demo_keeps_your_own_papers_and_edits(self):
         """It used to empty the workspace outright, which took papers you had added with it."""

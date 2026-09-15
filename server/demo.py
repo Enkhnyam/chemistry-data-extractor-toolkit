@@ -47,12 +47,18 @@ def is_empty() -> bool:
 def seed(*, replace: bool = False) -> bool:
     """Copy the demo into the workspace. Returns whether it did.
 
-    `replace=True` empties the workspace first, and is only ever reached from someone pressing a
-    button that says so. Everything else goes through seed_if_empty(), which will not touch a
-    workspace that has anything in it.
+    `replace=True` is the button that says it will overwrite, and it copies the demo in
+    regardless of what else is there -- the demo's papers have their own filenames, so they land
+    beside yours rather than on top of them; the config is genuinely replaced, which is what the
+    button warns about.
+
+    This used to clear() first and then call _seed_if_empty(). That worked only while clear()
+    emptied the whole workspace: once clear() was scoped to the demo's own files, one paper of
+    your own left the workspace permanently non-empty and "Load the demo" silently did nothing.
     """
     if replace:
         clear()
+        return _copy_in()
     return _seed_if_empty()
 
 
@@ -70,7 +76,15 @@ def seed_if_empty() -> bool:
 
 
 def _seed_if_empty() -> bool:
+    """The automatic path: only ever into a workspace with nothing to lose."""
     if not available() or not is_empty():
+        return False
+    return _copy_in()
+
+
+def _copy_in() -> bool:
+    """Put the demo's files into the workspace. The one place that does the copying."""
+    if not available():
         return False
     for name, target in STAGES.items():
         source = DEMO / name

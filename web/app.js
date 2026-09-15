@@ -360,9 +360,11 @@ function guideHTML(status) {
 
 async function loadDemo() {
   const empty = state.status?.workspace_empty;
-  if (!empty && !confirm('Your workspace already has something in it.\n\nLoading the demo '
-      + 'replaces it — papers, records, schema and prompts — with the two example papers. '
-      + 'Continue?')) return;
+  if (!empty && !confirm('Add the two demo papers to your workspace?\n\n'
+      + 'Your own papers and their records are kept — the demo\'s papers have their own names '
+      + 'and land beside them.\n\nThe demo\'s schema and prompts DO replace yours, because the '
+      + 'demo records only make sense against them. Export a bundle first if you want a copy.'))
+    return;
   await post('/api/demo/load' + (empty ? '' : '?replace=true'), {});
   location.hash = '#/report';
   router();
