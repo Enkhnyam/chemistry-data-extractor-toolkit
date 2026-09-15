@@ -234,6 +234,26 @@ class ConfigTests(unittest.TestCase):
         config.save_schema([])
         config.save_settings({"extract_model": "", "judge_model": ""})
 
+    def test_the_export_carries_the_judges_reasoning_not_only_its_verdict(self):
+        """A verdict with no argument behind it cannot be checked by anyone later."""
+        from server.storage import EXTRACTED, JUDGED, PARSED, write_json
+        from server import report
+        write_json(PARSED / "jr.json", {"id": "jr", "filename": "jr.pdf", "chunks": []})
+        write_json(EXTRACTED / "jr.json", {"id": "jr", "records": [{"compound": "ZnCl2"}]})
+        write_json(JUDGED / "jr.json", {"id": "jr", "verdicts": [
+            {"record_index": 0, "verdict": "incorrect", "bad_fields": ["compound"],
+             "critique": "Table 2 says FeCl3, not ZnCl2.", "drop_record": False,
+             "fixes": [{"field": "compound", "value": "FeCl3", "evidence": "Table 2, entry 4"}]}]})
+        columns, rows = report.flat_records()
+        for column in ("judge_critique", "judge_proposed", "judge_evidence", "judge_would_drop"):
+            self.assertIn(column, columns)
+        row = next(r for r in rows if r["paper_id"] == "jr")
+        self.assertEqual(row["judge_critique"], "Table 2 says FeCl3, not ZnCl2.")
+        self.assertIn("compound", row["judge_proposed"])
+        self.assertIn("Table 2, entry 4", row["judge_evidence"])
+        for name in ("jr.json",):
+            (EXTRACTED / name).unlink(); (JUDGED / name).unlink(); (PARSED / name).unlink()
+
     def test_the_bundle_carries_the_data_the_config_and_no_keys(self):
         """A CSV of records cannot say which model wrote it, under which prompt, against which
         schema, or which rows a human corrected. The bundle is the answer to that."""

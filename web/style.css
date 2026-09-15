@@ -200,15 +200,13 @@ mark.current{background:var(--cur);color:#3a1c00;box-shadow:0 0 0 2px var(--cur)
   margin-left:auto}
 .fixline .apply{background:var(--accent);border-color:var(--accent);color:#fff}
 .arrow{color:var(--dim);font-size:.75rem}
-details.reasoning{margin-top:9px;padding-top:8px;border-top:1px solid var(--line-2)}
-details.reasoning summary{font-size:.6875rem;color:var(--dim);cursor:pointer;list-style:none;
-  text-transform:uppercase;letter-spacing:.05em;font-weight:600}
-details.reasoning summary::-webkit-details-marker{display:none}
-details.reasoning summary::before{content:"▸ ";color:var(--line)}
-details.reasoning[open] summary::before{content:"▾ "}
-details.reasoning .body{font-size:.8125rem;color:var(--ink-2);margin-top:6px;line-height:1.55}
-details.reasoning .ev{display:block;margin-top:5px;padding-left:9px;
-  border-left:2px solid var(--line);color:var(--dim);font-size:.78rem}
+.reasoning{margin-top:9px;padding-top:8px;border-top:1px solid var(--line-2)}
+.reasoning .who{font-size:.6875rem;color:var(--dim);text-transform:uppercase;letter-spacing:.04em;
+  font-weight:600}
+.reasoning .body{font-size:.8125rem;color:var(--ink-2);margin:5px 0 0;line-height:1.55}
+.reasoning .ev{display:block;margin-top:5px;padding-left:9px;font-size:.78rem;color:var(--ink-2);
+  border-left:2px solid var(--cite-line);line-height:1.5}
+.reasoning .ev b{font-weight:600}
 .feedback{display:flex;gap:6px;align-items:center;margin-top:9px;padding-top:9px;
   border-top:1px solid var(--line-2);flex-wrap:wrap}
 .flag{font-size:.6875rem;padding:2.5px 9px}

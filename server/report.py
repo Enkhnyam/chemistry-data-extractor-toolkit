@@ -165,6 +165,17 @@ def flat_records() -> tuple[list[str], list[dict]]:
                    "source_chunk_ids": " ".join(record.get("source_chunk_ids") or []),
                    "judge_verdict": verdict.get("verdict", ""),
                    "judge_bad_fields": " ".join(verdict.get("bad_fields") or []),
+                   # The verdict without the argument behind it is an assertion. Anyone checking
+                   # this dataset later needs to see why a record was called wrong, not just that
+                   # it was -- and in our own validation most "wrong" turned out to be two
+                   # acceptable readings, which only the reasoning shows.
+                   "judge_critique": verdict.get("critique") or "",
+                   "judge_proposed": "; ".join(
+                       f"{f.get('field')}={f.get('value')!r}" for f in (verdict.get("fixes") or [])),
+                   "judge_evidence": " | ".join(
+                       f"{f.get('field')}: {f.get('evidence')}"
+                       for f in (verdict.get("fixes") or []) if f.get("evidence")),
+                   "judge_would_drop": bool(verdict.get("drop_record")),
                    "reviewer_flag": note.get("flag") or "",
                    "reviewer_note": note.get("note") or "",
                    "extract_model": extract_model,

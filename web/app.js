@@ -651,9 +651,15 @@ function recordCardHTML(rec, i) {
   const flagged = bad.size ? `${bad.size} field${bad.size === 1 ? '' : 's'} flagged` : 'no fields flagged';
   const evidence = [...fixes.values()].filter(fx => fx.evidence)
     .map(fx => `<span class="ev"><b>${esc(fx.field)}</b>: ${esc(fx.evidence)}</span>`).join('');
+  // Shown, not folded away. The judge's argument is the thing a reviewer is actually assessing
+  // -- a verdict without it is an assertion -- and a disclosure triangle made reading the
+  // reasoning an extra click per record, on every record, which meant it went unread.
   const reasoning = v && (v.critique || evidence) ? `
-    <details class="reasoning"><summary>judge's reasoning &middot; ${flagged}</summary>
-      <div class="body">${esc(v.critique || '')}${evidence}</div></details>` : '';
+    <div class="reasoning">
+      <div class="who">judge's reasoning &middot; ${flagged}</div>
+      ${v.critique ? `<p class="body">${esc(v.critique)}</p>` : ''}
+      ${evidence}
+    </div>` : '';
 
   return `<div class="rec${review.selected === i ? ' on' : ''}" data-i="${i}">
     <div class="rechead">
