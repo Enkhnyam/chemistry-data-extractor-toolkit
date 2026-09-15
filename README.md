@@ -30,6 +30,19 @@ docker compose up --build
 Same address. The workspace lives in `./data/`, and anything you add — papers, records, API
 keys — stays there between runs.
 
+## Already cloned an older version?
+
+`git pull` brings the demo, but two things do not follow automatically:
+
+```bash
+git pull
+uv sync          # picks up tenacity — without it every model call fails
+```
+
+And if you had already opened Settings, your workspace is no longer empty, so the demo is not
+seeded into it — that rule exists so it can never overwrite your work. The getting-started guide
+then offers **Load the demo**, which asks before replacing anything.
+
 ## What you see first
 
 A finished project, not an empty form. The workspace is seeded with two open-access PET papers
