@@ -4,6 +4,7 @@ so a chunk id means the same thing here as it does there. The only change is tha
 is kept as structured {id, text} instead of being flattened to "ID: <uuid>\\ntext" up front
 -- the review UI needs the id and text separately, and chunks_to_text() re-flattens them for
 the LLM call the same way."""
+import re
 import uuid
 from pathlib import Path
 
@@ -52,10 +53,44 @@ def parse_pdf(pdf_path: Path, paper_id: str) -> list[dict]:
     return chunks
 
 
+def label_for(index: int) -> str:
+    """The tag the model sees for the chunk at this position. Purely positional, so it needs
+    no lookup table passed around: c1 is chunks[0] in whatever paper is being read."""
+    return f"c{index + 1}"
+
+
+def resolve_labels(cited: list[str] | None, chunks: list[dict]) -> list[str]:
+    """Turn what the model cited back into real chunk ids.
+
+    Accepts the short label it was given (c17), and also a full uuid, because a model that has
+    seen uuids elsewhere in its life will sometimes produce one anyway. Anything unrecognised is
+    dropped rather than stored: a citation that points at nothing is worse than no citation,
+    since the review pane would silently highlight the wrong passage or none at all.
+    """
+    by_id = {c["id"] for c in chunks}
+    out = []
+    for raw in cited or []:
+        token = str(raw).strip()
+        if token in by_id:
+            out.append(token)
+            continue
+        m = re.fullmatch(r"c(\d+)", token, re.IGNORECASE)
+        if m and 1 <= int(m.group(1)) <= len(chunks):
+            out.append(chunks[int(m.group(1)) - 1]["id"])
+    return list(dict.fromkeys(out))
+
+
 def chunks_to_text(chunks: list[dict], with_source: bool) -> str:
     """The blob sent to the LLM. Tagging every chunk with its id is what lets the model
     cite sources in source_chunk_ids -- so with_source=False must drop the tags entirely,
-    not just hide the field, or the model teaches itself provenance from the prompt anyway."""
+    not just hide the field, or the model teaches itself provenance from the prompt anyway.
+
+    The tag is a short positional label, not the chunk's uuid. A uuid costs the model about
+    fifteen tokens to reproduce exactly, on input and again on every citation it makes, and
+    reproducing one exactly is a thing models are bad at -- measured against a local Qwen, the
+    same paper finished in 224s with the tags off and timed out at 280s with uuids on. The uuid
+    is still what gets stored; resolve_labels() maps back on the way in.
+    """
     if with_source:
-        return "\n\n".join(f"ID: {c['id']}\n{c['text']}" for c in chunks)
+        return "\n\n".join(f"ID: {label_for(i)}\n{c['text']}" for i, c in enumerate(chunks))
     return "\n\n".join(c["text"] for c in chunks)

@@ -19,6 +19,7 @@ os.environ["TOOLKIT_SEED_DEMO"] = "0"            # these test the empty workspac
 
 from fastapi.testclient import TestClient        # noqa: E402
 
+from server import config                        # noqa: E402
 from server.main import app                      # noqa: E402
 
 client = TestClient(app)
@@ -201,6 +202,68 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(stale.status_code, 409)
         (EXTRACTED / "vp.json").unlink()
         (PARSED / "vp.json").unlink()
+
+    def test_clearing_the_demo_keeps_your_own_papers_and_edits(self):
+        """It used to empty the workspace outright, which took papers you had added with it."""
+        import shutil, tempfile
+        from server import demo
+        from server.storage import PDFS, PARSED, EXTRACTED, CONFIG
+        if not demo.available():
+            self.skipTest("no demo/ in this checkout")
+        for d in (PDFS, PARSED, EXTRACTED, CONFIG):
+            for f in list(d.iterdir()):
+                if not f.name.startswith("."):
+                    f.unlink()
+        demo.MARKER.unlink(missing_ok=True)
+        self.assertTrue(demo.seed())
+
+        (PDFS / "mine.pdf").write_bytes(b"%PDF-1.4 mine")
+        config.save_schema([{"name": "my_field", "type": "string", "description": "mine"}])
+        config.save_settings({"extract_model": "chosen-by-me"})
+
+        removed = client.post("/api/demo/clear").json()["removed"]
+        self.assertEqual(removed["papers"], 2)
+        self.assertTrue((PDFS / "mine.pdf").exists(), "your own paper must survive")
+        self.assertEqual([f["name"] for f in config.get_schema()], ["my_field"],
+                         "a schema you edited is yours and stays")
+        self.assertIn("schema.json", removed["kept_config"])
+        self.assertEqual(config.get_settings()["extract_model"], "chosen-by-me",
+                         "clearing the demo must not unpick your model")
+        self.assertFalse(demo.state()["is_demo"])
+        (PDFS / "mine.pdf").unlink()
+        config.save_schema([])
+        config.save_settings({"extract_model": "", "judge_model": ""})
+
+    def test_chunks_are_tagged_short_and_citations_resolve_back(self):
+        """The model is shown c1, c2, ... and what gets stored is still the chunk's real uuid.
+
+        A uuid costs about fifteen tokens to reproduce exactly and models are bad at it: the
+        same paper finished in 224s with the tags off and timed out at 280s with uuids on."""
+        from server import parsing
+        chunks = [{"id": "15587205-10fe-5d54-ba31-99bc4d2ddda1", "text": "first"},
+                  {"id": "6d15a148-36f2-5ec9-8f87-03c8d6d71674", "text": "second"}]
+        text = parsing.chunks_to_text(chunks, True)
+        self.assertIn("ID: c1", text)
+        self.assertIn("ID: c2", text)
+        self.assertNotIn(chunks[0]["id"], text, "the uuid must not reach the model")
+
+        # the label it was given
+        self.assertEqual(parsing.resolve_labels(["c2"], chunks), [chunks[1]["id"]])
+        # a uuid it produced anyway
+        self.assertEqual(parsing.resolve_labels([chunks[0]["id"]], chunks), [chunks[0]["id"]])
+        # a citation pointing at nothing is dropped, not stored
+        self.assertEqual(parsing.resolve_labels(["c9", "nonsense", None], chunks), [])
+        # and duplicates collapse
+        self.assertEqual(parsing.resolve_labels(["c1", "C1"], chunks), [chunks[0]["id"]])
+        # source tracking off still means no tags at all
+        self.assertNotIn("ID:", parsing.chunks_to_text(chunks, False))
+
+    def test_the_judge_is_not_shown_ids_it_is_told_to_ignore(self):
+        from server.judge import build_messages
+        recs = [{"catalyst": "ZnCl2", "source_chunk_ids": ["15587205-10fe-5d54-ba31-99bc4d2ddda1"]}]
+        sent = build_messages("rubric", "text", recs)[1]["content"]
+        self.assertIn("ZnCl2", sent)
+        self.assertNotIn("source_chunk_ids", sent)
 
     def test_a_worked_example_is_saved_as_typed(self):
         """Examples are global -- the same one or two go to every paper -- so the text is the
@@ -492,11 +555,16 @@ class DemoTests(unittest.TestCase):
         self.assertEqual([p.name for p in (self.dir / "pdfs").glob("*")], ["mine.pdf"])
 
     @unittest.skipUnless(Path("demo/pdfs").is_dir(), "no demo/ in this checkout")
-    def test_clearing_takes_the_config_too(self):
+    def test_clearing_takes_the_untouched_config_with_it(self):
+        """A demo schema left behind would be applied to your papers without you choosing it.
+
+        settings.json is the exception and stays: it holds which model each stage calls, which
+        is the user's, not the demo's."""
         self.demo.seed_if_empty()
         self.demo.clear()
-        self.assertTrue(self.demo.is_empty())
         self.assertFalse(self.demo.state()["is_demo"])
         self.assertFalse((self.dir / "config" / "schema.json").exists(),
                          "a demo schema survived the clear and would be applied silently")
+        self.assertFalse((self.dir / "config" / "extract_prompt.txt").exists())
+        self.assertFalse(any((self.dir / "pdfs").glob("*.pdf")), "demo papers must go")
 

@@ -59,7 +59,11 @@ def strip_json_comments(text: str) -> str:
 
 
 def build_messages(rubric: str, paper_text: str, records: list[dict]) -> list[dict]:
-    numbered = "\n\n".join(f"RECORD {i}:\n{json.dumps(r, indent=2)}" for i, r in enumerate(records))
+    # source_chunk_ids is stripped, not sent. Every rubric tells the judge to ignore it, and a
+    # uuid costs about fifteen tokens to read -- so this was paying, on every judged paper, to
+    # show a model a field it was instructed not to look at.
+    shown = [{k: v for k, v in r.items() if k != "source_chunk_ids"} for r in records]
+    numbered = "\n\n".join(f"RECORD {i}:\n{json.dumps(r, indent=2)}" for i, r in enumerate(shown))
     return [{"role": "system", "content": rubric + "\n\n" + OUTPUT_SPEC},
             {"role": "user", "content": f"PAPER TEXT:\n{paper_text}\n\n"
                                        f"Judge each of the {len(records)} extracted records below.\n\n{numbered}"}]

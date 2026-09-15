@@ -139,6 +139,8 @@ td.nowrap{white-space:nowrap;text-align:right}
 .status-row .state{color:var(--dim);font-size:.78rem}
 .status-row.running .state{color:var(--accent);font-weight:500}
 .status-row.ok .state{color:var(--ok)}
+.waitnote{margin-top:3px;font-size:.72rem;color:var(--warn);line-height:1.45;white-space:normal;
+  max-width:60ch}
 .status-row.failed .state{color:var(--no);white-space:normal}
 .status-row.skipped{opacity:.5}
 .spinner{width:11px;height:11px;border-radius:50%;border:1.5px solid var(--line);

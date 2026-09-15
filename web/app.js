@@ -125,6 +125,10 @@ async function runJob(stage, items, runOne) {
   return state.run;
 }
 
+// Matches llm.REQUEST_TIMEOUT x MAX_ATTEMPTS on the server; the number is only ever shown,
+// never enforced here.
+const RUN_CEILING_MIN = 20;
+
 function runHTML(run) {
   const done = run.items.filter(i => i.state === 'ok' || i.state === 'failed').length;
   const failed = run.items.filter(i => i.state === 'failed').length;
@@ -136,16 +140,25 @@ function runHTML(run) {
     ? `total ${humanSeconds(elapsed)}`
     : `${humanSeconds(elapsed)} elapsed${remaining ? ` · about ${humanSeconds(remaining)} left` : ''}`;
   const rows = run.items.map(item => {
-    const elapsed = item.state === 'running' && item.startedAt
-      ? ` (${humanSeconds((Date.now() - item.startedAt) / 1000)}${item.eta ? ' of ~' + humanSeconds(item.eta) : ''})`
+    const secs = item.state === 'running' && item.startedAt
+      ? (Date.now() - item.startedAt) / 1000 : 0;
+    const elapsed = secs
+      ? ` (${humanSeconds(secs)}${item.eta ? ' of ~' + humanSeconds(item.eta) : ''})`
       : '';
     const detail = item.state === 'queued'
       ? (item.eta ? `queued · ~${humanSeconds(item.eta)}` : 'queued')
       : item.state === 'running' ? `running${elapsed}` : item.message;
+    // One call, no progress to report until it returns, so a bare timer past a couple of
+    // minutes reads as a hang. Saying what the silence is costs nothing and is true.
+    const patience = item.state === 'running' && secs > 90 && !item.eta
+      ? `<div class="waitnote">the model has not replied yet — a reasoning model writes a long
+           hidden answer first, and this is normal up to several minutes. It will stop itself
+           after ${Math.round(RUN_CEILING_MIN)} minutes.</div>`
+      : '';
     return `<div class="status-row ${item.state}">
       <span class="spinner" ${item.state === 'running' ? '' : 'hidden'}></span>
       <span class="name" title="${esc(item.label)}">${esc(item.label)}</span>
-      <span class="state">${esc(detail)}</span>
+      <span class="state">${esc(detail)}${patience}</span>
     </div>`;
   }).join('');
   const spent = run.items.reduce((n, i) => n + (i.cost || 0), 0);
@@ -299,7 +312,7 @@ function demoBannerHTML(status) {
     <div class="guidefoot">
       <span class="muted">Look around first: <a href="#/report">Report</a> and
       <a href="#/judge">Review</a> are already full.</span>
-      <button class="linkish" id="cleardemo">Clear the demo and start my own project</button>
+      <button class="linkish" id="cleardemo">Remove the demo papers</button>
     </div>
   </div>`;
 }
@@ -356,11 +369,17 @@ async function loadDemo() {
 }
 
 async function clearDemo() {
-  if (!confirm('Remove the two demo papers, their records and the demo schema and prompts?\n\n'
-             + 'This leaves an empty workspace ready for your own papers. It cannot be undone, '
-             + 'but the demo stays in demo/ and you can restore it by emptying workspace/ again.'))
+  if (!confirm('Remove the two demo papers and their records?\n\n'
+             + 'Papers you added yourself are kept. The demo schema and prompts go only if you '
+             + 'have not edited them — once you have, they are yours and they stay.\n\n'
+             + 'This cannot be undone, but the demo stays in demo/ and Load the demo brings it back.'))
     return;
-  await post('/api/demo/clear', {});
+  const r = await post('/api/demo/clear', {});
+  const kept = (r.removed || {}).kept_config || [];
+  if (kept.length) {
+    alert('Demo papers removed.\n\nKept, because you had edited them: '
+          + kept.join(', ') + '.');
+  }
   location.hash = '#/parse';
   router();
 }
@@ -1027,8 +1046,10 @@ async function openExamplesEditor(onSaved) {
               <b>your schema</b>
               ${fields.map(f => `<div><code>${esc(f.name)}</code> <span class="muted">${f.type}</span></div>`).join('')
                 || '<span class="muted">no fields defined</span>'}
-              <button class="ex-fill" data-i="${i}"
-                title="Replace the box with one empty record containing every field in your schema, ready to fill in">${icon('plus')}blank record</button>
+              <button class="ex-fill" data-i="${i}" ${fields.length ? '' : 'disabled'}
+                title="${fields.length
+                  ? 'Add one more record with every field in your schema set to null, ready to fill in. Press it again for another.'
+                  : 'Define your schema first — there are no fields to put in a blank record.'}">${icon('plus')}add blank record</button>
               <button class="ex-format" data-i="${i}"
                 title="Re-indent what is in the box so it is readable. Changes only the spacing, never the values.">re-indent</button>
             </div>
@@ -1082,11 +1103,24 @@ async function openExamplesEditor(onSaved) {
       rows.splice(Number(b.dataset.i), 1);
       paint();
     }));
+    // Appends. A worked example is usually several records from one paper, and a button that
+    // replaced the whole array meant typing the second one by hand, brackets and all.
     list.querySelectorAll('.ex-fill').forEach(b => b.addEventListener('click', () => {
       const box = list.querySelectorAll('.ex-records')[Number(b.dataset.i)];
       const blank = Object.fromEntries(fields.map(f => [f.name, null]));
-      box.value = JSON.stringify([blank], null, 2);
+      let records;
+      try { records = JSON.parse(box.value.trim() || '[]'); }
+      catch {
+        if (!confirm('The box is not valid JSON, so a record cannot be added to it. '
+                   + 'Replace it with one blank record?')) return;
+        records = [];
+      }
+      if (!Array.isArray(records)) records = [];
+      records.push(blank);
+      box.value = JSON.stringify(records, null, 2);
       box.dispatchEvent(new Event('input'));
+      box.focus();
+      box.setSelectionRange(box.value.length, box.value.length);
     }));
     list.querySelectorAll('.ex-format').forEach(b => b.addEventListener('click', () => {
       const box = list.querySelectorAll('.ex-records')[Number(b.dataset.i)];

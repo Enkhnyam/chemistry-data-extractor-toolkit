@@ -90,12 +90,43 @@ def state() -> dict:
             "papers": sorted(p.name for p in (DEMO / "pdfs").glob("*.pdf")) if available() else []}
 
 
-def clear() -> None:
-    """Empty the workspace. Used to start a real project, so it takes the config too -- a schema
-    left behind from the demo is the silent default this design exists to avoid."""
-    for directory in STAGES.values():
-        for item in directory.iterdir():
-            if item.name.startswith("."):
+def _demo_names(stage: str) -> set[str]:
+    source = DEMO / stage
+    return {p.name for p in source.iterdir() if p.is_file()} if source.is_dir() else set()
+
+
+def clear() -> dict:
+    """Remove the demo, and only the demo.
+
+    This used to empty the workspace outright, which is fine on the day you clone and wrong
+    every day after: by the time most people press it they have already added papers of their
+    own, and "clear the demo" took those with it. It now deletes the demo's own files by name.
+
+    Config is the awkward case, because there is one schema and one pair of prompts for the
+    whole workspace rather than one per paper. A demo config file goes only if it is still
+    byte-identical to the demo's -- untouched, therefore nobody's work. The moment you have
+    edited the schema or a prompt it is yours, and it stays, even though the demo put the first
+    draft there. So nothing anyone typed is ever destroyed by this button.
+    """
+    removed = {"papers": 0, "config": [], "kept_config": []}
+    for stage, directory in STAGES.items():
+        for name in _demo_names(stage):
+            # settings.json carries which model each stage calls. The demo ships one, but it is
+            # never demo *content* -- deleting it would silently unpick a model the user chose.
+            if stage == "config" and name == "settings.json":
                 continue
-            shutil.rmtree(item) if item.is_dir() else item.unlink()
+            target = directory / name
+            if not target.exists():
+                continue
+            if stage == "config":
+                if target.read_bytes() == (DEMO / stage / name).read_bytes():
+                    target.unlink()
+                    removed["config"].append(name)
+                else:
+                    removed["kept_config"].append(name)
+                continue
+            target.unlink()
+            if stage == "pdfs":
+                removed["papers"] += 1
     MARKER.unlink(missing_ok=True)
+    return removed

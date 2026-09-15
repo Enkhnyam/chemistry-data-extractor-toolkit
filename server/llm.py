@@ -6,7 +6,11 @@ spends money per paper should not make you read a provider dashboard to find out
 """
 import litellm
 
-REQUEST_TIMEOUT = 600      # seconds; slower than this is stuck, not working
+# A single call's ceiling. Generous, because a reasoning model on a long paper genuinely takes
+# minutes -- but it is a ceiling, and the retries below are few, because the failure mode being
+# avoided is a run that sits silent for the better part of an hour. 600s x 6 attempts was that.
+REQUEST_TIMEOUT = 600      # seconds
+MAX_ATTEMPTS = 2           # one retry, not five: a timeout repeated five times is just a wait
 
 
 def usage_of(resp) -> dict:
@@ -32,7 +36,7 @@ def complete(params: dict, messages: list[dict], **kwargs):
     if not params.get("model"):
         raise RuntimeError("No model configured. Choose one in Settings.")
     try:
-        return litellm.completion(messages=messages, num_retries=5,
+        return litellm.completion(messages=messages, num_retries=MAX_ATTEMPTS - 1,
                                   timeout=REQUEST_TIMEOUT, **params, **kwargs)
     except litellm.AuthenticationError as e:
         raise RuntimeError(f"Authentication failed: {e}. Check the key for this provider in "
@@ -42,6 +46,12 @@ def complete(params: dict, messages: list[dict], **kwargs):
     except litellm.ContextWindowExceededError as e:
         raise RuntimeError(f"The paper plus the prompt exceeds this model's context window: {e}. "
                            f"Use a longer-context model, or remove a few-shot example.") from e
+    except litellm.Timeout as e:
+        raise RuntimeError(
+            f"No reply within {REQUEST_TIMEOUT // 60} minutes, twice. That is usually the model "
+            f"rather than the connection: a reasoning model writes a long hidden answer before "
+            f"the first visible character. Try a faster model for extraction, or split the "
+            f"paper. ({e})") from e
     except litellm.APIError as e:
         raise RuntimeError(f"The provider returned an error: {e}") from e
 

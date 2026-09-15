@@ -394,14 +394,16 @@ def load_demo(replace: bool = False):
 
 @app.post("/api/demo/clear")
 def clear_demo():
-    """Empty the workspace so a real project can start. Takes the config with it: a schema left
-    over from the demo is exactly the silent default this tool refuses to have."""
+    """Remove the demo's papers and its untouched config, leaving everything else alone.
+
+    Anything you added or edited survives -- see demo.clear() for why the config is treated
+    differently from the papers."""
     single_flight("a clear")
     try:
-        demo.clear()
+        removed = demo.clear()
     finally:
         STAGE_LOCK.release()
-    return {"cleared": True, **demo.state()}
+    return {"cleared": True, "removed": removed, **demo.state()}
 
 
 @app.get("/api/status")
@@ -579,6 +581,12 @@ def _extract(body: PaperIds):
             results.append({"id": pid, "error": f"{type(e).__name__}: {e}"})
             continue
         seconds = time.monotonic() - started
+        # The model cited short labels (c17); what gets stored is the chunk's real id, so
+        # everything downstream -- the review pane, the export -- keeps working unchanged.
+        if with_source:
+            for record in records:
+                record["source_chunk_ids"] = parsing.resolve_labels(
+                    record.get("source_chunk_ids"), paper["chunks"])
         timings.record("extract", seconds, len(paper["chunks"]), unit="chunks")
         write_json(EXTRACTED / f"{pid}.json",
                    {"id": pid, "records": records, "usage": usage, "model": params.get("model")})
