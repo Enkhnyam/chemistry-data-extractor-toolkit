@@ -44,6 +44,18 @@ def is_empty() -> bool:
     return True
 
 
+def seed(*, replace: bool = False) -> bool:
+    """Copy the demo into the workspace. Returns whether it did.
+
+    `replace=True` empties the workspace first, and is only ever reached from someone pressing a
+    button that says so. Everything else goes through seed_if_empty(), which will not touch a
+    workspace that has anything in it.
+    """
+    if replace:
+        clear()
+    return _seed_if_empty()
+
+
 def seed_if_empty() -> bool:
     """Copy the demo in, if and only if there is nothing to lose. Returns whether it did.
 
@@ -54,6 +66,10 @@ def seed_if_empty() -> bool:
     import os
     if os.environ.get("TOOLKIT_SEED_DEMO", "1") == "0":
         return False
+    return _seed_if_empty()
+
+
+def _seed_if_empty() -> bool:
     if not available() or not is_empty():
         return False
     for name, target in STAGES.items():
@@ -70,7 +86,7 @@ def seed_if_empty() -> bool:
 
 def state() -> dict:
     """What the interface needs to say about the workspace it is showing."""
-    return {"is_demo": MARKER.exists(), "available": available(),
+    return {"is_demo": MARKER.exists(), "available": available(), "workspace_empty": is_empty(),
             "papers": sorted(p.name for p in (DEMO / "pdfs").glob("*.pdf")) if available() else []}
 
 

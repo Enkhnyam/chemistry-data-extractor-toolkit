@@ -308,6 +308,14 @@ function guideHTML(status) {
   const next = steps.find(s => !s.done);
   if (!next) return '';
   const doneCount = steps.filter(s => s.done).length;
+  // Anyone who opened Settings before pulling the version that ships the demo has a workspace
+  // that is no longer empty, so it was never seeded and they are looking at this list instead.
+  // The offer has to be here, because this is the screen they are on.
+  const offer = state.status?.demo_available
+    ? `<div class="guidefoot"><span class="muted">Or look at a worked example first:</span>
+         <button class="linkish" id="loaddemo">Load the demo &mdash; two papers, already
+         extracted and judged</button></div>`
+    : '';
 
   return `<div class="guide">
     <div class="guidehead">
@@ -322,7 +330,18 @@ function guideHTML(status) {
           <span class="muted">${s.hint}</span>
         </li>`).join('')}
     </ol>
+    ${offer}
   </div>`;
+}
+
+async function loadDemo() {
+  const empty = state.status?.workspace_empty;
+  if (!empty && !confirm('Your workspace already has something in it.\n\nLoading the demo '
+      + 'replaces it — papers, records, schema and prompts — with the two example papers. '
+      + 'Continue?')) return;
+  await post('/api/demo/load' + (empty ? '' : '?replace=true'), {});
+  location.hash = '#/report';
+  router();
 }
 
 async function clearDemo() {
@@ -374,6 +393,7 @@ async function router() {
       if (guide && section) {
         section.insertAdjacentHTML('afterbegin', guide);
         document.getElementById('cleardemo')?.addEventListener('click', clearDemo);
+        document.getElementById('loaddemo')?.addEventListener('click', loadDemo);
         document.getElementById('gotokey')?.addEventListener('click', () => { location.hash = '#/settings'; });
       }
     }

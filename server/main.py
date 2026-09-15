@@ -302,6 +302,29 @@ def get_demo():
     return demo.state()
 
 
+@app.post("/api/demo/load")
+def load_demo(replace: bool = False):
+    """Put the demo into the workspace on request.
+
+    Seeding happens automatically only into an empty workspace, which is right -- it must never
+    overwrite anyone's work. But that left no way to ask for it, and anyone who had already
+    opened Settings before pulling this version had a workspace that was no longer empty and no
+    route to the demo except deleting directories by hand. This is that route; `replace` is the
+    button that says it will clear what is there first.
+    """
+    single_flight("a load")
+    try:
+        if not demo.available():
+            raise HTTPException(404, "There is no demo/ directory in this checkout.")
+        if not (replace or demo.is_empty()):
+            raise HTTPException(409, "The workspace is not empty. Clear it first, or use "
+                                     "Replace to drop what is there and load the demo.")
+        demo.seed(replace=replace)
+    finally:
+        STAGE_LOCK.release()
+    return demo.state()
+
+
 @app.post("/api/demo/clear")
 def clear_demo():
     """Empty the workspace so a real project can start. Takes the config with it: a schema left
@@ -337,7 +360,11 @@ def get_status():
         "blockers": {stage: _blockers(stage) for stage in ("extract", "judge")},
         # The interface says so out loud rather than letting someone mistake the demo's PET
         # chemistry for something it inferred from their own papers.
-        "is_demo": demo.state()["is_demo"],
+        "is_demo": (_d := demo.state())["is_demo"],
+        # So the getting-started guide can offer the demo to someone whose workspace was already
+        # non-empty when they pulled, and knows whether loading it would replace anything.
+        "demo_available": _d["available"],
+        "workspace_empty": _d["workspace_empty"],
     }
 
 
