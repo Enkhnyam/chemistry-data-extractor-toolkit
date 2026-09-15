@@ -19,7 +19,16 @@ uv run uvicorn server.main:app
 ```
 
 Open <http://localhost:8000>. The first `uv sync` downloads PyTorch and takes a few minutes
-(~6 GB on disk).
+(~6 GB on disk) — that is docling, the PDF reader, and it is the only slow part.
+
+Or with Docker, which needs neither Python nor the download on your machine:
+
+```bash
+docker compose up --build
+```
+
+Same address. The workspace lives in `./data/`, and anything you add — papers, records, API
+keys — stays there between runs.
 
 ## What you see first
 

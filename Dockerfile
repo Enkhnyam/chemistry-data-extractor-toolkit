@@ -31,6 +31,8 @@ COPY demo ./demo
 RUN uv pip install --system --no-cache .
 
 ENV WORKSPACE_DIR=/data
+# Inside the mounted volume, so a key added through Settings outlives the container.
+ENV ENV_FILE=/data/.env
 VOLUME /data
 
 EXPOSE 8000

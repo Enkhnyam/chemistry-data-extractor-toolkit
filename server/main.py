@@ -6,6 +6,7 @@ import asyncio
 import csv
 import io
 import json
+import os
 import re
 import threading
 import time
@@ -19,7 +20,12 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 ROOT = Path(__file__).resolve().parents[1]
-ENV_FILE = ROOT / ".env"
+# Keys live beside the code by default, which is what you want when you cloned this and ran it.
+# Under Docker they must not: the image root is the container's own writable layer, so a key
+# added through Settings survived until the next `docker compose up --build` and then silently
+# vanished. The Dockerfile sets ENV_FILE=/data/.env, inside the mounted volume, so the same
+# setting persists the way the workspace does.
+ENV_FILE = Path(os.environ.get("ENV_FILE", ROOT / ".env"))
 load_dotenv(ENV_FILE)
 
 from . import config, demo, extraction, judge, llm, models, parsing, report, timings  # noqa: E402  (after load_dotenv)

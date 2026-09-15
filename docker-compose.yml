@@ -9,5 +9,9 @@ services:
       - "127.0.0.1:8000:8000"
     volumes:
       - ./data:/data
+    # required: false so a fresh clone comes up without one. The demo needs no key to look at,
+    # and keys added through Settings are written into the mounted volume, not into this file --
+    # `docker compose up` on a clean checkout used to fail here with "env file .env not found".
     env_file:
-      - .env
+      - path: .env
+        required: false
