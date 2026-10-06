@@ -22,14 +22,23 @@ Three rules this seeding follows, because the alternative caused a real bug once
 import shutil
 from pathlib import Path
 
-from .storage import WORKSPACE, PDFS, PARSED, EXTRACTED, JUDGED, CONFIG, read_json, write_json
+from . import storage
+from .storage import read_json, write_json
 
-DEMO = Path(__file__).resolve().parents[1] / "demo"
-STAGES = {"pdfs": PDFS, "parsed": PARSED, "extracted": EXTRACTED, "judged": JUDGED,
-          "config": CONFIG}
-# Written into the workspace when the demo is seeded and deleted when it is cleared, so "is this
-# the demo?" is a question about the workspace rather than a guess from what it happens to hold.
-MARKER = WORKSPACE / ".demo"
+DEMO = Path(__file__).resolve().parent / "demo"
+STAGE_NAMES = ("pdfs", "parsed", "extracted", "judged", "config")
+
+
+def stages() -> dict[str, Path]:
+    """The workspace folder for each stage, for whichever project is open."""
+    return {"pdfs": storage.PDFS, "parsed": storage.PARSED, "extracted": storage.EXTRACTED,
+            "judged": storage.JUDGED, "config": storage.CONFIG}
+
+
+def marker() -> Path:
+    """Written into the workspace when the demo is seeded and deleted when it is cleared, so "is
+    this the demo?" is a question about the workspace rather than a guess from what it holds."""
+    return storage.WORKSPACE / ".demo"
 
 
 def available() -> bool:
@@ -38,8 +47,8 @@ def available() -> bool:
 
 def is_empty() -> bool:
     """Nothing of the user's here yet. A .gitkeep is not content."""
-    for directory in STAGES.values():
-        if any(p for p in directory.iterdir() if not p.name.startswith(".")):
+    for directory in stages().values():
+        if directory.is_dir() and any(p for p in directory.iterdir() if not p.name.startswith(".")):
             return False
     return True
 
@@ -86,21 +95,21 @@ def _copy_in() -> bool:
     """Put the demo's files into the workspace. The one place that does the copying."""
     if not available():
         return False
-    for name, target in STAGES.items():
+    for name, target in stages().items():
         source = DEMO / name
         if not source.is_dir():
             continue
         for item in source.iterdir():
             if item.is_file() and not item.name.startswith("."):
                 shutil.copy2(item, target / item.name)
-    MARKER.write_text("Seeded from demo/. Delete this file, or use Clear demo, to disown it.\n",
+    marker().write_text("Seeded from demo/. Delete this file, or use Clear demo, to disown it.\n",
                       encoding="utf-8")
     return True
 
 
 def state() -> dict:
     """What the interface needs to say about the workspace it is showing."""
-    return {"is_demo": MARKER.exists(), "available": available(), "workspace_empty": is_empty(),
+    return {"is_demo": marker().exists(), "available": available(), "workspace_empty": is_empty(),
             "papers": sorted(p.name for p in (DEMO / "pdfs").glob("*.pdf")) if available() else []}
 
 
@@ -123,7 +132,7 @@ def clear() -> dict:
     draft there. So nothing anyone typed is ever destroyed by this button.
     """
     removed = {"papers": 0, "config": [], "kept_config": []}
-    for stage, directory in STAGES.items():
+    for stage, directory in stages().items():
         for name in _demo_names(stage):
             # settings.json carries which model each stage calls. The demo ships one, but it is
             # never demo *content* -- deleting it would silently unpick a model the user chose.
@@ -142,5 +151,5 @@ def clear() -> dict:
             target.unlink()
             if stage == "pdfs":
                 removed["papers"] += 1
-    MARKER.unlink(missing_ok=True)
+    marker().unlink(missing_ok=True)
     return removed

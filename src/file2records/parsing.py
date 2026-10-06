@@ -1,4 +1,4 @@
-"""PDF -> stable-ID text chunks, via docling. Ported from the source project's
+"""PDF -> stable-ID text chunks, via docling (other formats: readers.py). Ported from the source project's
 core/parse.py: same chunking (docling's own text/table items), same per-chunk UUID scheme,
 so a chunk id means the same thing here as it does there. The only change is that a chunk
 is kept as structured {id, text} instead of being flattened to "ID: <uuid>\\ntext" up front
@@ -8,8 +8,6 @@ import re
 import uuid
 from pathlib import Path
 
-from docling.document_converter import DocumentConverter
-from docling_core.types.doc import TableItem, TextItem
 from markdown_it import MarkdownIt
 
 NS = uuid.UUID("a3f1c9d2-6b4e-4a7b-9e2d-5c8f1a6b4e7d")
@@ -25,32 +23,54 @@ def with_html(chunks: list[dict]) -> list[dict]:
     than stored, so papers parsed before this existed render too."""
     return [{**c, "html": _MARKDOWN.render(c["text"])} for c in chunks]
 
-_converter: DocumentConverter | None = None
+_converter = None
+
+PDF_EXTRA_MISSING = ("Reading PDFs needs the PDF extra, which installs docling and its layout "
+                     "models (a large download):  pip install \"file2records[pdf]\"   "
+                     "XML, HTML, Word and Markdown files work without it.")
 
 
-def _get_converter() -> DocumentConverter:
+def _get_converter():
+    """docling is imported here, on the first PDF, rather than at the top of the module. It is
+    the one heavy dependency -- PyTorch and layout models -- and every other format, and every
+    other stage, works without it."""
     global _converter
     if _converter is None:
+        try:
+            from docling.document_converter import DocumentConverter
+        except ImportError as e:
+            raise RuntimeError(PDF_EXTRA_MISSING) from e
         _converter = DocumentConverter()
     return _converter
 
 
-def parse_pdf(pdf_path: Path, paper_id: str) -> list[dict]:
-    """[{id, text}, ...] for every table and text item docling finds, in document order."""
-    doc = _get_converter().convert(str(pdf_path)).document
-    chunks = []
+def parse_pdf_with_meta(pdf_path: Path, paper_id: str) -> tuple[list[dict], dict]:
+    """[{id, text}, ...] for every table and text item docling finds, in document order, plus
+    the title and DOI if the first page states them."""
+    converter = _get_converter()                      # first: it raises the helpful error
+    from docling_core.types.doc import TableItem, TextItem
+    doc = converter.convert(str(pdf_path)).document
+    chunks, title = [], ""
     for i, (item, _) in enumerate(doc.iterate_items()):
         if isinstance(item, TableItem):
             text = item.export_to_markdown(doc).strip()
         elif isinstance(item, TextItem):
             text = (item.text or "").strip()
+            if not title and str(getattr(item, "label", "")).endswith("title"):
+                title = text
         else:
             continue
         if not text:
             continue
         cid = str(uuid.uuid5(NS, f"{paper_id}|{i}|{text}"))
         chunks.append({"id": cid, "text": text})
-    return chunks
+    from .readers import find_doi
+    meta = {"doi": find_doi(" ".join(c["text"] for c in chunks[:15])), "title": title}
+    return chunks, {k: v for k, v in meta.items() if v}
+
+
+def parse_pdf(pdf_path: Path, paper_id: str) -> list[dict]:
+    return parse_pdf_with_meta(pdf_path, paper_id)[0]
 
 
 def label_for(index: int) -> str:

@@ -7,18 +7,20 @@ we could ship would be right for more than one person's laptop.
 """
 from statistics import median
 
-from .storage import CONFIG, read_json, write_json
+from . import storage
+from .storage import read_json, write_json
 
-FILE = CONFIG / "timings.json"
+def _file():
+    return storage.CONFIG / "timings.json"
 KEEP = 20          # recent runs per stage; enough for a stable median, short enough to track change
 
 
 def record(stage: str, seconds: float, size: int | None = None, unit: str = "") -> None:
-    history = read_json(FILE, {})
+    history = read_json(_file(), {})
     runs = history.setdefault(stage, [])
     runs.append({"seconds": round(seconds, 2), "size": size, "unit": unit})
     history[stage] = runs[-KEEP:]
-    write_json(FILE, history)
+    write_json(_file(), history)
 
 
 def estimates() -> dict:
@@ -28,7 +30,7 @@ def estimates() -> dict:
     the same time as a 20-chunk one, so the frontend multiplies per_unit by the size of the job
     it is about to start, and falls back to the flat median when it has no size to multiply.
     """
-    history = read_json(FILE, {})
+    history = read_json(_file(), {})
     out = {}
     for stage, runs in history.items():
         if not runs:

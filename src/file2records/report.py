@@ -9,7 +9,8 @@ so the same report describes an ionic-liquid corpus and a metal-salt one without
 from collections import Counter, defaultdict
 
 from . import config
-from .storage import EXTRACTED, JUDGED, PARSED, read_json
+from . import storage
+from .storage import read_json
 
 MAX_TOP = 25        # distinct values kept per categorical field
 MAX_NUMBERS = 5000  # numeric values shipped per field, enough for any histogram
@@ -32,11 +33,11 @@ def build() -> dict:
     verdicts, flags = Counter(), Counter()
     seen_fields, edited_records, dropped = list(declared), 0, 0
 
-    for path in sorted(PARSED.glob("*.json")):
+    for path in sorted(storage.PARSED.glob("*.json")):
         pid = path.stem
         paper = read_json(path, {})
-        extraction = read_json(EXTRACTED / f"{pid}.json")
-        judgment = read_json(JUDGED / f"{pid}.json")
+        extraction = read_json(storage.EXTRACTED / f"{pid}.json")
+        judgment = read_json(storage.JUDGED / f"{pid}.json")
         records = (extraction or {}).get("records", [])
         model_records = (extraction or {}).get("model_records") or records
         notes = (extraction or {}).get("notes", {})
@@ -143,14 +144,17 @@ def build() -> dict:
     }
 
 
-def flat_records() -> tuple[list[str], list[dict]]:
-    """Every record across every paper, one row each, for CSV/JSON export."""
-    columns, rows = ["paper_id", "paper", "record_index"], []
-    for path in sorted(EXTRACTED.glob("*.json")):
+def flat_records(paper_ids: list[str] | None = None) -> tuple[list[str], list[dict]]:
+    """Every record across every paper (or only `paper_ids`), one row each, for export."""
+    columns, rows = ["paper_id", "paper", "doi", "title", "record_index"], []
+    wanted = None if paper_ids is None else set(paper_ids)
+    for path in sorted(storage.EXTRACTED.glob("*.json")):
         pid = path.stem
+        if wanted is not None and pid not in wanted:
+            continue
         extraction = read_json(path, {})
-        paper = read_json(PARSED / f"{pid}.json", {})
-        judgment = read_json(JUDGED / f"{pid}.json")
+        paper = read_json(storage.PARSED / f"{pid}.json", {})
+        judgment = read_json(storage.JUDGED / f"{pid}.json")
         by_index = {v["record_index"]: v for v in (judgment or {}).get("verdicts", [])}
         notes = extraction.get("notes", {})
         # Provenance belongs in the exported file, not only in the app: a CSV that cannot say
@@ -160,7 +164,10 @@ def flat_records() -> tuple[list[str], list[dict]]:
         for i, record in enumerate(extraction.get("records", [])):
             verdict = by_index.get(i, {})
             note = notes.get(str(i), {})
-            row = {"paper_id": pid, "paper": paper.get("filename", pid), "record_index": i,
+            # The DOI is what makes a row citable; the filename is only where it was on disk.
+            meta = paper.get("meta") or {}
+            row = {"paper_id": pid, "paper": paper.get("filename", pid),
+                   "doi": meta.get("doi", ""), "title": meta.get("title", ""), "record_index": i,
                    **{k: v for k, v in record.items() if k != "source_chunk_ids"},
                    "source_chunk_ids": " ".join(record.get("source_chunk_ids") or []),
                    "judge_verdict": verdict.get("verdict", ""),
@@ -187,21 +194,28 @@ def flat_records() -> tuple[list[str], list[dict]]:
     return columns, rows
 
 
-def papers_table() -> tuple[list[str], list[dict]]:
+def papers_table(paper_ids: list[str] | None = None) -> tuple[list[str], list[dict]]:
     """One row per paper: what went in, what came out, which model, what it cost."""
-    columns = ["paper_id", "filename", "chunks", "source_tracking", "records", "judged",
+    columns = ["paper_id", "filename", "doi", "title", "format", "chunks", "source_tracking",
+               "records", "judged",
                "extract_model", "judge_model", "prompt_tokens", "completion_tokens", "cost_usd",
                "edited_at"]
     rows = []
-    for path in sorted(PARSED.glob("*.json")):
+    wanted = None if paper_ids is None else set(paper_ids)
+    for path in sorted(storage.PARSED.glob("*.json")):
         pid = path.stem
+        if wanted is not None and pid not in wanted:
+            continue
         paper = read_json(path, {})
-        extraction = read_json(EXTRACTED / f"{pid}.json") or {}
-        judgment = read_json(JUDGED / f"{pid}.json") or {}
+        extraction = read_json(storage.EXTRACTED / f"{pid}.json") or {}
+        judgment = read_json(storage.JUDGED / f"{pid}.json") or {}
         usage = [(extraction.get("usage") or {}), (judgment.get("usage") or {})]
         rows.append({
             "paper_id": pid,
             "filename": paper.get("filename", pid),
+            "doi": (paper.get("meta") or {}).get("doi", ""),
+            "title": (paper.get("meta") or {}).get("title", ""),
+            "format": paper.get("format", "pdf"),
             "chunks": len(paper.get("chunks", [])),
             "source_tracking": paper.get("source_tracking", True),
             "records": len(extraction.get("records", [])) if extraction else "",

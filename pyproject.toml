@@ -1,15 +1,30 @@
 [project]
-name = "chemistry-data-extractor-toolkit"
-version = "0.1.0"
-description = "Extract experimental data from scientific PDFs with an LLM, audit it with a second one, and review it against the source text. Schema, prompts and examples are yours to define."
+name = "file2records"
+version = "0.2.0"
+description = "Turn scientific papers (PDF, JATS and Elsevier XML, HTML, Word) into a structured dataset: one model extracts, a second audits, you review against the source text."
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Enkhnyam Battulga" }]
+keywords = ["chemistry", "data extraction", "llm", "scientific papers", "jats", "elsevier", "pdf"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Chemistry",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: OS Independent",
+    "Framework :: FastAPI",
+]
 
 dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.32.0",
     "python-multipart>=0.0.12",
-    "docling>=2.110.0",
     "litellm>=1.91.0",
     # litellm.completion(num_retries=...) imports tenacity lazily and litellm does not declare
     # it, so every model call on a clean install died with "tenacity import failed". We pass
@@ -17,16 +32,39 @@ dependencies = [
     "tenacity>=8.0",
     "pydantic>=2.0",
     "python-dotenv>=1.0.1",
-    "markdown-it-py>=4.0.0",
+    "markdown-it-py>=3.0.0",
     # Only for asking an endpoint which models it serves. It arrives anyway under litellm, but
     # a direct import belongs in a direct dependency -- otherwise it vanishes the day litellm
     # changes its HTTP client.
     "httpx>=0.27",
+    # The XML and HTML readers (JATS, Elsevier, publisher pages) and the Word reader. Small, and
+    # no machine-learning model is involved in reading a structured format.
+    "lxml>=5.0",
+    "python-docx>=1.1",
 ]
 
+[project.optional-dependencies]
+# PDF reading: docling and its layout/table models, via PyTorch -- a download of several GB.
+# Kept out of the base install so the structured formats work everywhere in seconds.
+pdf = ["docling>=2.110.0"]
+
+[project.scripts]
+file2records = "file2records.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Enkhnyam/chemistry-data-extractor-toolkit"
+Repository = "https://github.com/Enkhnyam/chemistry-data-extractor-toolkit"
+Issues = "https://github.com/Enkhnyam/chemistry-data-extractor-toolkit/issues"
+
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["server"]
+packages = ["src/file2records"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/file2records", "tests", "README.md", "LICENSE", "CITATION.cff"]
+
+[dependency-groups]
+dev = ["docling>=2.110.0"]

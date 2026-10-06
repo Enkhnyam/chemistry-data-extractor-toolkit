@@ -3,14 +3,30 @@ prompt, the judge rubric, and few-shot examples. All under workspace/config/, al
 from the Settings page -- change these four and the same pipeline runs on a different
 domain, no code changes."""
 from . import exemplar
-from .storage import CONFIG, read_json, write_json
+from . import storage
+from .storage import read_json, write_json
 from .dynschema import PLACEHOLDER_SCHEMA
 
-SETTINGS_FILE = CONFIG / "settings.json"
-SCHEMA_FILE = CONFIG / "schema.json"
-EXTRACT_PROMPT_FILE = CONFIG / "extract_prompt.txt"
-JUDGE_PROMPT_FILE = CONFIG / "judge_prompt.txt"
-FEW_SHOT_FILE = CONFIG / "few_shot.json"
+
+
+def settings_file():
+    return storage.CONFIG / "settings.json"
+
+
+def schema_file():
+    return storage.CONFIG / "schema.json"
+
+
+def extract_prompt_file():
+    return storage.CONFIG / "extract_prompt.txt"
+
+
+def judge_prompt_file():
+    return storage.CONFIG / "judge_prompt.txt"
+
+
+def few_shot_file():
+    return storage.CONFIG / "few_shot.json"
 
 DEFAULT_SETTINGS = {
     # Which named model profile each stage calls; see server/models.py. Empty until chosen.
@@ -20,24 +36,24 @@ DEFAULT_SETTINGS = {
 }
 
 def get_settings() -> dict:
-    return {**DEFAULT_SETTINGS, **read_json(SETTINGS_FILE, {})}
+    return {**DEFAULT_SETTINGS, **read_json(settings_file(), {})}
 
 
 def save_settings(patch: dict) -> dict:
     cfg = get_settings()
     cfg.update(patch)
-    write_json(SETTINGS_FILE, cfg)
+    write_json(settings_file(), cfg)
     return cfg
 
 
 def get_schema() -> list[dict]:
     """Empty until someone defines one. A shipped default meant every new install began with
     ten PET fields nobody chose, and an extraction that looked like it had worked."""
-    return read_json(SCHEMA_FILE, {"fields": []})["fields"]
+    return read_json(schema_file(), {"fields": []})["fields"]
 
 
 def save_schema(fields: list[dict]) -> None:
-    write_json(SCHEMA_FILE, {"fields": fields})
+    write_json(schema_file(), {"fields": fields})
 
 
 def _get_text(path) -> str:
@@ -51,15 +67,15 @@ def _get_text(path) -> str:
 
 
 def get_extract_prompt() -> str:
-    return _get_text(EXTRACT_PROMPT_FILE)
+    return _get_text(extract_prompt_file())
 
 
 def save_extract_prompt(text: str) -> None:
-    EXTRACT_PROMPT_FILE.write_text(text, encoding="utf-8")
+    extract_prompt_file().write_text(text, encoding="utf-8")
 
 
 def get_judge_prompt() -> str:
-    return _get_text(JUDGE_PROMPT_FILE)
+    return _get_text(judge_prompt_file())
 
 
 def placeholders() -> dict:
@@ -69,12 +85,12 @@ def placeholders() -> dict:
 
 
 def save_judge_prompt(text: str) -> None:
-    JUDGE_PROMPT_FILE.write_text(text, encoding="utf-8")
+    judge_prompt_file().write_text(text, encoding="utf-8")
 
 
 def get_few_shot() -> list[dict]:
-    return read_json(FEW_SHOT_FILE, [])
+    return read_json(few_shot_file(), [])
 
 
 def save_few_shot(examples: list[dict]) -> None:
-    write_json(FEW_SHOT_FILE, examples)
+    write_json(few_shot_file(), examples)

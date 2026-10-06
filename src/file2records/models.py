@@ -12,9 +12,11 @@ inspected or backed up without carrying a key with it.
 import re
 import uuid
 
-from .storage import CONFIG, read_json, write_json
+from . import storage
+from .storage import read_json, write_json
 
-FILE = CONFIG / "models.json"
+def _file():
+    return storage.CONFIG / "models.json"
 
 
 def key_var(profile_id: str) -> str:
@@ -39,11 +41,11 @@ def public(profile: dict, key_is_set) -> dict:
 
 
 def listing(key_is_set) -> list[dict]:
-    return [public(p, key_is_set) for p in read_json(FILE, [])]
+    return [public(p, key_is_set) for p in read_json(_file(), [])]
 
 
 def get(profile_id: str) -> dict | None:
-    return next((p for p in read_json(FILE, []) if p["id"] == profile_id), None)
+    return next((p for p in read_json(_file(), []) if p["id"] == profile_id), None)
 
 
 def save_all(profiles: list[dict]) -> list[dict]:
@@ -57,7 +59,7 @@ def save_all(profiles: list[dict]) -> list[dict]:
             "api_base": (p.get("api_base") or "").strip(),
             "api_version": (p.get("api_version") or "").strip(),
         })
-    write_json(FILE, stored)
+    write_json(_file(), stored)
     return stored
 
 

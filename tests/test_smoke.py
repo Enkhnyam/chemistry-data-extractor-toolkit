@@ -14,14 +14,15 @@ from contextlib import contextmanager
 from pathlib import Path
 
 WORKSPACE = tempfile.mkdtemp(prefix="toolkit-test-")
-os.environ["WORKSPACE_DIR"] = WORKSPACE          # must be set before server.storage is imported
+os.environ["WORKSPACE_DIR"] = WORKSPACE          # read when the app first opens a workspace
 os.environ["TOOLKIT_SEED_DEMO"] = "0"            # these test the empty workspace, not the demo
 
 from fastapi.testclient import TestClient        # noqa: E402
 
-from server import config                        # noqa: E402
-from server.main import app                      # noqa: E402
-from server.storage import EXTRACTED as EXTRACTED_DIR, JUDGED as JUDGED_DIR  # noqa: E402
+from file2records import config                        # noqa: E402
+from file2records.main import app                      # noqa: E402
+from file2records import storage                # noqa: E402
+EXTRACTED_DIR, JUDGED_DIR = storage.EXTRACTED, storage.JUDGED
 
 client = TestClient(app)
 
@@ -30,7 +31,7 @@ client = TestClient(app)
 def configured():
     """A workspace with everything a run needs, torn back down afterwards. Stages refuse until a
     model with a key, a schema and a prompt are all present, so most tests need this."""
-    from server import config, models
+    from file2records import config, models
     saved = client.put("/api/models", json=[{"name": "test", "model": "gpt-4o-mini"}]).json()
     pid = saved["ids"][0]
     os.environ[models.key_var(pid)] = "sk-test-not-a-real-key"
@@ -45,8 +46,8 @@ def configured():
         client.put("/api/models", json=[])
         config.save_settings({"extract_model": "", "judge_model": ""})
         config.save_schema([])
-        config.EXTRACT_PROMPT_FILE.unlink(missing_ok=True)
-        config.JUDGE_PROMPT_FILE.unlink(missing_ok=True)
+        config.extract_prompt_file().unlink(missing_ok=True)
+        config.judge_prompt_file().unlink(missing_ok=True)
 
 
 class ConfigTests(unittest.TestCase):
@@ -84,10 +85,10 @@ class ConfigTests(unittest.TestCase):
             self.assertEqual(body["extract"], "")
 
     def test_stages_refuse_to_run_without_a_prompt(self):
-        from server import config
+        from file2records import config
         with configured():
-            config.EXTRACT_PROMPT_FILE.unlink(missing_ok=True)
-            config.JUDGE_PROMPT_FILE.unlink(missing_ok=True)
+            config.extract_prompt_file().unlink(missing_ok=True)
+            config.judge_prompt_file().unlink(missing_ok=True)
             for endpoint, word in (("/api/extract", "extraction prompt"), ("/api/judge", "judge rubric")):
                 r = client.post(endpoint, json={"paper_ids": ["anything"]})
                 self.assertEqual(r.status_code, 400, endpoint)
@@ -95,7 +96,7 @@ class ConfigTests(unittest.TestCase):
 
     def test_a_fully_configured_workspace_unblocks_the_stages(self):
         """Every blocker must clear before a run is possible: model, key, schema, prompt."""
-        from server import config
+        from file2records import config
         with configured():
             ready = client.get("/api/readiness").json()
             self.assertEqual(ready["extract"]["blockers"], [])
@@ -107,17 +108,17 @@ class ConfigTests(unittest.TestCase):
             self.assertIn("error", r.json()[0])
 
     def test_readiness_names_each_missing_piece(self):
-        from server import config
+        from file2records import config
         config.save_settings({"extract_model": "", "judge_model": ""})
         config.save_schema([])
-        config.EXTRACT_PROMPT_FILE.unlink(missing_ok=True)
+        config.extract_prompt_file().unlink(missing_ok=True)
         blockers = " ".join(client.get("/api/readiness").json()["extract"]["blockers"])
         self.assertIn("model", blockers)
         self.assertIn("fields", blockers)
         self.assertIn("extraction prompt", blockers)
 
     def test_a_model_without_a_key_is_named_as_the_blocker(self):
-        from server import config
+        from file2records import config
         pid = client.put("/api/models", json=[{"name": "Keyless", "model": "gpt-4o-mini"}]).json()["ids"][0]
         config.save_settings({"extract_model": pid})
         blockers = " ".join(client.get("/api/readiness").json()["extract"]["blockers"])
@@ -129,7 +130,7 @@ class ConfigTests(unittest.TestCase):
         """The failure this replaces: "Qwen3.8-27B" saved, tested and configured without
         complaint, then every extraction died on litellm's "LLM Provider NOT provided" -- after
         the papers were parsed and paid for."""
-        from server import config, models
+        from file2records import config, models
         pid = client.put("/api/models", json=[{"name": "Local", "model": "Qwen3.8-27B"}]).json()["ids"][0]
         os.environ[models.key_var(pid)] = "any"
         config.save_settings({"extract_model": pid})
@@ -148,7 +149,7 @@ class ConfigTests(unittest.TestCase):
     def test_the_only_model_is_used_without_a_second_decision(self):
         """Adding your first model used to leave both stages pointing at nothing, so the Extract
         page asked for a model you had just entered."""
-        from server import config
+        from file2records import config
         config.save_settings({"extract_model": "", "judge_model": ""})
         pid = client.put("/api/models", json=[{"name": "Only", "model": "gpt-4o-mini"}]).json()["ids"][0]
         settings = client.get("/api/settings").json()
@@ -166,7 +167,7 @@ class ConfigTests(unittest.TestCase):
     def test_a_stage_never_keeps_pointing_at_a_deleted_model(self):
         """Replace your only model and the stage used to keep naming the one you removed, which
         reads on the Extract page as "the model you chose no longer exists" and no way forward."""
-        from server import config
+        from file2records import config
         config.save_settings({"extract_model": "", "judge_model": ""})
         old = client.put("/api/models", json=[{"name": "Old", "model": "gpt-4o-mini"}]).json()["ids"][0]
         self.assertEqual(client.get("/api/settings").json()["extract_model"], old)
@@ -184,7 +185,8 @@ class ConfigTests(unittest.TestCase):
         Python's big ints round-tripped it perfectly, so the API tests saw nothing -- which is
         why this test parses the response the way a browser would."""
         import json
-        from server.storage import EXTRACTED, PARSED, write_json
+        from file2records.storage import write_json
+        EXTRACTED, PARSED = storage.EXTRACTED, storage.PARSED
         write_json(PARSED / "vp.json", {"id": "vp", "filename": "vp.pdf", "source_tracking": True,
                                         "chunks": [{"id": "c1", "text": "t", "html": "<p>t</p>"}]})
         write_json(EXTRACTED / "vp.json", {"id": "vp", "records": [{"a": 1}], "usage": {}})
@@ -209,15 +211,15 @@ class ConfigTests(unittest.TestCase):
         your own left the workspace permanently non-empty, and the seeder it called refused any
         workspace that was not empty -- so "Load the demo" silently did nothing, for exactly the
         person who had cleared it and wanted it back."""
-        from server import demo
-        from server.storage import PDFS, PARSED, CONFIG
+        from file2records import demo
+        PDFS, PARSED, CONFIG = storage.PDFS, storage.PARSED, storage.CONFIG
         if not demo.available():
             self.skipTest("no demo/ in this checkout")
         for d in (PDFS, PARSED, EXTRACTED_DIR, JUDGED_DIR, CONFIG):
             for f in list(d.iterdir()):
                 if not f.name.startswith("."):
                     f.unlink()
-        demo.MARKER.unlink(missing_ok=True)
+        demo.marker().unlink(missing_ok=True)
 
         (PDFS / "mine.pdf").write_bytes(b"%PDF-1.4 mine")
         self.assertFalse(demo.is_empty())
@@ -237,15 +239,15 @@ class ConfigTests(unittest.TestCase):
     def test_clearing_the_demo_keeps_your_own_papers_and_edits(self):
         """It used to empty the workspace outright, which took papers you had added with it."""
         import shutil, tempfile
-        from server import demo
-        from server.storage import PDFS, PARSED, EXTRACTED, CONFIG
+        from file2records import demo
+        from file2records.storage import PDFS, PARSED, EXTRACTED, CONFIG
         if not demo.available():
             self.skipTest("no demo/ in this checkout")
         for d in (PDFS, PARSED, EXTRACTED, CONFIG):
             for f in list(d.iterdir()):
                 if not f.name.startswith("."):
                     f.unlink()
-        demo.MARKER.unlink(missing_ok=True)
+        demo.marker().unlink(missing_ok=True)
         self.assertTrue(demo.seed())
 
         (PDFS / "mine.pdf").write_bytes(b"%PDF-1.4 mine")
@@ -267,8 +269,8 @@ class ConfigTests(unittest.TestCase):
 
     def test_the_export_carries_the_judges_reasoning_not_only_its_verdict(self):
         """A verdict with no argument behind it cannot be checked by anyone later."""
-        from server.storage import EXTRACTED, JUDGED, PARSED, write_json
-        from server import report
+        from file2records.storage import EXTRACTED, JUDGED, PARSED, write_json
+        from file2records import report
         write_json(PARSED / "jr.json", {"id": "jr", "filename": "jr.pdf", "chunks": []})
         write_json(EXTRACTED / "jr.json", {"id": "jr", "records": [{"compound": "ZnCl2"}]})
         write_json(JUDGED / "jr.json", {"id": "jr", "verdicts": [
@@ -289,7 +291,8 @@ class ConfigTests(unittest.TestCase):
         """A CSV of records cannot say which model wrote it, under which prompt, against which
         schema, or which rows a human corrected. The bundle is the answer to that."""
         import io, json, zipfile
-        from server.storage import EXTRACTED, PARSED, write_json
+        from file2records.storage import write_json
+        EXTRACTED, PARSED = storage.EXTRACTED, storage.PARSED
         with configured():
             write_json(PARSED / "bp.json", {"id": "bp", "filename": "bp.pdf", "chunks": [
                 {"id": "11111111-1111-5111-8111-111111111111", "text": "t"}],
@@ -333,7 +336,7 @@ class ConfigTests(unittest.TestCase):
 
         A uuid costs about fifteen tokens to reproduce exactly and models are bad at it: the
         same paper finished in 224s with the tags off and timed out at 280s with uuids on."""
-        from server import parsing
+        from file2records import parsing
         chunks = [{"id": "15587205-10fe-5d54-ba31-99bc4d2ddda1", "text": "first"},
                   {"id": "6d15a148-36f2-5ec9-8f87-03c8d6d71674", "text": "second"}]
         text = parsing.chunks_to_text(chunks, True)
@@ -353,7 +356,7 @@ class ConfigTests(unittest.TestCase):
         self.assertNotIn("ID:", parsing.chunks_to_text(chunks, False))
 
     def test_the_judge_is_not_shown_ids_it_is_told_to_ignore(self):
-        from server.judge import build_messages
+        from file2records.judge import build_messages
         recs = [{"catalyst": "ZnCl2", "source_chunk_ids": ["15587205-10fe-5d54-ba31-99bc4d2ddda1"]}]
         sent = build_messages("rubric", "text", recs)[1]["content"]
         self.assertIn("ZnCl2", sent)
@@ -373,7 +376,7 @@ class ConfigTests(unittest.TestCase):
     def test_extraction_and_judging_can_use_different_models(self):
         """The reason profiles exist: a strong extractor and a separate auditor, each with its
         own endpoint and key, in one workspace."""
-        from server import config, models
+        from file2records import config, models
         saved = client.put("/api/models", json=[
             {"name": "Extractor", "model": "azure/deploy", "api_base": "https://x.azure.com",
              "api_version": "2024-12-01-preview"},
@@ -400,7 +403,7 @@ class ConfigTests(unittest.TestCase):
             config.save_settings({"extract_model": "", "judge_model": ""})
 
     def test_a_model_key_never_comes_back_in_a_listing(self):
-        from server import models
+        from file2records import models
         pid = client.put("/api/models", json=[{"name": "Secret", "model": "m"}]).json()["ids"][0]
         client.put(f"/api/models/{pid}/key", json={"value": "sk-do-not-leak-this"})
         blob = client.get("/api/models").text
@@ -461,7 +464,7 @@ class PaperTests(unittest.TestCase):
                 self.assertIn("error", body[0], endpoint)
 
     def test_unparseable_pdf_fails_that_file_only_and_leaves_nothing_behind(self):
-        from server.storage import PDFS
+        from file2records.storage import PDFS
         result = client.post("/api/papers?source_tracking=true",
                              files={"files": ("bad.pdf", b"not a pdf", "application/pdf")}).json()
         self.assertIn("error", result[0])
@@ -473,7 +476,7 @@ class ReviewTests(unittest.TestCase):
     regenerated by re-running anything."""
 
     def setUp(self):
-        from server.storage import EXTRACTED, write_json
+        from file2records.storage import EXTRACTED, write_json
         self.paper = "paper-under-review"
         write_json(Path(EXTRACTED) / f"{self.paper}.json",
                    {"id": self.paper, "records": [{"compound": "as extracted"}]})
@@ -501,7 +504,7 @@ class ReviewTests(unittest.TestCase):
 
 class DeleteTests(unittest.TestCase):
     def setUp(self):
-        from server.storage import EXTRACTED, JUDGED, PARSED, write_json
+        from file2records.storage import EXTRACTED, JUDGED, PARSED, write_json
         self.pid = "deletable"
         write_json(Path(PARSED) / f"{self.pid}.json", {"id": self.pid, "filename": "d.pdf", "chunks": []})
         write_json(Path(EXTRACTED) / f"{self.pid}.json", {"id": self.pid, "records": [{"a": 1}]})
@@ -533,7 +536,7 @@ class DeleteTests(unittest.TestCase):
 
 class SpendTests(unittest.TestCase):
     def test_per_paper_cost_is_listed_and_totalled(self):
-        from server.storage import EXTRACTED, JUDGED, PARSED, write_json
+        from file2records.storage import EXTRACTED, JUDGED, PARSED, write_json
         pid = "priced"
         write_json(Path(PARSED) / f"{pid}.json", {"id": pid, "filename": "p.pdf", "chunks": []})
         write_json(Path(EXTRACTED) / f"{pid}.json", {"id": pid, "records": [],
@@ -555,7 +558,7 @@ class SpendTests(unittest.TestCase):
 class ConcurrencyTests(unittest.TestCase):
     def test_a_second_run_is_refused_while_one_is_going(self):
         """Two tabs starting extractions on the same paper used to race for the same file."""
-        from server.main import STAGE_LOCK
+        from file2records.main import STAGE_LOCK
         with configured():
             STAGE_LOCK.acquire()
             try:
@@ -579,7 +582,8 @@ class ReportTests(unittest.TestCase):
 
     def test_a_paper_that_yields_nothing_still_counts_as_extracted(self):
         # it cost a call; counting it as unextracted hides both the work and the spend
-        from server.storage import EXTRACTED, PARSED, write_json
+        from file2records.storage import write_json
+        EXTRACTED, PARSED = storage.EXTRACTED, storage.PARSED
         pid = "empty-but-processed"
         write_json(Path(PARSED) / f"{pid}.json", {"id": pid, "filename": "e.pdf", "chunks": []})
         write_json(Path(EXTRACTED) / f"{pid}.json", {"id": pid, "records": []})
@@ -615,40 +619,35 @@ class DemoTests(unittest.TestCase):
 
     def setUp(self):
         import tempfile
-        from server import demo
+        from file2records import demo
         self.demo = demo
         self.dir = Path(tempfile.mkdtemp(prefix="toolkit-demo-"))
-        for name in demo.STAGES:
-            (self.dir / name).mkdir(parents=True, exist_ok=True)
-        self._real = {k: v for k, v in demo.STAGES.items()}
-        demo.STAGES.update({name: self.dir / name for name in demo.STAGES})
-        self._marker = demo.MARKER
-        demo.MARKER = self.dir / ".demo"
+        self._real = storage.WORKSPACE
+        storage.use(self.dir)
         # The module-level opt-out is for the other tests; these are the ones about seeding.
         self._optout = os.environ.pop("TOOLKIT_SEED_DEMO", None)
 
     def tearDown(self):
         import shutil
-        self.demo.STAGES.update(self._real)
-        self.demo.MARKER = self._marker
+        storage.use(self._real)
         if self._optout is not None:
             os.environ["TOOLKIT_SEED_DEMO"] = self._optout
         shutil.rmtree(self.dir, ignore_errors=True)
 
-    @unittest.skipUnless(Path("demo/pdfs").is_dir(), "no demo/ in this checkout")
+    @unittest.skipUnless(Path(__file__).parents[1].joinpath("src/file2records/demo/pdfs").is_dir(), "no demo/ in this checkout")
     def test_it_seeds_an_empty_workspace_and_says_so(self):
         self.assertTrue(self.demo.seed_if_empty())
         self.assertTrue(self.demo.state()["is_demo"])
         self.assertTrue(list((self.dir / "pdfs").glob("*.pdf")))
         self.assertTrue((self.dir / "config" / "schema.json").exists())
 
-    @unittest.skipUnless(Path("demo/pdfs").is_dir(), "no demo/ in this checkout")
+    @unittest.skipUnless(Path(__file__).parents[1].joinpath("src/file2records/demo/pdfs").is_dir(), "no demo/ in this checkout")
     def test_it_refuses_to_seed_over_anything(self):
         (self.dir / "pdfs" / "mine.pdf").write_bytes(b"%PDF-1.4 not really")
         self.assertFalse(self.demo.seed_if_empty(), "seeded on top of a user's own paper")
         self.assertEqual([p.name for p in (self.dir / "pdfs").glob("*")], ["mine.pdf"])
 
-    @unittest.skipUnless(Path("demo/pdfs").is_dir(), "no demo/ in this checkout")
+    @unittest.skipUnless(Path(__file__).parents[1].joinpath("src/file2records/demo/pdfs").is_dir(), "no demo/ in this checkout")
     def test_clearing_takes_the_untouched_config_with_it(self):
         """A demo schema left behind would be applied to your papers without you choosing it.
 

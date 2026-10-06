@@ -7,15 +7,41 @@ import os
 import re
 from pathlib import Path
 
-WORKSPACE = Path(os.environ.get("WORKSPACE_DIR", Path(__file__).resolve().parents[1] / "workspace"))
-PDFS = WORKSPACE / "pdfs"
-PARSED = WORKSPACE / "parsed"
-EXTRACTED = WORKSPACE / "extracted"
-JUDGED = WORKSPACE / "judged"
-CONFIG = WORKSPACE / "config"
+WORKSPACE = PDFS = PARSED = EXTRACTED = JUDGED = CONFIG = Path()
 
-for _d in (PDFS, PARSED, EXTRACTED, JUDGED, CONFIG):
-    _d.mkdir(parents=True, exist_ok=True)
+
+def use(path) -> Path:
+    """Point every stage at the project folder `path`, creating it if needed.
+
+    The folders are module attributes that the rest of the package reads at call time
+    (`storage.PARSED`, never `from .storage import PARSED`), so switching projects is this one
+    call. They used to be fixed at import and created as a side effect of importing -- which a
+    web server can live with and a library cannot: `import file2records` made directories in
+    whatever folder you happened to be standing in.
+
+    `pdfs/` holds every source file, PDF or not. The name is kept so workspaces made by earlier
+    versions open unchanged.
+    """
+    global WORKSPACE, PDFS, PARSED, EXTRACTED, JUDGED, CONFIG
+    WORKSPACE = Path(path).expanduser().resolve()
+    PDFS = WORKSPACE / "pdfs"
+    PARSED = WORKSPACE / "parsed"
+    EXTRACTED = WORKSPACE / "extracted"
+    JUDGED = WORKSPACE / "judged"
+    CONFIG = WORKSPACE / "config"
+    for d in (PDFS, PARSED, EXTRACTED, JUDGED, CONFIG):
+        d.mkdir(parents=True, exist_ok=True)
+    return WORKSPACE
+
+
+def default_workspace() -> Path:
+    """WORKSPACE_DIR if set (Docker, tests), otherwise ./workspace."""
+    return Path(os.environ.get("WORKSPACE_DIR") or Path.cwd() / "workspace")
+
+
+def source_file(pid: str) -> Path | None:
+    """The original file a paper was parsed from, whatever its format."""
+    return next(iter(sorted(PDFS.glob(f"{pid}.*"))), None)
 
 
 def read_json(path: Path, default=None):
@@ -60,6 +86,11 @@ def list_papers() -> list[dict]:
         papers.append({
             "id": pid,
             "filename": meta.get("filename", pid),
+            # What the reader found in the file itself. Empty for papers parsed before readers
+            # recorded it, and for PDFs whose first page names no DOI.
+            "format": meta.get("format", "pdf"),
+            "doi": (meta.get("meta") or {}).get("doi", ""),
+            "title": (meta.get("meta") or {}).get("title", ""),
             "source_tracking": meta.get("source_tracking", True),
             "n_chunks": len(meta.get("chunks", [])),
             "extracted": (EXTRACTED / f"{pid}.json").exists(),

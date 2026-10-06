@@ -1,16 +1,16 @@
-"""FastAPI app: parse PDFs, extract records, judge them. Three verbs, three stages, all
-reading/writing plain JSON under workspace/. See README for the full endpoint list --
-this file is short enough to read top to bottom instead.
+"""FastAPI app: read papers, extract records, judge them. Three verbs, three stages, all
+reading/writing plain JSON in the project folder. The stages themselves are in pipeline.py; this
+file is the HTTP layer over them, short enough to read top to bottom.
+
+`file2records serve <folder>` chooses the project folder before importing this module; run
+directly under uvicorn it uses WORKSPACE_DIR, or ./workspace.
 """
 import asyncio
-import csv
-import io
 import json
 import os
 import re
 import threading
 import time
-import zipfile
 from pathlib import Path
 from typing import Literal
 
@@ -21,18 +21,20 @@ from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-ROOT = Path(__file__).resolve().parents[1]
-# Keys live beside the code by default, which is what you want when you cloned this and ran it.
-# Under Docker they must not: the image root is the container's own writable layer, so a key
-# added through Settings survived until the next `docker compose up --build` and then silently
-# vanished. The Dockerfile sets ENV_FILE=/data/.env, inside the mounted volume, so the same
-# setting persists the way the workspace does.
-ENV_FILE = Path(os.environ.get("ENV_FILE", ROOT / ".env"))
-load_dotenv(ENV_FILE)
+from . import (__version__, bundle, config, demo, filters, llm, models, parsing,  # noqa: E402
+               pipeline, report, storage, timings)
+from .storage import list_papers, read_json, require, version_of, write_json  # noqa: E402
 
-from . import config, demo, extraction, judge, llm, models, parsing, report, timings  # noqa: E402  (after load_dotenv)
-from .storage import (EXTRACTED, JUDGED, PARSED, PDFS, list_papers, paper_id_for, read_json,  # noqa: E402
-                      require, version_of, write_json)
+ROOT = Path(__file__).resolve().parent
+if storage.WORKSPACE == Path():
+    storage.use(storage.default_workspace())
+# Keys live in the project folder, beside the work they pay for, so they travel with it and
+# survive a reinstall -- and under Docker the folder is the mounted volume, which is the only
+# place that outlives the container. ENV_FILE overrides. A .env in the current directory is also
+# read (never written), for anyone who keeps keys there.
+ENV_FILE = Path(os.environ.get("ENV_FILE") or storage.WORKSPACE / ".env")
+load_dotenv(ENV_FILE)
+load_dotenv(Path.cwd() / ".env")
 
 # One stage at a time per server. Two browser tabs starting extractions on the same paper wrote
 # the same file from two threads and the loser's records vanished; refusing the second is both
@@ -46,7 +48,7 @@ def single_flight(stage: str):
                                  f"before starting {stage}.")
 
 
-app = FastAPI(title="Extraction Toolkit")
+app = FastAPI(title="file2records", version=__version__)
 
 
 @app.exception_handler(Exception)
@@ -322,22 +324,10 @@ def reveal_api_key(name: str):
 
 
 def _blockers(stage: str) -> list[str]:
-    """What is still missing before this stage can run, in the order a person would fix it.
-
-    The UI shows the same list as a checklist; both call this so they can never disagree about
-    whether a run is possible."""
-    settings = config.get_settings()
-    missing = list(models.blockers(settings.get(f"{stage}_model", ""),
-                                   "extraction" if stage == "extract" else "judging"))
-    if not config.get_schema():
-        missing.append("Define the fields a record has, in Settings.")
-    if stage == "extract" and not config.get_extract_prompt().strip():
-        missing.append("Write an extraction prompt. Until you do, nothing tells the model what "
-                       "to pull out.")
-    if stage == "judge" and not config.get_judge_prompt().strip():
-        missing.append("Write a judge rubric. Until you do, nothing tells the model what counts "
-                       "as a good record.")
-    return missing
+    """What is still missing before this stage can run. The UI shows the same list as a
+    checklist; both call pipeline.blockers so they can never disagree about whether a run is
+    possible."""
+    return pipeline.blockers(stage)
 
 
 def _stage_readiness(stage: str) -> dict:
@@ -450,35 +440,15 @@ async def upload_papers(files: list[UploadFile], source_tracking: bool | None = 
 
 
 async def _upload(files: list[UploadFile], source_tracking: bool | None):
-    with_source = config.get_settings()["source_tracking_default"] if source_tracking is None else source_tracking
     results = []
     for f in files:
         content = await f.read()
-        pid = paper_id_for(f.filename, content)
-        pdf_path = PDFS / f"{pid}.pdf"
-        pdf_path.write_bytes(content)
-        started = time.monotonic()
-        try:
-            # In a thread, not inline: docling is seconds-to-minutes of blocking CPU work, and
-            # running it on the event loop froze every other request for its whole duration --
-            # so switching tabs mid-parse left the next page stuck on "Loading" until the PDF
-            # finished, which looked exactly like a crash.
-            chunks = await asyncio.to_thread(parsing.parse_pdf, pdf_path, pid)
-        except Exception as e:
-            # Don't leave the PDF behind: it has no parsed record, so nothing in the UI can see
-            # it or clean it up, and a folder of retried failures would silently fill the disk.
-            pdf_path.unlink(missing_ok=True)
-            results.append({"id": pid, "filename": f.filename, "error": f"{type(e).__name__}: {e}"})
-            continue
-        write_json(PARSED / f"{pid}.json", {
-            "id": pid, "filename": f.filename, "source_tracking": with_source, "chunks": chunks,
-        })
-        seconds = time.monotonic() - started
-        # Measured per byte, because that is what the browser can see before it uploads. Chunk
-        # count only exists once the parse is over, which is too late to estimate with.
-        timings.record("parse", seconds, len(content), unit="bytes")
-        results.append({"id": pid, "filename": f.filename, "n_chunks": len(chunks),
-                        "source_tracking": with_source, "seconds": round(seconds, 1)})
+        # In a thread, not inline: docling is seconds-to-minutes of blocking CPU work, and
+        # running it on the event loop froze every other request for its whole duration --
+        # so switching tabs mid-parse left the next page stuck on "Loading" until the PDF
+        # finished, which looked exactly like a crash.
+        results.append(await asyncio.to_thread(pipeline.add_file, f.filename, content,
+                                               source_tracking))
     return results
 
 
@@ -495,7 +465,7 @@ def get_papers():
 @app.get("/api/papers/{paper_id}")
 def get_paper(paper_id: str):
     try:
-        paper = require(PARSED / f"{paper_id}.json", "paper")
+        paper = require(storage.PARSED / f"{paper_id}.json", "paper")
     except FileNotFoundError as e:
         raise HTTPException(404, str(e)) from e
     return {**paper, "chunks": parsing.with_html(paper["chunks"])}
@@ -506,9 +476,9 @@ def delete_paper(paper_id: str):
     """The paper and everything derived from it. Irreversible, and it takes any reviewer
     corrections with it -- the frontend says so before asking."""
     removed = []
-    for path in (PDFS / f"{paper_id}.pdf", PARSED / f"{paper_id}.json",
-                 EXTRACTED / f"{paper_id}.json", JUDGED / f"{paper_id}.json"):
-        if path.exists():
+    for path in (storage.source_file(paper_id), storage.PARSED / f"{paper_id}.json",
+                 storage.EXTRACTED / f"{paper_id}.json", storage.JUDGED / f"{paper_id}.json"):
+        if path is not None and path.exists():
             path.unlink()
             removed.append(path.parent.name)
     if not removed:
@@ -520,11 +490,11 @@ def delete_paper(paper_id: str):
 def delete_extraction(paper_id: str):
     """The extraction, and with it the judgment -- a verdict about records that no longer
     exist is worse than no verdict. Corrections and notes go too; they live in this file."""
-    path = EXTRACTED / f"{paper_id}.json"
+    path = storage.EXTRACTED / f"{paper_id}.json"
     if not path.exists():
         raise HTTPException(404, f"no extraction for {paper_id}")
     path.unlink()
-    judged = JUDGED / f"{paper_id}.json"
+    judged = storage.JUDGED / f"{paper_id}.json"
     also = judged.exists()
     if also:
         judged.unlink()
@@ -533,7 +503,7 @@ def delete_extraction(paper_id: str):
 
 @app.delete("/api/papers/{paper_id}/judgment")
 def delete_judgment(paper_id: str):
-    path = JUDGED / f"{paper_id}.json"
+    path = storage.JUDGED / f"{paper_id}.json"
     if not path.exists():
         raise HTTPException(404, f"no judgment for {paper_id}")
     path.unlink()
@@ -556,49 +526,15 @@ def run_extract(body: PaperIds):
 
 
 def _extract(body: PaperIds):
-    settings = config.get_settings()
     blockers = _blockers("extract")
     if blockers:
         raise HTTPException(400, " ".join(blockers))
-    prompt = config.get_extract_prompt()
-    schema_fields = config.get_schema()
-    few_shot = config.get_few_shot()
-    params = models.call_params(settings.get("extract_model", ""))
-
-    results = []
-    for pid in body.paper_ids:
-        try:
-            paper = require(PARSED / f"{pid}.json", "paper")
-        except FileNotFoundError as e:
-            results.append({"id": pid, "error": str(e)})
-            continue
-        with_source = paper.get("source_tracking", True)
-        text = parsing.chunks_to_text(paper["chunks"], with_source)
-        started = time.monotonic()
-        try:
-            records, usage = extraction.run_extraction(params, prompt, schema_fields,
-                                                       few_shot, text, with_source)
-        except Exception as e:
-            results.append({"id": pid, "error": f"{type(e).__name__}: {e}"})
-            continue
-        seconds = time.monotonic() - started
-        # The model cited short labels (c17); what gets stored is the chunk's real id, so
-        # everything downstream -- the review pane, the export -- keeps working unchanged.
-        if with_source:
-            for record in records:
-                record["source_chunk_ids"] = parsing.resolve_labels(
-                    record.get("source_chunk_ids"), paper["chunks"])
-        timings.record("extract", seconds, len(paper["chunks"]), unit="chunks")
-        write_json(EXTRACTED / f"{pid}.json",
-                   {"id": pid, "records": records, "usage": usage, "model": params.get("model")})
-        results.append({"id": pid, "n_records": len(records), "seconds": round(seconds, 1),
-                        "usage": usage})
-    return results
+    return pipeline.extract(body.paper_ids, pipeline.resolve_model(None, "extract"))
 
 
 @app.get("/api/papers/{paper_id}/extraction")
 def get_extraction(paper_id: str):
-    path = EXTRACTED / f"{paper_id}.json"
+    path = storage.EXTRACTED / f"{paper_id}.json"
     try:
         return {**require(path, "extraction"), "version": version_of(path)}
     except FileNotFoundError as e:
@@ -620,7 +556,7 @@ def put_extraction(paper_id: str, body: ReviewedExtraction):
     the judge's proposed fixes). The model's own output is kept under `model_records` the first
     time anything is edited: a corrected dataset that cannot be diffed against what the model
     actually said is not evidence of anything."""
-    path = EXTRACTED / f"{paper_id}.json"
+    path = storage.EXTRACTED / f"{paper_id}.json"
     try:
         current = require(path, "extraction")
     except FileNotFoundError as e:
@@ -658,44 +594,16 @@ def run_judge_endpoint(body: PaperIds):
 
 
 def _judge(body: PaperIds):
-    settings = config.get_settings()
     blockers = _blockers("judge")
     if blockers:
         raise HTTPException(400, " ".join(blockers))
-    rubric = config.get_judge_prompt()
-    params = models.call_params(settings.get("judge_model", ""))
-
-    results = []
-    for pid in body.paper_ids:
-        try:
-            paper = require(PARSED / f"{pid}.json", "paper")
-            extracted = require(EXTRACTED / f"{pid}.json", "extraction")
-        except FileNotFoundError as e:
-            results.append({"id": pid, "error": str(e)})
-            continue
-        with_source = paper.get("source_tracking", True)
-        text = parsing.chunks_to_text(paper["chunks"], with_source)
-        started = time.monotonic()
-        try:
-            verdicts, usage = judge.run_judge(params, rubric, text, extracted["records"])
-        except Exception as e:
-            results.append({"id": pid, "error": f"{type(e).__name__}: {e}"})
-            continue
-        seconds = time.monotonic() - started
-        timings.record("judge", seconds, len(extracted["records"]), unit="records")
-        write_json(JUDGED / f"{pid}.json",
-                   {"id": pid, "verdicts": verdicts, "usage": usage, "model": params.get("model"),
-                    # what the judge actually saw, so a later edit can be spotted as post-dating it
-                    "judged_records": extracted["records"]})
-        results.append({"id": pid, "n_verdicts": len(verdicts), "seconds": round(seconds, 1),
-                        "usage": usage})
-    return results
+    return pipeline.judge_papers(body.paper_ids, pipeline.resolve_model(None, "judge"))
 
 
 @app.get("/api/papers/{paper_id}/judgment")
 def get_judgment(paper_id: str):
     try:
-        return require(JUDGED / f"{paper_id}.json", "judgment")
+        return require(storage.JUDGED / f"{paper_id}.json", "judgment")
     except FileNotFoundError as e:
         raise HTTPException(404, str(e)) from e
 
@@ -707,140 +615,53 @@ def get_report():
     return report.build()
 
 
+def _chosen(only: str | None, exclude: str | None) -> list[str] | None:
+    """The papers an export or a stage is limited to, or None for all of them."""
+    if not (only or exclude):
+        return None
+    try:
+        return filters.select(pipeline.paper_ids(), only=only, exclude=exclude)
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+
+
+@app.get("/api/search")
+def search_papers(q: str, case: bool = False):
+    """Papers whose full text matches the regular expression `q`, with snippets. Free: it reads
+    the parsed text and calls no model."""
+    try:
+        hits = filters.search(q, ignore_case=not case)
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+    return {"pattern": q, "papers": len(hits), "matches": sum(h["matches"] for h in hits),
+            "results": hits}
+
+
 @app.get("/api/export.csv")
-def export_csv():
-    columns, rows = report.flat_records()
-    buffer = io.StringIO()
-    writer = csv.DictWriter(buffer, fieldnames=columns, extrasaction="ignore")
-    writer.writeheader()
-    writer.writerows(rows)
-    return Response(buffer.getvalue(), media_type="text/csv",
+def export_csv(only: str | None = None, exclude: str | None = None):
+    columns, rows = report.flat_records(_chosen(only, exclude))
+    return Response(bundle.csv_bytes(columns, rows), media_type="text/csv",
                     headers={"Content-Disposition": 'attachment; filename="records.csv"'})
 
 
 @app.get("/api/export.json")
-def export_json():
-    _, rows = report.flat_records()
+def export_json(only: str | None = None, exclude: str | None = None):
+    _, rows = report.flat_records(_chosen(only, exclude))
     return Response(json.dumps(rows, indent=1, ensure_ascii=False), media_type="application/json",
                     headers={"Content-Disposition": 'attachment; filename="records.json"'})
 
 
-def _csv_bytes(columns, rows) -> bytes:
-    buffer = io.StringIO()
-    writer = csv.DictWriter(buffer, fieldnames=columns, extrasaction="ignore")
-    writer.writeheader()
-    writer.writerows(rows)
-    return buffer.getvalue().encode("utf-8")
-
-
 @app.get("/api/export.zip")
-def export_bundle(pdfs: bool = False):
-    """The whole project as one folder: the data, what produced it, and what it cost.
-
-    A CSV of records on its own is not reproducible -- it cannot say which model wrote it, under
-    which prompt, against which schema, or which rows a human then corrected. This is the same
-    shape the source project deposits: data beside the config and a manifest that pins both.
-
-    No key ever enters the bundle; the model profiles are copied without their key variables.
-    """
-    record_columns, record_rows = report.flat_records()
-    paper_columns, paper_rows = report.papers_table()
-    summary = report.build()
-    settings = config.get_settings()
-    profiles = models.listing(_key_is_set)
-
-    manifest = {
-        "exported_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "tool": "chemistry-data-extractor-toolkit",
-        "git_commit": _git_commit(),
-        "papers": len(paper_rows),
-        "records": len(record_rows),
-        "models": {
-            "extract": (models.get(settings.get("extract_model", "")) or {}).get("model"),
-            "judge": (models.get(settings.get("judge_model", "")) or {}).get("model"),
-            # per paper too: a corpus is often built across more than one model
-            "per_paper": {r["paper_id"]: {"extract": r["extract_model"], "judge": r["judge_model"]}
-                          for r in paper_rows},
-        },
-        "spend": summary.get("totals", {}).get("spend", {}),
-        "source_tracking_default": settings.get("source_tracking_default", True),
-    }
-
-    buffer = io.BytesIO()
-    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as bundle:
-        bundle.writestr("manifest.json", json.dumps(manifest, indent=2, ensure_ascii=False))
-        bundle.writestr("README.md", _bundle_readme(manifest))
-        bundle.writestr("data/records.csv", _csv_bytes(record_columns, record_rows))
-        bundle.writestr("data/records.json", json.dumps(record_rows, indent=1, ensure_ascii=False))
-        bundle.writestr("data/papers.csv", _csv_bytes(paper_columns, paper_rows))
-        bundle.writestr("data/report.json", json.dumps(summary, indent=2, ensure_ascii=False))
-
-        # config: everything that decides what a run produces, and nothing that authenticates it
-        bundle.writestr("config/schema.json",
-                        json.dumps({"fields": config.get_schema()}, indent=2, ensure_ascii=False))
-        bundle.writestr("config/extract_prompt.txt", config.get_extract_prompt())
-        bundle.writestr("config/judge_prompt.txt", config.get_judge_prompt())
-        bundle.writestr("config/few_shot.json",
-                        json.dumps(config.get_few_shot(), indent=2, ensure_ascii=False))
-        bundle.writestr("config/models.json", json.dumps(
-            [{k: v for k, v in m.items()
-              if k in ("id", "name", "model", "api_base", "api_version")} for m in profiles],
-            indent=2, ensure_ascii=False))
-
-        # the per-paper working files, so a reviewer can trace any row back to its chunk
-        for stage, directory in (("extracted", EXTRACTED), ("judged", JUDGED),
-                                 ("parsed", PARSED)):
-            for path in sorted(directory.glob("*.json")):
-                bundle.write(path, f"{stage}/{path.name}")
-        if pdfs:
-            for path in sorted(PDFS.glob("*.pdf")):
-                bundle.write(path, f"papers/{path.name}")
-
+def export_bundle(pdfs: bool = False, text: bool = False, only: str | None = None,
+                  exclude: str | None = None):
+    """The whole project as one zip: the data, what produced it, and what it cost. Paper text
+    and source files are included only when asked for -- see bundle.build for why."""
+    data = bundle.build(_chosen(only, exclude), include_text=text, include_files=pdfs,
+                        profiles=models.listing(_key_is_set))
     stamp = time.strftime("%Y%m%d", time.gmtime())
-    return Response(buffer.getvalue(), media_type="application/zip",
+    return Response(data, media_type="application/zip",
                     headers={"Content-Disposition":
-                             f'attachment; filename="extraction-bundle-{stamp}.zip"'})
-
-
-def _git_commit() -> str | None:
-    """Which version of the tool produced this. None outside a checkout, which is honest."""
-    import subprocess
-    try:
-        return subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "HEAD"],
-                                       text=True, stderr=subprocess.DEVNULL, timeout=5).strip()
-    except Exception:
-        return None
-
-
-def _bundle_readme(manifest: dict) -> str:
-    m = manifest["models"]
-    return f"""# Extraction bundle
-
-{manifest['records']} records from {manifest['papers']} paper(s), exported
-{manifest['exported_at']} by chemistry-data-extractor-toolkit.
-
-## What is here
-
-- `data/records.csv`, `data/records.json` — one row per record, with the judge's verdict and
-  any reviewer flag or note. `extract_model` and `judge_model` say what produced each row.
-- `data/papers.csv` — one row per paper: chunks in, records out, model, tokens, cost.
-- `data/report.json` — completeness by field, what the judge changed, totals.
-- `config/` — the schema, both prompts, the worked examples and the model settings that
-  produced this. API keys are not included.
-- `parsed/`, `extracted/`, `judged/` — the working files, so any row can be traced back to the
-  chunk it came from. `source_chunk_ids` on a record refers to `chunks[].id` in `parsed/`.
-- `papers/` — the source PDFs, if you exported with them.
-
-## Reading it
-
-Extraction model: `{m['extract'] or 'not set'}` · judge model: `{m['judge'] or 'not set'}`.
-Papers may differ from these if the corpus was built across more than one model; see
-`models.per_paper` in `manifest.json`.
-
-`model_records` in `extracted/*.json` is what the model originally said, kept beside the
-corrected records the moment anything was edited. A corrected dataset that cannot be diffed
-against the model's own output is not evidence of anything.
-"""
+                             f'attachment; filename="file2records-bundle-{stamp}.zip"'})
 
 
 # ---------- prompt authoring ----------
@@ -903,7 +724,7 @@ def generate_prompt(body: PromptRequest):
 
     messages = [{"role": "user", "content": brief}]
     if body.paper_id:
-        paper = read_json(PARSED / f"{body.paper_id}.json")
+        paper = read_json(storage.PARSED / f"{body.paper_id}.json")
         if paper:
             excerpt = parsing.chunks_to_text(paper["chunks"], False)[:6000]
             messages.append({"role": "user", "content":
