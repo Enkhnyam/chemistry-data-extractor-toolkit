@@ -68,7 +68,14 @@ function humanSeconds(s) {
 // because parse speed depends on the PDF, on OCR, and on whether there's a GPU.
 // A 4 MB paper takes proportionally longer than a 0.5 MB one, and the browser knows the size
 // before it uploads -- so the estimate is per byte rather than a flat median over past parses.
+// What the server can read. Structured formats (XML, HTML, Word, Markdown) are read directly
+// and take a moment; only PDFs go through the layout model the time estimate is measured on.
+const SUPPORTED = ['.pdf', '.xml', '.nxml', '.html', '.htm', '.xhtml', '.docx', '.md', '.markdown', '.txt'];
+const isSupported = (name) => SUPPORTED.some(ext => name.toLowerCase().endsWith(ext));
+const isPdf = (name) => name.toLowerCase().endsWith('.pdf');
+
 function parseEta(file) {
+  if (!isPdf(file.name)) return 1;
   const t = state.timings.parse;
   if (!t) return null;
   return (t.unit === 'bytes' && t.per_unit) ? t.per_unit * file.size : t.seconds;
@@ -1157,16 +1164,20 @@ function modelCell(models) {
   return `<div class="models">${line('extracted', m.extract)}${line('judged', m.judge)}</div>`;
 }
 
+const FORMAT_LABELS = { pdf: 'PDF', elsevier: 'Elsevier XML', jats: 'JATS XML', html: 'HTML',
+  docx: 'Word', markdown: 'Markdown', text: 'Text', xml: 'XML (general)' };
+
 function papersTableHTML(papers) {
   const spent = papers.reduce((n, p) => n + ((p.spend || {}).cost_usd || 0), 0);
   const totalTokens = papers.reduce((n, p) => n + ((p.spend || {}).tokens || 0), 0);
   return `<table>
-    <thead><tr><th>File</th><th>Chunks</th><th>Source</th><th>Records</th>
+    <thead><tr><th>File</th><th>Format</th><th>Chunks</th><th>Source</th><th>Records</th>
       <th>Model</th><th style="text-align:right">Cost</th><th></th></tr></thead>
     <tbody>${papers.map(p => {
       const spend = p.spend || {};
       return `<tr data-id="${p.id}">
-        <td>${esc(p.filename)}</td>
+        <td>${esc(p.filename)}${p.doi ? `<div class="muted small">doi:${esc(p.doi)}</div>` : ''}</td>
+        <td><span class="tag">${esc(FORMAT_LABELS[p.format] || p.format || 'PDF')}</span></td>
         <td class="muted">${p.n_chunks}</td>
         <td><span class="tag ${p.source_tracking ? 'yes' : 'no'}">${p.source_tracking ? 'on' : 'off'}</span></td>
         <td>${p.n_records === null || p.n_records === undefined
@@ -1183,8 +1194,8 @@ function papersTableHTML(papers) {
             data-has="${[p.extracted && 'extraction', p.judged && 'judgment'].filter(Boolean).join(' and ')}">${icon('trash')}</button>
         </span></td>
       </tr>`;
-    }).join('') || '<tr><td colspan="7" class="muted">No papers yet</td></tr>'}</tbody>
-    ${(spent || totalTokens) ? `<tfoot><tr><td colspan="5" class="muted">total</td>
+    }).join('') || '<tr><td colspan="8" class="muted">No papers yet</td></tr>'}</tbody>
+    ${(spent || totalTokens) ? `<tfoot><tr><td colspan="6" class="muted">total</td>
       ${spendCell(spent, totalTokens)}<td></td></tr></tfoot>` : ''}
   </table>`;
 }
@@ -1199,11 +1210,13 @@ async function renderParse(gen) {
     <section>
       <div class="panel">
         <h2>Add papers</h2>
-        <p class="lede">Parsed locally into text and table chunks. ${esc(etaText('parse'))} per
-          paper; scanned PDFs take longer. You can leave this tab while it runs.</p>
+        <p class="lede">PDF, JATS or Elsevier XML, HTML, Word or Markdown, read locally into text
+          and table chunks. XML and HTML from a publisher keep their tables exactly, so prefer them
+          to a PDF when you have both. PDFs: ${esc(etaText('parse'))} per paper; scanned ones take
+          longer. You can leave this tab while it runs.</p>
         <div class="pickers">
-          <label class="pickbtn">Choose PDF files
-            <input type="file" id="pdf-files" accept="application/pdf" multiple hidden></label>
+          <label class="pickbtn">Choose files
+            <input type="file" id="pdf-files" accept="${SUPPORTED.join(',')}" multiple hidden></label>
           <label class="pickbtn">Choose a whole folder
             <input type="file" id="pdf-folder" webkitdirectory multiple hidden></label>
           <button id="clear-pick" hidden>${icon('x')}Clear</button>
@@ -1220,6 +1233,18 @@ async function renderParse(gen) {
       <div class="panel">
         <h2>Papers <span class="muted" style="font-weight:400" id="paper-count">${papers.length}</span></h2>
         <div id="papers-table">${papersTableHTML(papers)}</div>
+      </div>
+      <div class="panel">
+        <h2>Search the full text${help('A regular expression, matched against every paper\'s ' +
+          'parsed text. Free: no model is called. glycoly[sz]is matches both spellings; ' +
+          'positron|tomograph matches either word. The same patterns choose papers on the ' +
+          'Extract and Judge pages and limit an export on the Report page.')}</h2>
+        <div class="row">
+          <input id="search-q" class="grow" placeholder="e.g. glycoly[sz]is|methanoly[sz]is" spellcheck="false">
+          <label class="nowrap"><input type="checkbox" id="search-case"> match case</label>
+          <button id="search-btn">${icon('view')}Search</button>
+        </div>
+        <div id="search-results" class="muted" style="margin-top:8px"></div>
       </div>
       <div class="panel" id="preview-panel" style="display:none">
         <h2 id="preview-title"></h2>
@@ -1265,19 +1290,19 @@ async function renderParse(gen) {
       return `about <b>${humanSeconds(seconds)}</b> in total`;
     })();
     pickedBox.className = 'picked';
-    pickedBox.innerHTML = `<b>${picked.length} PDF${picked.length === 1 ? '' : 's'} chosen</b>
+    pickedBox.innerHTML = `<b>${picked.length} file${picked.length === 1 ? '' : 's'} chosen</b>
       <span class="muted">${mb.toFixed(1)} MB · ${total}</span>
       <div class="filelist">${picked.map(f => `<div>${esc(f.webkitRelativePath || f.name)}</div>`).join('')}</div>`;
-    uploadBtn.textContent = `Parse ${picked.length} PDF${picked.length === 1 ? '' : 's'}`;
+    uploadBtn.textContent = `Parse ${picked.length} file${picked.length === 1 ? '' : 's'}`;
   }
 
   const addFiles = (fileList) => {
-    const pdfs = [...fileList].filter(f => f.name.toLowerCase().endsWith('.pdf'));
-    const skipped = fileList.length - pdfs.length;
+    const usable = [...fileList].filter(f => isSupported(f.name) && !f.name.startsWith('.'));
+    const skipped = fileList.length - usable.length;
     const seen = new Set(picked.map(f => (f.webkitRelativePath || f.name) + f.size));
-    picked = picked.concat(pdfs.filter(f => !seen.has((f.webkitRelativePath || f.name) + f.size)));
+    picked = picked.concat(usable.filter(f => !seen.has((f.webkitRelativePath || f.name) + f.size)));
     document.getElementById('upload-hint').textContent =
-      skipped ? `${skipped} non-PDF file${skipped === 1 ? '' : 's'} in that folder ignored.` : '';
+      skipped ? `${skipped} file${skipped === 1 ? '' : 's'} of another type ignored.` : '';
     showPicked();
   };
 
@@ -1296,12 +1321,40 @@ async function renderParse(gen) {
       fd.append('files', item.file);
       const [r] = await post('/api/papers?source_tracking=' + srcTrack, fd);
       if (r.error) throw new Error(r.error);
-      return `${r.n_chunks} chunks in ${humanSeconds(r.seconds)}`;
+      return `${FORMAT_LABELS[r.format] || r.format} · ${r.n_chunks} chunks in ${humanSeconds(r.seconds)}` +
+        (r.doi ? ` · doi:${r.doi}` : '');
     });
     picked = [];
     showPicked();
     await refreshPapers();
   });
+
+  const runSearch = async () => {
+    const q = document.getElementById('search-q').value.trim();
+    const box = document.getElementById('search-results');
+    if (!q) { box.textContent = ''; return; }
+    const caseSensitive = document.getElementById('search-case').checked;
+    try {
+      const res = await get(`/api/search?q=${encodeURIComponent(q)}&case=${caseSensitive}`);
+      box.className = '';
+      box.innerHTML = `<p class="muted">${res.matches} match${res.matches === 1 ? '' : 'es'} in
+          ${res.papers} of ${document.getElementById('paper-count').textContent} papers</p>` +
+        res.results.map(h => `<div class="search-hit" data-id="${h.id}">
+          <b>${esc(h.title || h.filename)}</b> <span class="muted">${h.matches} match${h.matches === 1 ? '' : 'es'}</span>
+          ${h.snippets.map(sn => `<div class="snippet" data-chunk="${sn.chunk_id}" title="Show this passage">${esc(sn.before)}<mark>${esc(sn.match)}</mark>${esc(sn.after)}</div>`).join('')}
+        </div>`).join('');
+      box.querySelectorAll('.snippet').forEach(sn => sn.addEventListener('click', async () => {
+        await showPreview(sn.closest('.search-hit').dataset.id);
+        const chunk = document.querySelector(`#preview-text .chunk[data-id="${sn.dataset.chunk}"]`);
+        if (chunk) { chunk.classList.add('hit'); chunk.scrollIntoView({ block: 'center' }); }
+      }));
+    } catch (err) {
+      box.className = 'error';
+      box.textContent = err.message;
+    }
+  };
+  document.getElementById('search-btn').addEventListener('click', runSearch);
+  document.getElementById('search-q').addEventListener('keydown', e => { if (e.key === 'Enter') runSearch(); });
 }
 
 // Deleting is the one irreversible thing in the app, so the confirm names what goes with it:
@@ -1329,8 +1382,12 @@ function wireDeleteButtons(onDone) {
 }
 
 function wireViewButtons() {
-  document.querySelectorAll('.view-btn').forEach(btn => btn.addEventListener('click', async (e) => {
-    const id = e.target.closest('tr').dataset.id;
+  document.querySelectorAll('.view-btn').forEach(btn => btn.addEventListener('click', (e) =>
+    showPreview(e.target.closest('tr').dataset.id)));
+}
+
+async function showPreview(id) {
+  {
     const paper = await get('/api/papers/' + id);
     const panel = document.getElementById('preview-panel');
     if (!panel) return;
@@ -1341,7 +1398,7 @@ function wireViewButtons() {
       (paper.source_tracking ? `<span class="cid">${c.id.slice(0, 8)}</span>` : '') +
       c.html + '</div>').join('');
     panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }));
+  }
 }
 
 // ---------- Extract / Judge pages (same shape) ----------
@@ -1443,6 +1500,48 @@ function openPromptEditor(kind, prompts, onSaved) {
   });
 }
 
+// Choose papers by what their text says: the matching ones are ticked, everything else is
+// unticked. The same /api/search the Parse page uses, so a pattern means the same thing on both.
+function regexPickerHTML() {
+  return `<div class="regex-pick">
+    <input id="pick-only" placeholder="only papers matching, e.g. glycoly[sz]is" spellcheck="false">
+    <input id="pick-exclude" placeholder="except papers matching, e.g. positron|tomograph" spellcheck="false">
+    <button id="pick-apply">Select</button>
+    <div class="muted small" id="pick-note"></div>
+  </div>`;
+}
+
+function wireRegexPicker(doneKey, papers) {
+  const btn = document.getElementById('pick-apply');
+  if (!btn) return;
+  const idsFor = async (q) => q ? new Set((await get(`/api/search?q=${encodeURIComponent(q)}`)).results.map(r => r.id)) : null;
+  const apply = async () => {
+    const note = document.getElementById('pick-note');
+    const only = document.getElementById('pick-only').value.trim();
+    const exclude = document.getElementById('pick-exclude').value.trim();
+    try {
+      const [keep, drop] = await Promise.all([idsFor(only), idsFor(exclude)]);
+      const done = Object.fromEntries(papers.map(p => [p.id, p[doneKey]]));
+      let n = 0;
+      document.querySelectorAll('#checklist input[type=checkbox]').forEach(cb => {
+        const match = (!keep || keep.has(cb.value)) && !(drop && drop.has(cb.value));
+        cb.checked = match && !done[cb.value];
+        n += match;
+      });
+      note.className = 'muted small';
+      note.textContent = (only || exclude)
+        ? `${n} of ${papers.length} papers match; those not done yet are selected.` : '';
+      document.getElementById('checklist').dispatchEvent(new Event('change'));
+    } catch (err) {
+      note.className = 'error small';
+      note.textContent = err.message;
+    }
+  };
+  btn.addEventListener('click', apply);
+  ['pick-only', 'pick-exclude'].forEach(id => document.getElementById(id)
+    .addEventListener('keydown', e => { if (e.key === 'Enter') apply(); }));
+}
+
 function stageChecklistHTML(papers, doneKey, emptyMsg) {
   return papers.map(p =>
     `<label><input type="checkbox" value="${p.id}" ${p[doneKey] ? '' : 'checked'}>
@@ -1466,6 +1565,7 @@ async function renderExtract(gen) {
         <p class="lede">One call per paper. ${esc(etaText('extract', 30))} for a typical paper.</p>
         <div class="stage-split">
           <div>
+            ${papers.length ? regexPickerHTML() : ''}
             <div class="checklist" id="checklist">${stageChecklistHTML(papers, 'extracted',
               '<span class="muted">No parsed papers yet &mdash; start in <a href="#/parse">Parse</a>.</span>')}</div>
             <div class="muted" id="selection-summary" style="margin-top:8px"></div>
@@ -1486,6 +1586,7 @@ async function renderExtract(gen) {
   wireStageRun(papers, 'extract', 'Extracting',
     (r) => `${r.n_records} records · ${humanSeconds(r.seconds)}${costOf(r)}`,
     readiness.extract.blockers);
+  wireRegexPicker('extracted', papers);
   await wireReviewPicker(papers.filter(p => p.extracted), false);
 }
 
@@ -1514,6 +1615,7 @@ async function renderJudge(gen) {
           ${esc(etaText('judge', 18))} for a typical paper.</p>
         <div class="stage-split">
           <div>
+            ${extracted.length ? regexPickerHTML() : ''}
             <div class="checklist" id="checklist">${stageChecklistHTML(extracted, 'judged',
               '<span class="muted">Nothing extracted yet &mdash; run <a href="#/extract">Extract</a> first.</span>')}</div>
             <div class="muted" id="selection-summary" style="margin-top:8px"></div>
@@ -1534,6 +1636,7 @@ async function renderJudge(gen) {
   wireStageRun(extracted, 'judge', 'Judging',
     (r) => `${r.n_verdicts} verdicts · ${humanSeconds(r.seconds)}${costOf(r)}`,
     readiness.judge.blockers);
+  wireRegexPicker('judged', extracted);
   await wireReviewPicker(papers.filter(p => p.judged), true);
 }
 
@@ -1716,12 +1819,16 @@ async function renderReport(gen) {
             ${t.papers_judged} audited by the judge.</p>
         </div>
         <span class="grow"></span>
-        <a href="/api/export.csv" download><button>${icon('download')}Records CSV</button></a>
-        <a href="/api/export.json" download><button>${icon('download')}Records JSON</button></a>
-        <a href="/api/export.zip" download><button class="go"
-          title="A zip holding the records, a row per paper, the schema and prompts that produced them, and a manifest. No API keys.">${icon('download')}Full bundle</button></a>
-        <a href="/api/export.zip?pdfs=true" download><button
-          title="The same bundle with the source PDFs included. Check you may redistribute them.">${icon('download')}Bundle + PDFs</button></a>
+        <a class="export" data-base="/api/export.csv" href="/api/export.csv" download><button>${icon('download')}Records CSV</button></a>
+        <a class="export" data-base="/api/export.json" href="/api/export.json" download><button>${icon('download')}Records JSON</button></a>
+        <a class="export" data-base="/api/export.zip" href="/api/export.zip" download><button class="go"
+          title="A zip holding the records, a row per paper, the schema and prompts that produced them, and a manifest. No API keys, and no paper text unless you tick it below.">${icon('download')}Full bundle</button></a>
+      </div>
+      <div class="export-options">
+        <input id="ex-only" placeholder="only papers matching (regex)" spellcheck="false">
+        <input id="ex-exclude" placeholder="except papers matching (regex)" spellcheck="false">
+        <label class="nowrap" title="Papers obtained under publishers' text-mining terms may be mined, not redistributed. Leave this off unless every paper is open access.">
+          <input type="checkbox" id="ex-text"> bundle includes paper text and source files</label>
       </div>
 
       <div class="cards">
@@ -1812,6 +1919,25 @@ async function renderReport(gen) {
 
   paintRun();
 
+  // The export links carry the filter and the paper-text choice as query parameters, so what
+  // downloads is exactly what the boxes say -- there is no separate "apply" step to forget.
+  const paintExports = () => {
+    const params = new URLSearchParams();
+    const only = document.getElementById('ex-only').value.trim();
+    const exclude = document.getElementById('ex-exclude').value.trim();
+    if (only) params.set('only', only);
+    if (exclude) params.set('exclude', exclude);
+    document.querySelectorAll('a.export').forEach(a => {
+      const q = new URLSearchParams(params);
+      if (a.dataset.base.endsWith('.zip') && document.getElementById('ex-text').checked) {
+        q.set('text', 'true'); q.set('pdfs', 'true');
+      }
+      a.href = a.dataset.base + (q.toString() ? '?' + q : '');
+    });
+  };
+  ['ex-only', 'ex-exclude', 'ex-text'].forEach(id =>
+    document.getElementById(id).addEventListener('input', paintExports));
+
   const pick = document.getElementById('field-pick');
   const paintField = () => {
     const f = explorable.find(x => x.name === pick.value);
@@ -1873,6 +1999,7 @@ async function renderSettings(gen) {
           endpoint. Keys are written to this project's local <code>.env</code> and never shown again.</p>
         <div id="model-list"></div>
         <button id="add-model" style="margin-top:8px">${icon('plus')}Add a model</button>
+        <button id="add-rwth" style="margin-top:8px" title="RWTH Aachen's KI:connect: OpenAI-compatible, and its open models are free to use. Create a key at chat.kiconnect.nrw under API Key Management.">${icon('plus')}Add RWTH KI:connect</button>
 
         <h3 style="margin-top:22px">Which model each stage uses</h3>
         <div class="stageselect">
@@ -2090,6 +2217,13 @@ async function renderSettings(gen) {
   document.getElementById('add-model').addEventListener('click', () => {
     collectModels();
     profiles.push({ id: '', name: '', model: '', api_base: '', api_version: '', key_set: false });
+    paintModels(); paintStageSelects(); markDirty();
+  });
+  // RWTH's endpoint filled in, with its free open model; "List models" shows the rest.
+  document.getElementById('add-rwth').addEventListener('click', () => {
+    collectModels();
+    profiles.push({ id: '', name: 'RWTH gpt-oss-120b', model: 'openai/gpt-oss-120b',
+                    api_base: 'https://chat.kiconnect.nrw/api/v1/', api_version: '', key_set: false });
     paintModels(); paintStageSelects(); markDirty();
   });
 

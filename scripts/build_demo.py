@@ -22,9 +22,9 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "src"))
 
-DEMO = ROOT / "demo"
+DEMO = ROOT / "src" / "file2records" / "demo"
 # Whatever model you have a key for. Defaults to a cheap OpenAI one so the command in the
 # docstring works for anyone; set DEMO_MODEL and the matching credentials to use your own
 # endpoint. The model that produced a file is recorded in the file, so the demo never implies
@@ -58,11 +58,11 @@ def main() -> None:
     ap.add_argument("--stage", choices=["parse", "extract", "judge", "all"], default="all")
     args = ap.parse_args()
 
-    # Imported late: importing server.storage creates the workspace directories, and pointing
-    # WORKSPACE_DIR at demo/ first is what makes the app's own writers land here instead.
-    os.environ["WORKSPACE_DIR"] = str(DEMO)
-    from server import extraction, judge, parsing
-    from server.storage import PDFS, PARSED, EXTRACTED, JUDGED, paper_id_for, read_json, write_json
+    # The demo folder is opened as the project, so the app's own writers land in it.
+    from file2records import extraction, judge, parsing, storage
+    from file2records.storage import paper_id_for, read_json, write_json
+    storage.use(DEMO)
+    PDFS, PARSED, EXTRACTED, JUDGED = storage.PDFS, storage.PARSED, storage.EXTRACTED, storage.JUDGED
 
     schema = json.loads((DEMO / "config/schema.json").read_text())["fields"]
     prompt = (DEMO / "config/extract_prompt.txt").read_text(encoding="utf-8")
@@ -87,9 +87,10 @@ def main() -> None:
         print(f"\n{display_name}\n  id {pid}")
 
         if args.stage in ("parse", "all") or not (PARSED / f"{pid}.json").exists():
-            chunks = parsing.parse_pdf(target, pid)
+            chunks, meta = parsing.parse_pdf_with_meta(target, pid)
             write_json(PARSED / f"{pid}.json", {"id": pid, "filename": display_name,
-                                                "source_tracking": True, "chunks": chunks})
+                                                "source_tracking": True, "format": "pdf",
+                                                "meta": meta, "chunks": chunks})
             print(f"  parsed   {len(chunks)} chunks")
 
         paper = read_json(PARSED / f"{pid}.json")

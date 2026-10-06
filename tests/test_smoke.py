@@ -17,11 +17,13 @@ WORKSPACE = tempfile.mkdtemp(prefix="toolkit-test-")
 os.environ["WORKSPACE_DIR"] = WORKSPACE          # read when the app first opens a workspace
 os.environ["TOOLKIT_SEED_DEMO"] = "0"            # these test the empty workspace, not the demo
 
+from file2records import storage                 # noqa: E402
+storage.use(WORKSPACE)                           # whatever another test module opened before
+
 from fastapi.testclient import TestClient        # noqa: E402
 
 from file2records import config                        # noqa: E402
 from file2records.main import app                      # noqa: E402
-from file2records import storage                # noqa: E402
 EXTRACTED_DIR, JUDGED_DIR = storage.EXTRACTED, storage.JUDGED
 
 client = TestClient(app)
@@ -634,20 +636,20 @@ class DemoTests(unittest.TestCase):
             os.environ["TOOLKIT_SEED_DEMO"] = self._optout
         shutil.rmtree(self.dir, ignore_errors=True)
 
-    @unittest.skipUnless(Path(__file__).parents[1].joinpath("src/file2records/demo/pdfs").is_dir(), "no demo/ in this checkout")
+    @unittest.skipUnless(__import__("file2records.demo").demo.available(), "the demo is not installed")
     def test_it_seeds_an_empty_workspace_and_says_so(self):
         self.assertTrue(self.demo.seed_if_empty())
         self.assertTrue(self.demo.state()["is_demo"])
         self.assertTrue(list((self.dir / "pdfs").glob("*.pdf")))
         self.assertTrue((self.dir / "config" / "schema.json").exists())
 
-    @unittest.skipUnless(Path(__file__).parents[1].joinpath("src/file2records/demo/pdfs").is_dir(), "no demo/ in this checkout")
+    @unittest.skipUnless(__import__("file2records.demo").demo.available(), "the demo is not installed")
     def test_it_refuses_to_seed_over_anything(self):
         (self.dir / "pdfs" / "mine.pdf").write_bytes(b"%PDF-1.4 not really")
         self.assertFalse(self.demo.seed_if_empty(), "seeded on top of a user's own paper")
         self.assertEqual([p.name for p in (self.dir / "pdfs").glob("*")], ["mine.pdf"])
 
-    @unittest.skipUnless(Path(__file__).parents[1].joinpath("src/file2records/demo/pdfs").is_dir(), "no demo/ in this checkout")
+    @unittest.skipUnless(__import__("file2records.demo").demo.available(), "the demo is not installed")
     def test_clearing_takes_the_untouched_config_with_it(self):
         """A demo schema left behind would be applied to your papers without you choosing it.
 

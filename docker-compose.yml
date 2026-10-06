@@ -1,5 +1,5 @@
 services:
-  extraction-toolkit:
+  file2records:
     build: .
     # 127.0.0.1 on purpose. The API can read and write this machine's provider keys and spend
     # money against them, and it has no authentication -- publishing it as "8000:8000" would

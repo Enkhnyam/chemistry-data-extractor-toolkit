@@ -22,18 +22,16 @@ RUN uv pip install --system --no-cache \
 
 # uv.lock is copied so the image installs the versions this was tested with; without it every
 # rebuild silently resolves to whatever is newest that day.
-COPY pyproject.toml uv.lock README.md ./
-COPY server ./server
-COPY web ./web
-# Without this the image has no demo/ to seed from and a container's first screen is empty,
-# which is the thing the demo exists to prevent.
-COPY demo ./demo
-RUN uv pip install --system --no-cache .
+COPY pyproject.toml uv.lock README.md LICENSE ./
+# The web app and the demo live inside the package, so the install below carries them.
+COPY src ./src
+RUN uv pip install --system --no-cache ".[pdf]"
 
+# The project folder is the mounted volume; keys added through Settings are written to its .env,
+# so they outlive the container.
 ENV WORKSPACE_DIR=/data
-# Inside the mounted volume, so a key added through Settings outlives the container.
-ENV ENV_FILE=/data/.env
 VOLUME /data
 
 EXPOSE 8000
-CMD ["uvicorn", "server.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# 0.0.0.0 inside the container only; docker-compose publishes it on 127.0.0.1 alone.
+CMD ["file2records", "serve", "/data", "--host", "0.0.0.0", "--port", "8000", "--no-browser"]

@@ -65,8 +65,25 @@ def parse_pdf_with_meta(pdf_path: Path, paper_id: str) -> tuple[list[dict], dict
         cid = str(uuid.uuid5(NS, f"{paper_id}|{i}|{text}"))
         chunks.append({"id": cid, "text": text})
     from .readers import find_doi
-    meta = {"doi": find_doi(" ".join(c["text"] for c in chunks[:15])), "title": title}
+    meta = {"doi": find_doi(" ".join(c["text"] for c in chunks[:15])) or _first_page_doi(pdf_path),
+            "title": title}
     return chunks, {k: v for k, v in meta.items() if v}
+
+
+def _first_page_doi(pdf_path: Path) -> str:
+    """Publishers print the DOI in the page header, which docling rightly drops as page
+    furniture -- so look for it in the raw text of page one instead. pypdfium2 comes with
+    docling; if it is missing or the page has no text layer, there is simply no DOI."""
+    try:
+        import pypdfium2
+        from .readers import find_doi
+        document = pypdfium2.PdfDocument(str(pdf_path))
+        try:
+            return find_doi(document[0].get_textpage().get_text_range())
+        finally:
+            document.close()
+    except Exception:
+        return ""
 
 
 def parse_pdf(pdf_path: Path, paper_id: str) -> list[dict]:

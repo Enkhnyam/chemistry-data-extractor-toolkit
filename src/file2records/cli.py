@@ -103,7 +103,7 @@ def cmd_check(args):
     for stage in ("extract", "judge"):
         missing = project.check(stage, args.model)
         ok &= stage == "judge" or not missing
-        print(f"{stage}: {'ready' if not missing else ''}")
+        print(f"{stage}: {'ready' if not missing else 'not ready'}")
         for m in missing:
             print(f"  - {m}")
     return 0 if ok else 1

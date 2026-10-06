@@ -2,6 +2,11 @@
   "id": "lewis-acidic-ionic-liquids-for-pet-glycolysis-polymers-2013-bc017719",
   "filename": "Lewis Acidic Ionic Liquids for PET Glycolysis (Polymers 2013).pdf",
   "source_tracking": true,
+  "format": "pdf",
+  "meta": {
+    "doi": "10.3390/polym5041258",
+    "title": "The Glycolysis of Poly(ethylene terephthalate) Waste: Lewis Acidic Ionic Liquids as High Efficient Catalysts"
+  },
   "chunks": [
     {
       "id": "36581e88-bd5c-58b5-aa6b-b824635abd72",

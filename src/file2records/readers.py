@@ -307,7 +307,8 @@ def read_html(path: Path) -> tuple[list[str], dict]:
             "year": metatag("citation_publication_date", "citation_date")[:4]}
     meta["doi"] = find_doi(meta["doi"]) or meta["doi"]
 
-    blocks, seen = [], set()
+    # The title first, as the XML readers do, so a search over the text finds what it says.
+    blocks, seen = ([meta["title"]] if meta["title"] else []), set()
     for element in root.iter():
         if not isinstance(element.tag, str) or any(id(a) in seen for a in element.iterancestors()):
             continue

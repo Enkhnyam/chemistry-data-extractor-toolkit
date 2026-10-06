@@ -261,7 +261,7 @@ def main() -> int:
         env = {**os.environ, "WORKSPACE_DIR": str(workspace)}
         with log.open("w") as fh:
             server = subprocess.Popen(
-                [UV, "run", "uvicorn", "server.main:app", "--port", str(PORT)],
+                [UV, "run", "file2records", "serve", "workspace", "--no-browser", "--port", str(PORT)],
                 cwd=clone, stdout=fh, stderr=subprocess.STDOUT, env=env)
         wait_for_server(server, log)
         report.ok("server starts", f"port {PORT}")
