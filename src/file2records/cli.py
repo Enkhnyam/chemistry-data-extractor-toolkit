@@ -105,7 +105,8 @@ def cmd_check(args):
         ok &= stage == "judge" or not missing
         print(f"{stage}: {'ready' if not missing else 'not ready'}")
         for m in missing:
-            print(f"  - {m}")
+            hint = " Or pass --model, e.g. rwth/gpt-oss-120b." if m.startswith("Choose a model") else ""
+            print(f"  - {m}{hint}")
     return 0 if ok else 1
 
 
@@ -128,15 +129,21 @@ def cmd_export(args):
     print(f"Wrote {path}")
 
 
+FOLDER = "the project folder (created if it does not exist)"
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="file2records",
-        description="Turn papers (PDF, XML, HTML, Word, Markdown) into a structured dataset.")
+        description="Turn papers (PDF, XML, HTML, Word, Markdown) into a structured dataset.",
+        epilog="examples:\n" + "\n".join(__doc__.splitlines()[2:10]) +
+               "\n\ndocs: https://enkhnyam.github.io/chemistry-data-extractor-toolkit/",
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--version", action="version", version=f"file2records {__version__}")
     sub = parser.add_subparsers(dest="command", required=True, metavar="COMMAND")
 
     p = sub.add_parser("serve", help="open the web app on a project folder")
-    p.add_argument("folder", nargs="?", default="workspace")
+    p.add_argument("folder", nargs="?", default="workspace", help=FOLDER + " (default: %(default)s)")
     p.add_argument("--port", type=int, default=8000)
     p.add_argument("--host", default="127.0.0.1",
                    help="keep the default unless you know why: the app has no login")
@@ -144,31 +151,31 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_serve)
 
     p = sub.add_parser("add", help="read files or folders of papers into a project")
-    p.add_argument("folder")
-    p.add_argument("paths", nargs="+")
+    p.add_argument("folder", help=FOLDER)
+    p.add_argument("paths", nargs="+", help="paper files, or folders of them")
     p.add_argument("--no-source-tracking", action="store_true",
                    help="don't tag chunks, so records won't cite the passage they came from")
     p.set_defaults(func=cmd_add)
 
     p = sub.add_parser("papers", help="list the papers in a project")
-    p.add_argument("folder")
+    p.add_argument("folder", help=FOLDER)
     p.set_defaults(func=cmd_papers)
 
     p = sub.add_parser("search", help="search the full text of every paper with a regex")
-    p.add_argument("folder")
-    p.add_argument("pattern")
+    p.add_argument("folder", help=FOLDER)
+    p.add_argument("pattern", help="a regular expression, e.g. \"glycoly[sz]is\"")
     p.add_argument("--case-sensitive", action="store_true")
     p.set_defaults(func=cmd_search)
 
     p = sub.add_parser("check", help="say what is missing before a run")
-    p.add_argument("folder")
+    p.add_argument("folder", help=FOLDER)
     p.add_argument("--model")
     p.set_defaults(func=cmd_check)
 
     for stage, text in (("extract", "extract records from papers not extracted yet"),
                         ("judge", "audit extracted records with a second model")):
         p = sub.add_parser(stage, help=text)
-        p.add_argument("folder")
+        p.add_argument("folder", help=FOLDER)
         p.add_argument("--model", help='litellm model string, or rwth/<name> '
                                        '(default: the model chosen in Settings)')
         p.add_argument("--redo", action="store_true", help="also re-run papers already done")
@@ -176,8 +183,8 @@ def build_parser() -> argparse.ArgumentParser:
         p.set_defaults(func=lambda a, s=stage: _run_stage(a, s))
 
     p = sub.add_parser("export", help="write records to .csv / .json, or a .zip bundle")
-    p.add_argument("folder")
-    p.add_argument("output")
+    p.add_argument("folder", help=FOLDER)
+    p.add_argument("output", help="a .csv or .json file of records, or a .zip bundle")
     p.add_argument("--include-text", action="store_true",
                    help="put the paper text in a .zip bundle (check the papers' licences)")
     p.add_argument("--include-files", action="store_true",

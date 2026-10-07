@@ -10,7 +10,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from . import config, extraction, judge, llm, models, parsing, readers, storage, timings
-from .storage import paper_id_for, read_json, require, write_json
+from .storage import paper_id_for, require, write_json
 
 # RWTH's KI:connect service: OpenAI-compatible, unmetered for its open models. Spelled out once
 # here so a researcher writes "rwth/gpt-oss-120b" instead of an endpoint and a provider prefix.
@@ -59,13 +59,14 @@ def blockers(stage: str, params: dict | None = None) -> list[str]:
             missing.append(f"No RWTH key. Set {RWTH_KEY_VAR}, or create one at "
                            f"https://chat.kiconnect.nrw under API Key Management.")
     if not config.get_schema():
-        missing.append("Define the fields a record has, in Settings.")
+        missing.append("Define the fields a record has: Settings → Schema in the web app, or "
+                       "config/schema.json in the project folder.")
     if stage == "extract" and not config.get_extract_prompt().strip():
-        missing.append("Write an extraction prompt. Until you do, nothing tells the model what "
-                       "to pull out.")
+        missing.append("Write an extraction prompt (in the web app, or config/extract_prompt.txt). "
+                       "Until you do, nothing tells the model what to pull out.")
     if stage == "judge" and not config.get_judge_prompt().strip():
-        missing.append("Write a judge rubric. Until you do, nothing tells the model what counts "
-                       "as a good record.")
+        missing.append("Write a judge rubric (in the web app, or config/judge_prompt.txt). "
+                       "Until you do, nothing tells the model what counts as a good record.")
     return missing
 
 
@@ -203,7 +204,3 @@ def paper_ids() -> list[str]:
 def done(stage: str, pid: str) -> bool:
     return (storage.EXTRACTED if stage == "extract" else storage.JUDGED).joinpath(
         f"{pid}.json").exists()
-
-
-def read_paper(pid: str) -> dict:
-    return read_json(storage.PARSED / f"{pid}.json", {}) or {}

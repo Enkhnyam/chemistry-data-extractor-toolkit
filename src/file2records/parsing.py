@@ -86,10 +86,6 @@ def _first_page_doi(pdf_path: Path) -> str:
         return ""
 
 
-def parse_pdf(pdf_path: Path, paper_id: str) -> list[dict]:
-    return parse_pdf_with_meta(pdf_path, paper_id)[0]
-
-
 def label_for(index: int) -> str:
     """The tag the model sees for the chunk at this position. Purely positional, so it needs
     no lookup table passed around: c1 is chunks[0] in whatever paper is being read."""

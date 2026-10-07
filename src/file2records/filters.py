@@ -37,10 +37,6 @@ def _paper(pid: str) -> dict:
     return read_json(storage.PARSED / f"{pid}.json", {}) or {}
 
 
-def matches(pid: str, pattern: re.Pattern) -> bool:
-    return bool(pattern.search(_full_text(_paper(pid))))
-
-
 def select(paper_ids: list[str], only: str | None = None, exclude: str | None = None,
            ignore_case: bool = True) -> list[str]:
     """The papers among `paper_ids` that match `only` (if given) and not `exclude` (if given)."""
