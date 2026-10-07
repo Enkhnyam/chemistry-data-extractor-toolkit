@@ -6,6 +6,7 @@ paper, completeness by field, verdict split, corrections by field, the distribut
 field -- but computed from whatever schema is loaded rather than from a fixed list of columns,
 so the same report describes an ionic-liquid corpus and a metal-salt one without edits.
 """
+import json
 from collections import Counter, defaultdict
 
 from . import config
@@ -178,7 +179,8 @@ def flat_records(paper_ids: list[str] | None = None) -> tuple[list[str], list[di
                    # acceptable readings, which only the reasoning shows.
                    "judge_critique": verdict.get("critique") or "",
                    "judge_proposed": "; ".join(
-                       f"{f.get('field')}={f.get('value')!r}" for f in (verdict.get("fixes") or [])),
+                       f"{f.get('field')}={json.dumps(f.get('value'), ensure_ascii=False)}"
+                       for f in (verdict.get("fixes") or [])),
                    "judge_evidence": " | ".join(
                        f"{f.get('field')}: {f.get('evidence')}"
                        for f in (verdict.get("fixes") or []) if f.get("evidence")),

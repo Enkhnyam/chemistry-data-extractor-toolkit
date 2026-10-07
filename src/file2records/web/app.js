@@ -83,7 +83,7 @@ function parseEta(file) {
 
 function etaText(stage, size) {
   const t = state.timings[stage];
-  if (!t) return 'no estimate yet — this is the first run of this stage';
+  if (!t) return '';
   const seconds = (t.per_unit && size) ? t.per_unit * size : t.seconds;
   return `about ${humanSeconds(seconds)} expected (median of the last ${t.n})`;
 }
@@ -329,12 +329,12 @@ function guideHTML(status) {
   const steps = [
     { done: status.has_model, label: 'Add a model',
       hint: 'endpoint, API key and model', href: '#/settings' },
+    { done: status.papers > 0, label: 'Add papers',
+      hint: 'PDF, XML, HTML or Word files', href: '#/parse' },
     { done: status.has_schema, label: 'Define the fields',
       hint: 'what one record should contain', href: '#/settings' },
     { done: status.has_extract_prompt, label: 'Write the extraction prompt',
-      hint: 'what to pull out of each paper', href: '#/settings' },
-    { done: status.papers > 0, label: 'Add papers',
-      hint: 'drop in PDF, XML, HTML or Word files', href: '#/parse' },
+      hint: 'what to pull out of each paper', href: '#/extract' },
   ];
   const next = steps.find(s => !s.done);
   if (!next) return '';
@@ -343,9 +343,8 @@ function guideHTML(status) {
   // that is no longer empty, so it was never seeded and they are looking at this list instead.
   // The offer has to be here, because this is the screen they are on.
   const offer = state.status?.demo_available
-    ? `<div class="guidefoot"><span class="muted">Or look at a worked example first:</span>
-         <button class="linkish" id="loaddemo">Load the demo &mdash; one paper, already
-         extracted and judged</button></div>`
+    ? `<div class="guidefoot"><span class="muted">Not sure what you'll get? <button class="linkish"
+         id="loaddemo">Load the demo</button>: one paper, already extracted and judged.</span></div>`
     : '';
 
   return `<div class="guide">
@@ -834,7 +833,7 @@ async function loadReview(paperId, withJudgment) {
   if (prov) {
     const bit = (label, name) => name
       ? `<span>${label} <code>${esc(name)}</code></span>` : '';
-    prov.innerHTML = bit('extracted by', review.extractModel) + bit('judged by', review.judgeModel);
+    prov.innerHTML = bit('extracted by', modelName(review.extractModel)) + bit('judged by', modelName(review.judgeModel));
   }
 }
 
@@ -1169,11 +1168,13 @@ async function openExamplesEditor(onSaved) {
 
 // Which model wrote this paper's records, and which audited them. Two different models is the
 // normal case here, so they are shown as two lines rather than one crowded string.
+const modelName = (m) => (m || '').replace(/^openai\//, '');
+
 function modelCell(models) {
   const m = models || {};
   if (!m.extract && !m.judge) return '<span class="muted">&mdash;</span>';
   const line = (label, name) => name
-    ? `<div class="modelline"><span>${label}</span> <code>${esc(name)}</code></div>` : '';
+    ? `<div class="modelline"><span>${label}</span> <code>${esc(modelName(name))}</code></div>` : '';
   return `<div class="models">${line('extracted', m.extract)}${line('judged', m.judge)}</div>`;
 }
 
@@ -1225,8 +1226,8 @@ async function renderParse(gen) {
         <h2>Add papers</h2>
         <p class="lede">PDF, JATS or Elsevier XML, HTML, Word or Markdown, read locally into text
           and table chunks. XML and HTML from a publisher keep their tables exactly, so prefer them
-          to a PDF when you have both. PDFs: ${esc(etaText('parse'))} per paper; scanned ones take
-          longer. You can leave this tab while it runs.</p>
+          to a PDF when you have both. PDFs take longer${etaText('parse') ? ` (${esc(etaText('parse'))} per
+          paper here)` : ''}, and scanned ones longest. You can leave this tab while it runs.</p>
         <div class="pickers">
           <label class="pickbtn">Choose files
             <input type="file" id="pdf-files" accept="${SUPPORTED.join(',')}" multiple hidden></label>
@@ -1575,7 +1576,7 @@ async function renderExtract(gen) {
     <section>
       <div class="panel">
         <h2>Extract</h2>
-        <p class="lede">One call per paper. ${esc(etaText('extract', 30))} for a typical paper.</p>
+        <p class="lede">One call per paper${etaText('extract', 30) ? `, ${esc(etaText('extract', 30))} for a typical one` : ''}.</p>
         <div class="stage-split">
           <div>
             ${papers.length ? regexPickerHTML() : ''}
@@ -1624,8 +1625,8 @@ async function renderJudge(gen) {
     <section>
       <div class="panel">
         <h2>Judge</h2>
-        <p class="lede">A second model re-reads each paper and checks every record against it.
-          ${esc(etaText('judge', 18))} for a typical paper.</p>
+        <p class="lede">A second model re-reads each paper and checks every record against it${etaText('judge', 18) ? `,
+          ${esc(etaText('judge', 18))} for a typical paper` : ''}.</p>
         <div class="stage-split">
           <div>
             ${extracted.length ? regexPickerHTML() : ''}

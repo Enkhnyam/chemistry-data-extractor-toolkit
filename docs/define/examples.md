@@ -52,6 +52,11 @@ can't copy answers from it. For the example papers:
     The records use your field names. Leave out a field, or write `None`, when the text
     doesn't give it.
 
+!!! info "Copies of the example are removed"
+    Now and then a model repeats the example's records in its answer for a real paper.
+    file2records drops any record that matches an example record in every field, so made-up
+    values never reach your dataset.
+
 !!! tip "Show the hard cases"
     This example shows two conventions in one go: the pressure comes from the caption, not
     the table, and it's converted from MPa to bar. Pick the cases your prompt alone doesn't

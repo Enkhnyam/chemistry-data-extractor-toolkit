@@ -72,7 +72,7 @@ button:hover:not(:disabled){background:var(--sunk);border-color:var(--dim)}
 button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
 button.primary:hover:not(:disabled){filter:brightness(1.08);background:var(--accent)}
 button:disabled{opacity:.4;cursor:default}
-button.linkish{background:none;border:none;padding:0 2px;color:var(--dim);font-weight:500}
+button.linkish{background:none;border:none;padding:0 2px;color:var(--accent);font-weight:600;text-decoration:underline;cursor:pointer}
 button.linkish:hover{background:none;color:var(--accent);text-decoration:underline}
 /* Three tiers and no more: accent is the one action that moves the work forward, red is the
    one that destroys something, everything else stays neutral. A page where four buttons all
@@ -122,6 +122,7 @@ td.nowrap{white-space:nowrap;text-align:right}
 .runbanner{display:flex;gap:8px;align-items:center;font-size:.75rem;padding:4px 10px;
   border-radius:99px;background:var(--sunk);border:1px solid var(--line);color:var(--ink-2);
   white-space:nowrap;max-width:38ch;overflow:hidden}
+.runbanner[hidden]{display:none}
 .runbanner.done{background:var(--ok-soft);border-color:transparent;color:var(--ok)}
 .runbanner.failed{background:var(--no-soft);border-color:transparent;color:var(--no)}
 .runsummary{margin:14px 0 10px;font-size:.8125rem;color:var(--ink-2)}
@@ -466,7 +467,7 @@ nav a.active .navcount{background:var(--accent);color:#fff}
 .keycta b{font-size:.875rem}
 .keycta .muted{font-size:.8125rem}
 .keycta button{flex-shrink:0}
-.guidefoot{display:flex;gap:12px;align-items:baseline;justify-content:space-between;
+.guidefoot{display:flex;gap:12px;align-items:baseline;justify-content:flex-start;
   flex-wrap:wrap;font-size:.8125rem}
 
 /* full-text search and regex selection */

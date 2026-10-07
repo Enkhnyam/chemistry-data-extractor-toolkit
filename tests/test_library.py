@@ -231,6 +231,15 @@ class ProjectTests(unittest.TestCase):
         csv_path = self.project.export(self.dir / "out.csv", exclude="Elsevier|elsevier|Ionic")
         self.assertNotIn("polymdegradstab", csv_path.read_text())
 
+    def test_a_record_copied_from_the_worked_example_is_dropped(self):
+        """Seen for real: the model repeated the made-up example in a real paper's answer."""
+        self.configure()
+        example = {"catalyst": "Zn(OAc)2", "temperature_c": 196, "yield_percent": 85}
+        self.project.examples = [{"text": "Zn(OAc)2, 196 °C, 85 %.", "records": [example]}]
+        self.project.add(self.files["jats-no-doctype.xml"])
+        self.project.extract("gpt-4o-mini")      # the fake model answers with exactly that record
+        self.assertEqual(self.project.records(), [])
+
     def test_a_bundle_carries_no_paper_text_unless_asked(self):
         self.configure()
         self.project.add(self.files["jats-no-doctype.xml"])
