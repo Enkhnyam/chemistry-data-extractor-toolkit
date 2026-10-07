@@ -20,7 +20,9 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: 3.x
-      - run: pip install zensical
+      - run: pip install zensical vale
+      - name: Lint the prose (Google style + House rules, see .vale.ini)
+        run: vale sync && vale --minAlertLevel=warning docs README.md
       - run: zensical build --clean
       - uses: actions/upload-pages-artifact@v5
         with:

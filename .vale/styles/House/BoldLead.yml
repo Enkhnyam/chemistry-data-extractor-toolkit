@@ -1,0 +1,6 @@
+extends: existence
+message: "A bold phrase followed by a dash is a list-of-slogans pattern. Write a plain sentence."
+level: suggestion
+scope: raw
+raw:
+  - '\*\*[^*\n]+\*\*\s*[—–]'

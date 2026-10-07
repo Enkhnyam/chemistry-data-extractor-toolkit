@@ -1,13 +1,14 @@
 # Command line
 
-Every command takes the **project folder** first; it is created if it doesn't exist. Commands
-that call a model use the model chosen in the browser's Settings unless you pass `--model`:
-any [litellm model string](https://docs.litellm.ai/docs/providers), or `rwth/<name>`.
+Every command takes the project folder as its first argument and creates the folder if it
+doesn't exist. Commands that call a model use the model chosen in the browser's settings. To
+use a different one, pass `--model` with a [litellm model
+string](https://docs.litellm.ai/docs/providers) or `rwth/<name>`.
 
-Keys are read from the shell, from `.env` in the project folder, and from `.env` in the
-current folder.
+API keys are read from your shell, from the `.env` file in the project folder, and from the
+`.env` file in the current folder.
 
-## serve
+## `serve`
 
 Open the browser app on a project.
 
@@ -15,10 +16,11 @@ Open the browser app on a project.
 file2records serve [folder] [--port 8000] [--host 127.0.0.1] [--no-browser]
 ```
 
-`folder` defaults to `workspace`. A new, empty folder opens on the demo project. There is no
-login, so keep the default host.
+`folder` defaults to `workspace`. A new, empty folder opens with the demo project in it. The
+app has no login, so keep the default host, which only accepts connections from your own
+computer.
 
-## add
+## `add`
 
 Read paper files, or folders of them, into the project.
 
@@ -26,33 +28,33 @@ Read paper files, or folders of them, into the project.
 file2records add folder paths... [--no-source-tracking]
 ```
 
-`--no-source-tracking` leaves chunks untagged, so records won't cite where a value came from.
+With `--no-source-tracking`, chunks aren't tagged, so records can't say which passage a value came from.
 
-## papers
+## `papers`
 
-List the papers in the project: id, format, stage, record count, DOI.
+List the papers in the project with their ID, format, stage, number of records, and DOI.
 
 ```bash
 file2records papers folder
 ```
 
-## search
+## `search`
 
-Search every paper's full text with a regular expression. Free.
+Search the full text of every paper with a regular expression. This doesn't call a model.
 
 ```bash
 file2records search folder pattern [--case-sensitive]
 ```
 
-## check
+## `check`
 
-Say what is missing before `extract` or `judge` can run. Exits with 1 if extraction isn't ready.
+List what's missing before `extract` or `judge` can run. The exit code is 1 if extraction isn't ready.
 
 ```bash
 file2records check folder [--model MODEL]
 ```
 
-## extract
+## `extract`
 
 Extract records from papers not extracted yet.
 
@@ -60,15 +62,15 @@ Extract records from papers not extracted yet.
 file2records extract folder [--model MODEL] [--only REGEX] [--exclude REGEX] [--redo]
 ```
 
-## judge
+## `judge`
 
-Have a second model audit each extracted paper's records.
+Use a second model to check the records of each extracted paper.
 
 ```bash
 file2records judge folder [--model MODEL] [--only REGEX] [--exclude REGEX] [--redo]
 ```
 
-## export
+## `export`
 
 Write records to `.csv` or `.json`, or the full bundle to `.zip`.
 
@@ -76,8 +78,8 @@ Write records to `.csv` or `.json`, or the full bundle to `.zip`.
 file2records export folder output [--only REGEX] [--exclude REGEX] [--include-text] [--include-files]
 ```
 
-`--include-text` and `--include-files` put paper text and source files in a bundle — only for
-papers you may redistribute.
+`--include-text` and `--include-files` add the paper text and the source files to a bundle.
+Use them only for papers you're allowed to share.
 
 ## Options shared by several commands
 
@@ -88,4 +90,4 @@ papers you may redistribute.
 | `--exclude REGEX` | skip papers whose full text matches |
 | `--redo` | also re-run papers already done |
 
-`file2records --help` and `file2records <command> --help` print the same, with examples.
+`file2records --help` and `file2records <command> --help` show the same information, with examples.

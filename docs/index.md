@@ -1,13 +1,14 @@
 # file2records
 
-**Turn a folder of papers into a dataset you can check.** One model reads each paper and fills
-the fields you define. A second model re-reads the paper and audits every record. You review
-what is left with the source passage beside each value.
+file2records builds a dataset from a folder of scientific papers. You say which fields a
+record has. A language model reads each paper and fills them in, a second model checks every
+record against the paper, and you review the result with the source passage next to each
+value.
 
-It reads what publishers actually give you — PDF, JATS XML, Elsevier XML, HTML, Word — runs on
-your machine, and works out of the box with RWTH's free KI:connect models.
+It reads PDF, JATS XML, Elsevier XML, HTML and Word files, runs on your own machine, and
+comes set up for RWTH's KI:connect models, which are free for RWTH members.
 
-![The review screen: paper on the left, records and the judge's reasoning on the right](img/review-hero.png)
+![The review screen: the paper on the left, records and the judge's reasoning on the right](img/review-hero.png)
 
 ## Install
 
@@ -23,21 +24,22 @@ your machine, and works out of the box with RWTH's free KI:connect models.
     uv add "file2records[pdf]"
     ```
 
-!!! tip "No PDFs? Skip the big download"
-    `[pdf]` adds the PDF reader, which brings PyTorch (a few GB). For XML, HTML, Word and
-    Markdown, `pip install file2records` is enough — about 250 MB.
+The `[pdf]` part installs docling, which reads PDFs and needs PyTorch, a download of a few GB.
+If your papers are XML, HTML or Word files, `pip install file2records` is enough and takes
+about 250 MB.
 
-## See it work in one minute
+## Try it
 
 ```bash
 file2records serve my-first-project
 ```
 
-Your browser opens on a finished example: an open-access PET glycolysis paper, already read,
-extracted and judged. Click **Judge** to see each record next to the passage it came from, and
-**Report** for the whole dataset. No key needed to look.
+This opens your browser on a finished example: an open-access paper on PET glycolysis that
+has already been read, extracted, and checked. Open **Judge** to see each record beside the
+passage it came from, and **Report** for the whole dataset. You don't need a key to look
+around.
 
-## Three ways to use it
+## Use it from the browser, the command line, or Python
 
 === "Browser"
 
@@ -45,8 +47,8 @@ extracted and judged. Click **Judge** to see each record next to the passage it 
     file2records serve my-review
     ```
 
-    Drop in papers, set the fields and the prompt, press Extract, review, export. Every step
-    has a checklist that says what is still missing.
+    Add papers, define the fields and the prompt, and press **Extract**. Each page lists what
+    it still needs before it can run.
 
 === "Command line"
 
@@ -73,18 +75,11 @@ extracted and judged. Click **Judge** to see each record next to the passage it 
     project.export("dataset.csv")
     ```
 
-All three work on the same project folder, so you can extract from a script and review in the
-browser.
+All three work on the same project folder. You can run the extraction from a script and
+review it in the browser afterwards.
 
-## Where next
+## Next steps
 
-<div class="grid cards" markdown>
-
-- **[Tutorial](tutorial.md)** — build a small PET glycolysis dataset from real papers, start
-  to finish, in about 15 minutes.
-- **[Use RWTH KI:connect](how-to/rwth.md)** — get a free key and use it.
-- **[Add papers in any format](how-to/add-papers.md)** — PDF, XML from Europe PMC or
-  Elsevier, HTML, Word.
-- **[Command line](reference/cli.md)** and **[Python API](reference/python.md)** reference.
-
-</div>
+The [tutorial](tutorial.md) builds a small PET glycolysis dataset from three real papers and
+takes about 15 minutes. After that, the how-to guides cover single tasks, starting with
+[using RWTH KI:connect](how-to/rwth.md) and [adding your own papers](how-to/add-papers.md).

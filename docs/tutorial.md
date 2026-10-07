@@ -1,23 +1,25 @@
 # Tutorial: a PET glycolysis dataset
 
-You will build a small dataset of PET glycolysis experiments — catalyst, temperature, time,
-BHET yield — from three real open-access papers. It takes about 15 minutes, most of it
-waiting for the model.
+In this tutorial you build a small dataset of PET glycolysis experiments from three
+open-access papers. Each record has a catalyst, a temperature, a reaction time, and a BHET
+yield. It takes about 15 minutes, and most of that is waiting for the model.
 
-You need Python 3.10 or newer and an RWTH account. Everything else is free.
+You need Python 3.10 or later and an RWTH account.
 
-## 1. Install
+## 1. Install file2records
 
 ```bash
 pip install file2records
 ```
 
-The papers in this tutorial are XML, so the PDF extra isn't needed.
+The papers in this tutorial are XML files, so you don't need the PDF extra.
 
 ## 2. Get an RWTH key
 
-Log in at [chat.kiconnect.nrw](https://chat.kiconnect.nrw) with RWTH single sign-on, click your
-name (bottom left) → **API Key Management** → **Create Key**. Then, in an empty folder:
+Log in at [chat.kiconnect.nrw](https://chat.kiconnect.nrw) with your RWTH account. Click
+your name in the bottom-left corner, then **API Key Management**, then **Create Key**.
+
+Make an empty folder for the tutorial and save the key in a file called `.env`:
 
 ```bash title=".env"
 RWTH_API_KEY=paste-your-key-here
@@ -25,7 +27,8 @@ RWTH_API_KEY=paste-your-key-here
 
 ## 3. Download three papers
 
-Europe PMC gives the full text of open-access papers to anyone, as XML:
+Europe PMC publishes the full text of open-access papers as XML, and you don't need an
+account to download it:
 
 ```bash
 mkdir papers
@@ -34,10 +37,13 @@ for id in PMC12587479 PMC8877978 PMC13589335; do
 done
 ```
 
-Two are about PET glycolysis. The third, `PMC13589335`, is a cancer imaging study that a
-search for "PET glycolysis" also finds — you will filter it out in step 5.
+Two of these papers are about PET glycolysis. The third, `PMC13589335`, is a cancer imaging
+study. A search for "PET glycolysis" finds papers like it too, and step 5 shows how to leave
+them out.
 
-## 4. Read them into a project
+## 4. Read the papers into a project
+
+Create `tutorial.py`:
 
 ```python title="tutorial.py"
 import file2records as fr
@@ -54,15 +60,15 @@ PMC13589335.xml jats 10.1186/s12880-026-02772-8
 PMC8877978.xml jats 10.3390/polym14040656
 ```
 
-Keep adding each step's code to `tutorial.py` and run it again; the outputs below show only
-what the new part prints. Re-reading a paper you already added is harmless.
+file2records created the folder `pet-review/` and split each paper into chunks: one per
+paragraph, and one per table. Later, every extracted value records which chunk it came from.
 
-`pet-review/` is now a project folder. Each paper is split into chunks (paragraphs and whole
-tables) so that every value extracted later can point at the chunk it came from.
+In the next steps you add code to the end of `tutorial.py` and run it again. The output shown
+is only what the new code prints. Adding a paper that's already in the project does nothing.
 
-## 5. Choose the papers worth a model call
+## 5. Choose the papers to send to the model
 
-Searching is free — it reads the text you already have:
+Searching the text you already have costs nothing:
 
 ```python title="tutorial.py"
 for hit in project.search(r"BHET yield"):
@@ -77,12 +83,14 @@ print(project.select(only=r"glycoly[sz]is", exclude=r"tumou?r|positron|tomograph
 ['pmc12587479-b8154390', 'pmc8877978-27725354']
 ```
 
-`only` keeps papers whose text matches, `exclude` drops papers whose text matches. The cancer
-paper is gone. See [Choose papers with a regex](how-to/choose-papers.md) for more patterns.
+`select` keeps the papers whose text matches `only` and then removes the ones that match
+`exclude`. The cancer study isn't in the list. For more patterns, see
+[Choose papers with a regex](how-to/choose-papers.md).
 
-## 6. Say what a record is
+## 6. Define a record
 
-A record is one experiment. Describe each field — the model reads these descriptions:
+A record is one experiment. Describe each field in plain words, because the model reads these
+descriptions:
 
 ```python title="tutorial.py"
 from pydantic import BaseModel, Field
@@ -100,7 +108,7 @@ project.rubric = """Check each record against the paper. A record is wrong if a 
 match the run it describes, or if it is not an experiment from this paper."""
 ```
 
-Ask whether anything is missing before spending a call:
+Before you use the model, check that nothing is missing:
 
 ```python
 print(project.check("extract", fr.rwth()))
@@ -110,13 +118,13 @@ print(project.check("extract", fr.rwth()))
 []
 ```
 
-An empty list means ready. If you forgot the key, you'd see instead:
+An empty list means the project is ready. Without a key, the list says so:
 
 ```console
 ['No RWTH key. Set RWTH_API_KEY, or create one at https://chat.kiconnect.nrw under API Key Management.']
 ```
 
-## 7. Extract and judge
+## 7. Extract and check the records
 
 ```python title="tutorial.py"
 from dotenv import load_dotenv
@@ -127,37 +135,33 @@ project.extract(model=fr.rwth(), **papers, on_paper=print)
 project.judge(model=fr.rwth(), **papers, on_paper=print)
 ```
 
-Each paper prints one line as it finishes, with how many records it gave and how long it took.
-Run the script again and finished papers are skipped — pass `redo=True` to run them again.
+As each paper finishes, the script prints how many records it produced and how long it took.
+If you run the script again, papers that are done are skipped. To run them again, pass
+`redo=True`.
 
-## 8. Review in the browser
+## 8. Review the records
 
 ```bash
 file2records serve pet-review
 ```
 
-Open **Judge**, pick a paper. Click a record to shade the passages it cites; the judge's
-reasoning is under each record, and any value it would change is marked with an **apply**
-button. Nothing changes unless you press it.
+Open **Judge** and choose a paper. When you click a record, the passages it cites are
+highlighted. Under each record is the judge's reasoning. If the judge thinks a value is
+wrong, the field shows its suggestion and an **apply** button. Values only change when you
+press it.
 
-![Review: a record, the judge's reasoning, and a proposed fix](img/review.png)
+![A record, the judge's reasoning, and a suggested correction](img/review.png)
 
-## 9. Export
+## 9. Export the dataset
 
 ```python
 project.export("pet_glycolysis.csv", **papers)
 ```
 
-One row per record, with the paper's DOI, the judge's verdict and reasoning, and which model
-produced it.
+The CSV file has one row per record. Each row includes the paper's DOI, the judge's verdict
+and reasoning, and the model that produced it.
 
-## What you did
+## Next steps
 
-- read three papers from XML, with their DOIs
-- dropped an off-topic paper by its text, for free
-- defined a record as a pydantic model and wrote a two-line prompt
-- extracted and audited with a free RWTH model
-- reviewed against the source and exported a citable CSV
-
-Next: [write a better schema and prompt](how-to/schema-and-prompts.md), or point it at your
-own papers with [Add papers in any format](how-to/add-papers.md).
+You now have a dataset you can check against its sources. The guide to [writing the schema and prompts](how-to/schema-and-prompts.md) shows how to
+improve it, and the guide to [adding papers](how-to/add-papers.md) shows how to use your own.

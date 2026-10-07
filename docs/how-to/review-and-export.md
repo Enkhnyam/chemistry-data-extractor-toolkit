@@ -1,28 +1,29 @@
 # Review and export
 
-## Review
+## Review the records
 
 ```bash
 file2records serve my-review
 ```
 
-Open **Judge** and pick a paper. The paper is on the left, its records on the right.
+Open **Judge** and choose a paper. The paper is on the left and its records are on the right.
 
-- **Click a record** to shade the chunks it cites.
-- **Click a field** to find its value in the text; click again for the next match.
-- **Edit** any value, or press **apply** on the judge's proposed fix.
-- Mark a record **looks right** / **looks wrong** and add a note.
+- Click a record to highlight the passages it cites.
+- Click a field to find its value in the text. Click again to find the next match.
+- Click **Edit** to change a value, or **apply** to accept the judge's suggestion.
+- Mark a record **looks right** or **looks wrong**, and add a note if you like.
 
-Corrections are saved beside the model's original output, so the two can always be compared.
+Your corrections are saved next to the model's original output, so you can always compare
+the two.
 
-![Review screen](../img/review.png)
+![The review screen](../img/review.png)
 
-## Export
+## Export the dataset
 
 === "Browser"
 
-    Report page → **Records CSV**, **Records JSON** or **Full bundle**. The two boxes above the
-    cards limit the export to papers matching a regex.
+    On the **Report** page, click **Records CSV**, **Records JSON** or **Full bundle**. To
+    export only some papers, type a pattern into the boxes below the buttons.
 
 === "Command line"
 
@@ -38,19 +39,22 @@ Corrections are saved beside the model's original output, so the two can always 
     rows = project.records()          # the same rows as a list of dicts
     ```
 
-Every row has the paper's `doi` and `title`, the extracted fields, `source_chunk_ids`, the
-judge's verdict, reasoning and proposed fixes, your flag and note, and which models produced it.
+Each row has the paper's DOI and title, the fields you defined, the chunks the values came
+from, the judge's verdict, reasoning and suggestions, your mark and note, and the models
+that produced it.
 
-The **bundle** (`.zip`) adds what produced the data: the schema, both prompts, the worked
-examples, model settings (never keys), per-paper cost, and a manifest with the file2records
-version.
+The full bundle is a `.zip` file. Besides the records, it contains the schema, both prompts,
+the worked examples, the model settings without keys, the cost per paper, and the version
+of file2records that produced it.
 
-## Sharing a dataset
+## Share a dataset
 
-!!! warning "Paper text is left out of the bundle unless you ask"
-    Papers from a publisher's text-and-data-mining agreement (Elsevier, Wiley, Springer…) may
-    be mined, not redistributed. The bundle therefore carries each record's DOI and chunk ids,
-    not the text. Add the text only if every paper is open access: tick *bundle includes paper
-    text* in the browser, or `--include-text`.
+The bundle leaves out the text of the papers unless you ask for it. Many publishers let
+institutions mine their papers but not pass the text on, and that includes papers downloaded
+from Elsevier, Wiley, and Springer. Each record still has its paper's DOI and the IDs of the
+chunks it came from, so anyone with access to the paper can check it.
 
-Extracted values themselves are facts and can be shared; cite the papers by DOI.
+If every paper is open access, you can include the text. In the browser, select **bundle
+includes paper text and source files**. On the command line, use `--include-text`.
+
+The extracted values are facts, and you can share them. Cite the papers by their DOIs.

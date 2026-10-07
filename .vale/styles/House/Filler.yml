@@ -1,0 +1,24 @@
+extends: existence
+message: "'%s' adds nothing a reader needs. Cut it or say the specific thing."
+level: warning
+ignorecase: true
+tokens:
+  - seamless(ly)?
+  - robust
+  - leverage
+  - delve
+  - effortless(ly)?
+  - powerful
+  - comprehensive
+  - crucial
+  - truly
+  - simply
+  - just
+  - actually
+  - out of the box
+  - it's worth noting
+  - note that
+  - in summary
+  - whole thing
+  - under the hood
+  - game[- ]changer

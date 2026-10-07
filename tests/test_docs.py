@@ -14,7 +14,7 @@ class ReferenceTests(unittest.TestCase):
         page = (DOCS / "cli.md").read_text(encoding="utf-8")
         sub = next(a for a in cli.build_parser()._actions if a.dest == "command")
         for name, parser in sub.choices.items():
-            self.assertIn(f"## {name}\n", page, f"command {name}")
+            self.assertIn(f"## `{name}`\n", page, f"command {name}")
             for action in parser._actions:
                 for flag in action.option_strings:
                     if flag.startswith("--") and flag != "--help":

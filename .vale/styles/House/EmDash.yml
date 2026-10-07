@@ -1,0 +1,6 @@
+extends: existence
+message: "Rewrite without the em dash: a period, a comma or parentheses."
+level: warning
+nonword: true
+tokens:
+  - '—'

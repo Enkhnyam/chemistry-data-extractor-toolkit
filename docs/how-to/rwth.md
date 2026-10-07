@@ -1,37 +1,42 @@
 # Use RWTH KI:connect
 
-RWTH's [KI:connect](https://chat.kiconnect.nrw) speaks the OpenAI API, and its open models
-cost nothing. `gpt-oss-120b` is the default here.
+KI:connect is RWTH's language model service. It uses the same API as OpenAI, and its open
+models are free for RWTH members. file2records uses `gpt-oss-120b` by default.
 
 ## Get a key
 
-1. Log in at [chat.kiconnect.nrw](https://chat.kiconnect.nrw) with RWTH single sign-on.
-2. Click your name (bottom left) → **API Key Management** → **Create Key**.
+1. Log in at [chat.kiconnect.nrw](https://chat.kiconnect.nrw) with your RWTH account.
+2. Click your name in the bottom-left corner, then **API Key Management**, then
+   **Create Key**.
 
-## Use it
+## Use the key
 
 === "Browser"
 
-    Settings → Models → **Add RWTH KI:connect**, paste the key, press **Test connection**.
-    The key is saved in `.env` inside the project folder and never shown again.
+    Go to **Settings**, then **Models**, and click **Add RWTH KI:connect**. Paste the key and
+    click **Test connection**. The key is saved in the `.env` file in the project folder, and
+    the browser doesn't show it again.
 
 === "Command line"
 
     ```bash
-    export RWTH_API_KEY=...          # or put RWTH_API_KEY=... in a .env file
+    export RWTH_API_KEY=...
     file2records extract my-review --model rwth/gpt-oss-120b
     ```
+
+    You can put `RWTH_API_KEY=...` in a `.env` file instead of exporting it.
 
 === "Python"
 
     ```python
-    project.extract(model=fr.rwth())                         # gpt-oss-120b
+    project.extract(model=fr.rwth())
     project.extract(model=fr.rwth("mistral-small-4-119b-2603"))
     ```
 
-    `fr.rwth()` reads `RWTH_API_KEY` from the environment; pass `api_key=` to give it directly.
+    `fr.rwth()` reads `RWTH_API_KEY` from the environment. To pass the key yourself, use
+    `fr.rwth(api_key=...)`.
 
-## Check it
+## Check the setup
 
 ```console
 $ file2records check my-review --model rwth/gpt-oss-120b
@@ -39,12 +44,17 @@ extract: ready
 judge: ready
 ```
 
-## If it goes wrong
+## Troubleshooting
 
-- **"No RWTH key"** — `RWTH_API_KEY` isn't set in this shell or in a `.env` in the folder you
-  run from.
-- **Which models are there?** In the browser, **List models** asks the endpoint. Any name it
-  lists works as `rwth/<name>`.
-- **Rate limits** — the endpoint allows a few requests at a time. file2records sends one at a
-  time, so you shouldn't hit them. Some models (such as `gpt-5.5`) have hourly caps that a large
-  batch will exceed; use the open models for batches.
+No RWTH key
+:   `RWTH_API_KEY` isn't set in your shell, and there's no `.env` file with it in the folder
+    you're running from.
+
+You want a different model
+:   In the browser, **List models** shows every model the service offers. On the command line
+    and in Python, use any of them as `rwth/<name>`.
+
+Rate limit errors
+:   The service accepts a few requests at a time, and file2records sends one at a time.
+    Some models, such as `gpt-5.5`, also have an hourly limit that a large batch exceeds. For
+    large batches, use the open models.

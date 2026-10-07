@@ -1,55 +1,66 @@
 # Add papers in any format
 
+To add papers, give `add` files or folders. It searches folders, including subfolders, for
+files it can read.
+
 ```bash
-file2records add my-review papers/        # files or folders; folders are searched recursively
+file2records add my-review papers/
 ```
 
-The format is recognised from the file itself, not its name:
+file2records works out a file's format from its contents, so a file with the wrong extension
+still reads correctly.
 
-| Format | Where it comes from | Notes |
+| Format | Typical source | Notes |
 |---|---|---|
-| **JATS XML** | PubMed Central, Europe PMC, RSC, Springer Nature, MDPI, Frontiers… | Tables exact. Works without a DOCTYPE line. |
-| **Elsevier XML** | ScienceDirect's article API (`view=FULL`) | Table footnotes stay with their table. |
-| **HTML** | a saved article page | `citation_doi` / `citation_title` tags are used. |
-| **Word** (`.docx`) | theses, preprints | headings, paragraphs, tables |
-| **Markdown, text** | anything you converted yourself | |
-| **PDF** | everything else | needs `pip install "file2records[pdf]"` |
-| other XML | | read by a general reader, labelled "XML (general)" |
+| JATS XML | PubMed Central, Europe PMC, RSC, Springer Nature, MDPI, Frontiers | Tables keep their rows and columns. |
+| Elsevier XML | The ScienceDirect article API | Table footnotes stay with their table. |
+| HTML | An article page saved from a browser | The page's citation tags supply the DOI and title. |
+| Word (`.docx`) | Theses and preprints | Headings, paragraphs, and tables. |
+| Markdown, text | Anything you converted yourself | |
+| PDF | Everything else | Needs `pip install "file2records[pdf]"`. |
+| Other XML | | Read by a general reader and labeled as general XML. |
 
-!!! tip "Prefer XML to PDF"
-    When a publisher offers both, take the XML. Its tables arrive as rows and cells; a PDF's
-    tables have to be reconstructed from the page layout.
+If a publisher offers both XML and PDF, use the XML. Its tables are already rows and
+columns, while a PDF's tables have to be reconstructed from the page layout.
 
-## Get XML from Europe PMC
+## Download XML from Europe PMC
 
-Open-access papers, no key:
+Europe PMC serves open-access papers without an account:
 
 ```bash
 curl -o PMC8877978.xml \
   "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC8877978/fullTextXML"
 ```
 
-To find papers, search at [europepmc.org](https://europepmc.org) with the *Open access*
-filter, or use the [REST API](https://europepmc.org/RestfulWebService).
+To find papers, search [europepmc.org](https://europepmc.org) with the open access filter,
+or use its [REST API](https://europepmc.org/RestfulWebService).
 
-## Get XML from Elsevier
+<!-- vale Google.Headings = NO -->
+## Download Elsevier XML
+<!-- vale Google.Headings = YES -->
 
-With a key from [dev.elsevier.com](https://dev.elsevier.com) and your institution's access:
+You need a key from the [Elsevier Developer Portal](https://dev.elsevier.com), and your
+institution needs access to the journal:
 
 ```bash
 curl -H "X-ELS-APIKey: $ELSEVIER_KEY" -H "Accept: text/xml" -o paper.xml \
   "https://api.elsevier.com/content/article/doi/10.1016/j.polymdegradstab.2020.109000?view=FULL"
 ```
 
-Papers you get this way may be mined, not redistributed — see
-[Review and export](review-and-export.md#sharing-a-dataset).
+Elsevier's terms let you mine these papers but not share them. See
+[Share a dataset](review-and-export.md#share-a-dataset).
 
-## If it goes wrong
+## Troubleshooting
 
-- **"Reading PDFs needs the PDF extra"** — `pip install "file2records[pdf]"`.
-- **"no article body — probably an abstract-only record"** — Europe PMC has only the abstract
-  for that paper; it isn't open access there.
-- **"Elsevier XML without the article text"** — you downloaded the metadata view; add
-  `?view=FULL`.
-- **A file failed** — the others are still added. Fix or remove it and run `add` again;
-  re-adding a file that is already there is harmless.
+"Reading PDFs needs the PDF extra"
+:   Run `pip install "file2records[pdf]"`.
+
+"no article body, probably an abstract-only record"
+:   Europe PMC only has the abstract for this paper, because it isn't open access there.
+
+"Elsevier XML without the article text"
+:   The download used the metadata view. Add `?view=FULL` to the URL.
+
+One file failed
+:   The other files were still added. Fix or remove the file and run `add` again. Files that
+    are already in the project are skipped.

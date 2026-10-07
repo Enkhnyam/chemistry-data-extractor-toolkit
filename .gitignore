@@ -25,3 +25,5 @@ artifacts/overnight.log
 
 # built docs site (zensical build)
 site/
+# downloaded by `vale sync`
+.vale/styles/Google/
