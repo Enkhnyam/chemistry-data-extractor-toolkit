@@ -92,3 +92,51 @@ def run_judge(params: dict, rubric: str, paper_text: str, records: list[dict]) -
         for i in range(len(records))
     ]
     return verdicts, llm.usage_of(resp)
+
+
+def fit_fixes(verdicts: list[dict], schema: list[dict]) -> list[dict]:
+    """Keep only suggested fixes that can go into their field.
+
+    A judge sometimes proposes "100-500 °C" for a number field, or a field the schema doesn't
+    have. Applying that would put text into a numeric column, so such a fix is taken out of
+    `fixes` (where the review page offers it to apply) and described in the critique instead.
+    Numbers written as text ("68") are converted.
+    """
+    types = {f["name"]: f.get("type", "string") for f in schema}
+    for verdict in verdicts:
+        kept, notes = [], []
+        for fix in verdict.get("fixes") or []:
+            field, value = fix.get("field"), fix.get("value")
+            if field not in types:
+                notes.append(f'{field} = "{value}" is not one of your fields')
+                continue
+            ok, converted = _as_type(value, types[field])
+            if ok:
+                kept.append({**fix, "value": converted})
+            else:
+                article = "an" if types[field][0] in "aeiou" else "a"
+                notes.append(f'{field} = "{value}" is not {article} {types[field]}')
+        if notes:
+            verdict["fixes"] = kept
+            verdict["critique"] = (verdict.get("critique") or "") + \
+                " (Suggested, but not applicable: " + "; ".join(notes) + ".)"
+    return verdicts
+
+
+def _as_type(value, kind: str):
+    if value is None or kind == "string":
+        return True, value
+    if kind == "boolean":
+        if isinstance(value, bool):
+            return True, value
+        text = str(value).strip().lower()
+        return (True, text == "true") if text in ("true", "false") else (False, value)
+    try:
+        number = float(value) if not isinstance(value, bool) else None
+    except (TypeError, ValueError):
+        return False, value
+    if number is None:
+        return False, value
+    if kind == "integer":
+        return (True, int(number)) if number.is_integer() else (False, value)
+    return True, number

@@ -223,6 +223,7 @@ def _judge_one(pid, params, rubric) -> dict:
         verdicts, usage = judge.run_judge(params, rubric, text, extracted["records"])
     except Exception as e:
         return {"id": pid, "error": f"{type(e).__name__}: {e}"}
+    verdicts = judge.fit_fixes(verdicts, config.get_schema())
     seconds = time.monotonic() - started
     timings.record("judge", seconds, len(extracted["records"]), unit="records")
     write_json(storage.JUDGED / f"{pid}.json",

@@ -240,6 +240,24 @@ class ProjectTests(unittest.TestCase):
         self.project.extract("gpt-4o-mini")      # the fake model answers with exactly that record
         self.assertEqual(self.project.records(), [])
 
+    def test_a_suggested_fix_must_fit_its_field(self):
+        """Seen for real: the judge proposed "100‑500 °C" for a number field."""
+        from file2records import judge
+        schema = [{"name": "temperature_c", "type": "number"}, {"name": "runs", "type": "integer"},
+                  {"name": "catalyst", "type": "string"}]
+        verdicts = [{"critique": "Wrong.", "fixes": [
+            {"field": "temperature_c", "value": "100‑500 °C"},
+            {"field": "temperature_c", "value": "68"},
+            {"field": "runs", "value": 2.5},
+            {"field": "catalyst", "value": "Ni/ZnO"},
+            {"field": "solvent", "value": "EG"}]}]
+        fixed = judge.fit_fixes(verdicts, schema)[0]
+        self.assertEqual(fixed["fixes"], [{"field": "temperature_c", "value": 68.0},
+                                          {"field": "catalyst", "value": "Ni/ZnO"}])
+        self.assertIn('temperature_c = "100‑500 °C" is not a number', fixed["critique"])
+        self.assertIn('runs = "2.5" is not an integer', fixed["critique"])
+        self.assertIn('solvent = "EG" is not one of your fields', fixed["critique"])
+
     def test_a_bundle_carries_no_paper_text_unless_asked(self):
         self.configure()
         self.project.add(self.files["jats-no-doctype.xml"])

@@ -13,6 +13,8 @@ passages it came from, with the judge's verdict and suggestions.
     - **Click a record** to highlight the passages it came from.
     - **Click a field** to find its value in the text. Click again for the next match.
     - **Click apply** to accept a value the judge suggests. Nothing changes until you do.
+      A suggestion that doesn't fit the field, such as a range for a number field, isn't
+      offered to apply; the judge's reasoning mentions it instead.
     - **Click Edit** to change a value yourself.
     - **Click looks right or looks wrong**, and add a note, to mark records you checked.
 
