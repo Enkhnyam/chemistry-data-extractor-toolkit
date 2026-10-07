@@ -79,10 +79,11 @@ All three work on the same project folder. You can run the extraction from a scr
 review it in the browser afterwards.
 
 The command line and Python read your AI service's endpoint, your key, and the model name
-from a `.env` file. See [Connect your model](how-to/connect.md).
+from a `.env` file. See [Set up API access](how-to/connect.md).
 
 ## Next steps
 
-The [tutorial](tutorial.md) builds a small dataset from three real catalysis papers, step by
-step in the browser, and takes about 20 minutes. After that, the how-to guides cover single tasks. Start with
-[Connect your model](how-to/connect.md), then [Add papers in any format](how-to/add-papers.md).
+1. [Set up API access](how-to/connect.md) to a language model: an endpoint, a key, and a
+   model name. [Example: RWTH KI:connect](examples/rwth-kiconnect.md) shows it step by step.
+2. [Get started](tutorial.md): build a small dataset from three real catalysis papers, step by
+   step in the browser, in about 15 minutes.

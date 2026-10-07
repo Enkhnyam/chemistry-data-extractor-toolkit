@@ -12,9 +12,9 @@ edit_uri = "edit/main/docs/"
 
 nav = [
   { "Home" = "index.md" },
-  { "Tutorial" = "tutorial.md" },
+  { "Get started" = "tutorial.md" },
   { "How-to guides" = [
-    { "Connect your model" = "how-to/connect.md" },
+    { "Set up API access" = "how-to/connect.md" },
     { "Run it from a script" = "how-to/script.md" },
     { "Add papers in any format" = "how-to/add-papers.md" },
     { "Choose papers with a regex" = "how-to/choose-papers.md" },
@@ -24,6 +24,9 @@ nav = [
   { "Reference" = [
     { "Command line" = "reference/cli.md" },
     { "Python API" = "reference/python.md" },
+  ] },
+  { "Examples" = [
+    { "RWTH KI:connect" = "examples/rwth-kiconnect.md" },
   ] },
 ]
 

@@ -1,18 +1,15 @@
-# Tutorial: your first dataset
+# Get started
 
 In this tutorial you build a small dataset from three real papers on CO₂ hydrogenation
 catalysts. You do every step in your web browser, and each step shows what you should see.
-It takes about 20 minutes.
-
-The example AI service is RWTH Aachen's KI:connect. If your organization runs a different
-service, the steps are the same: you need an endpoint, an API key, and the name of a model.
+It takes about 15 minutes.
 
 ## What you need
 
 - A computer with Python 3.10 or later. To check, open a terminal and run
   `python --version`.
-- An account with an AI service that offers an API. Many universities run one, and your IT
-  center can tell you whether yours does.
+- API access to a language model: an endpoint, an API key, and a model name. If you don't
+  have these yet, [set up API access](how-to/connect.md) first. It takes a few minutes.
 
 ## 1. Install file2records
 
@@ -29,57 +26,7 @@ $ file2records --version
 file2records 0.2.1
 ```
 
-## 2. Get your endpoint and API key
-
-Open your AI service's API key page. On KI:connect, log in at
-[chat.kiconnect.nrw](https://chat.kiconnect.nrw), click your name in the bottom-left corner,
-and click **API Keys Management**.
-
-![KI:connect's API Keys Management window](img/service/api-keys.png)
-
-1. Next to **Endpoint**, click the copy icon. Paste the endpoint into a text file. On
-   KI:connect it's `https://chat.kiconnect.nrw/api/v1`.
-2. In **Key Name**, type `file2records`, and click **Generate Key**.
-3. Next to your new key, click the copy icon, and paste the key into the same text file.
-
-!!! warning "Copy the key now"
-    The service shows the key only once. If you lose it, delete it and generate a new one.
-
-Other services have a similar page, often called **API**, **API keys**, or **Developer**.
-You always need the same two things from it: the endpoint and the key.
-
-## 3. Choose a model
-
-Your service offers several models. On KI:connect, open the model menu at the top of the
-chat page:
-
-![KI:connect's model menu](img/service/model-menu.png){ width="360" }
-
-Click **Learn more** at the top of the menu to see the details of every model:
-
-![KI:connect's model overview](img/service/model-overview.png)
-
-Look at three things:
-
-Limits
-:   You send one message per paper, and two if you also check the results. A model with
-    **Unlimited messages** is best.
-
-Data processing
-:   A German flag means the data stays in Germany. Choose one of these if your papers
-    aren't public yet.
-
-Max. output
-:   How much the model can write in one answer, in the **API** column. Each record takes some
-    of it. A paper with a very large table needs a model with a large maximum output.
-
-On KI:connect, use **OpenAI GPT OSS 120b**. It has unlimited messages, stays in Germany, and
-gave the best results of KI:connect's models in a benchmark on chemistry papers. Write its name into your text file.
-
-You don't need to copy the name exactly. The service spells each model differently on each
-page, and file2records shows you the correct spelling in step 5.
-
-## 4. Open file2records
+## 2. Open file2records
 
 In the terminal, run:
 
@@ -95,7 +42,9 @@ lists what's still missing:
 Leave the terminal open while you work. To stop file2records later, press ++ctrl+c++ in the
 terminal.
 
-## 5. Connect the model
+## 3. Connect your model
+
+You need the endpoint, API key, and model name from [Set up API access](how-to/connect.md).
 
 1. Click **Settings** at the top of the page.
 2. Under **Models**, click **Add a model**.
@@ -105,13 +54,13 @@ terminal.
 
     ![The models the service offers](img/tutorial/02-list-models.png)
 
-6. Click the model you chose in step 3. On KI:connect, that's `gpt-oss-120b`.
+6. Click your model. In these screenshots, it's `gpt-oss-120b` on RWTH KI:connect.
 7. At the bottom of the page, click **Save changes**.
 8. Click **Test connection**. After a few seconds you see **It works**:
 
     ![A successful connection test](img/tutorial/03-test-connection.png)
 
-## 6. Say what one record is
+## 4. Say what one record is
 
 A record is one experiment. You decide which values it has. Each value is a field with a
 name, a type, and a description. The model reads the descriptions, so put the unit there.
@@ -134,7 +83,7 @@ name, a type, and a description. The model reads the descriptions, so put the un
 
 ![The six fields](img/tutorial/04-fields.png)
 
-## 7. Add the papers
+## 5. Add the papers
 
 Download three open-access papers from Europe PMC. In the terminal, run:
 
@@ -158,7 +107,7 @@ After a few seconds the papers appear in the list, each with its DOI:
 
 ![The three papers in the project](img/tutorial/05-papers.png)
 
-## 8. Write the extraction prompt
+## 6. Write the extraction prompt
 
 The prompt tells the model what to extract and what to skip.
 
@@ -184,7 +133,7 @@ The prompt tells the model what to extract and what to skip.
 
 ![The extraction prompt](img/tutorial/06-prompt.png)
 
-## 9. Extract the records
+## 7. Extract the records
 
 On the **Extract** page, all three papers are ticked, and every item under **What this run
 needs** has a green check:
@@ -196,7 +145,7 @@ When it's done, each paper shows how many records it gave:
 
 ![Extraction finished](img/tutorial/08-extract-done.png)
 
-## 10. Check the records
+## 8. Check the records
 
 A second pass with the model checks every record against the paper.
 
@@ -226,7 +175,7 @@ right. Each record says **correct** or **incorrect**, with the reason underneath
   Nothing changes until you click it.
 - To change a value yourself, click **Edit** on the record. Then click **Save corrections**.
 
-## 11. Export the dataset
+## 9. Export the dataset
 
 Click **Report** at the top of the page, then **Records CSV**:
 
@@ -241,13 +190,13 @@ paper's DOI, the judge's verdict and reasoning, and the model that produced it.
 |---|---|
 | `file2records: command not found` | Close the terminal, open a new one, and try again. If it still fails, run `python -m file2records` instead of `file2records`. |
 | "rejected the API key" | Copy the key again. Include every character, including anything after a colon. |
-| "answered HTTP 404" | The endpoint is the website address, not the API address. On KI:connect it's `https://chat.kiconnect.nrw/api/v1`. |
+| "answered HTTP 404" | The endpoint is the website address, not the API address. See [Set up API access](how-to/connect.md). |
 | A paper says "did not match the schema" | The answer was too long for the model. Choose a model with a larger maximum output for that paper. |
 | A paper gives 0 records | The paper doesn't report any experiments your prompt asks for, such as a review article. That's expected. |
 
 ## Next steps
 
-- To work with your own papers, start again at step 4 with a new project name, and change
+- To work with your own papers, start again at step 2 with a new project name, and change
   the fields and the prompt to fit your chemistry.
   [Write the schema and prompts](how-to/schema-and-prompts.md) explains what makes a good
   prompt.

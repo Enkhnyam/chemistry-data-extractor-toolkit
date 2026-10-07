@@ -1,6 +1,11 @@
-# Connect your model
+# Set up API access
 
-file2records needs three values from your AI service:
+!!! example "Using RWTH KI:connect?"
+    See [Example: RWTH KI:connect](../examples/rwth-kiconnect.md) for the same steps with
+    screenshots of KI:connect.
+
+file2records sends each paper to a language model through your AI service's API. For that it
+needs three values from the service:
 
 Endpoint
 :   The address of the service's API. It usually ends in `/v1`.
@@ -11,10 +16,7 @@ API key
 Model
 :   Which of the service's models to use.
 
-[Steps 2 and 3 of the tutorial](../tutorial.md#2-get-your-endpoint-and-api-key) show
-where to find them, with RWTH KI:connect as the example.
-
-## Where to find them at your organization
+## Get the endpoint and a key
 
 Universities and research centers often run their own AI service. Look on its website for a
 page called **API**, **API keys**, or **Developer**. That page shows the endpoint and lets you
@@ -27,28 +29,42 @@ offers API access. The service must offer an OpenAI-compatible API; most do.
 | OpenAI | `https://api.openai.com/v1` |
 | Your organization's service | shown on its API key page |
 
-## Enter them
+Most services show a new key only once. Copy it right away and keep it somewhere safe.
+
+## Choose a model
+
+Most services have a page that lists their models. Look for three things:
+
+- **Message limits.** You send one message per paper, and one more if you check the results.
+  A model without a message limit is best.
+- **Where the data is processed.** For papers that aren't public yet, choose a model that
+  processes data in your country or at your institution.
+- **Maximum output.** A paper with a very large table needs a model that can write a long
+  answer.
+
+## Enter them in file2records
 
 === "Browser"
 
-    Go to **Settings**, then **Models**, and click **Add a model**. Fill in **Endpoint** and
-    **API key**, click **List models**, and click the model you want. Click **Save changes**,
-    then **Test connection**.
+    1. Open **Settings**, and under **Models** click **Add a model**.
+    2. Fill in **Endpoint** and **API key**.
+    3. Click **List models**, and click the model you chose.
+    4. Click **Save changes**, then **Test connection**. You see **It works**.
 
 === "Command line and Python"
 
     Put the three values in a file called `.env` in the folder you work in:
 
     ```bash title=".env"
-    FILE2RECORDS_ENDPOINT=https://chat.kiconnect.nrw/api/v1
+    FILE2RECORDS_ENDPOINT=https://your-service.example/api/v1
     FILE2RECORDS_API_KEY=paste-your-key-here
-    FILE2RECORDS_MODEL=gpt-oss-120b
+    FILE2RECORDS_MODEL=the-model-name
     ```
 
     In Python you can also pass them directly:
 
     ```python
-    model = fr.connect(api_key, "https://chat.kiconnect.nrw/api/v1", "gpt-oss-120b")
+    model = fr.connect(api_key, "https://your-service.example/api/v1", "the-model-name")
     project.extract(model=model)
     ```
 
@@ -70,19 +86,6 @@ uses its API spelling.
 
 If the name matches more than one model, or none, file2records lists the models your service
 offers, so you can pick one.
-
-## Choose a model
-
-Look at the service's model overview for three things:
-
-- **Message limits.** You send one message per paper, and one more if you check the results.
-- **Where the data is processed.** For papers that aren't public yet, choose a model that
-  processes data in your country or at your institution.
-- **Maximum output.** A paper with a very large table needs a model that can write a long
-  answer.
-
-On RWTH KI:connect, `gpt-oss-120b` gave the best results in a benchmark on chemistry
-papers. It has no message limit and processes data in Germany.
 
 ## Troubleshooting
 

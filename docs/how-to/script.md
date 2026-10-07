@@ -1,12 +1,12 @@
 # Run it from a script
 
 Everything the browser does also works from Python and from the command line. This page
-does the [tutorial](../tutorial.md) again, without the browser.
+does the [Get started](../tutorial.md) tutorial again, without the browser.
 
 ## Save your model settings in a file
 
-Make a file called `.env` in the folder you work in, with the three values from steps 2 and 3
-of the tutorial:
+Make a file called `.env` in the folder you work in, with the three values from
+[Set up API access](connect.md):
 
 ```bash title=".env"
 FILE2RECORDS_ENDPOINT=https://chat.kiconnect.nrw/api/v1

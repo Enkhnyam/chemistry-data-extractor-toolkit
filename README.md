@@ -31,8 +31,8 @@ FILE2RECORDS_API_KEY=your-key
 FILE2RECORDS_MODEL=gpt-oss-120b
 ```
 
-Start with the [tutorial](https://enkhnyam.github.io/chemistry-data-extractor-toolkit/tutorial/):
-a catalysis dataset from three real papers, step by step, in 20 minutes.
+Start with [Get started](https://enkhnyam.github.io/chemistry-data-extractor-toolkit/tutorial/):
+a catalysis dataset from three real papers, step by step, in 15 minutes.
 
 ## Development
 
