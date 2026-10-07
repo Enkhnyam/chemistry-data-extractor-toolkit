@@ -116,10 +116,10 @@ terminal.
 A record is one experiment. You decide which values it has. Each value is a field with a
 name, a type, and a description. The model reads the descriptions, so put the unit there.
 
+<!-- vale Google.Latin = NO -->
 1. Still in **Settings**, scroll to **Schema**, and click **Clear all**.
 2. Click **Add field** six times, and fill in the rows:
 
-    <!-- vale Google.Latin = NO -->
     | Field name | Type | Description |
     |---|---|---|
     | `catalyst` | string | Catalyst as the paper names it, e.g. 5Ni5Zn/SiO2 |
@@ -128,9 +128,9 @@ name, a type, and a description. The model reads the descriptions, so put the un
     | `co2_conversion_percent` | number | CO2 conversion, % |
     | `main_product` | string | Main product, e.g. CO, CH4, methanol |
     | `selectivity_percent` | number | Selectivity to the main product, % |
-    <!-- vale Google.Latin = YES -->
 
 3. Click **Save changes**.
+<!-- vale Google.Latin = YES -->
 
 ![The six fields](img/tutorial/04-fields.png)
 
@@ -167,14 +167,17 @@ The prompt tells the model what to extract and what to skip.
 3. Copy this text into the box:
 
     ```text
-    Extract every CO2 hydrogenation experiment this paper reports. One record per catalyst and
-    reaction condition; each row of a results table is one record.
-
-    Skip values quoted from other papers, values shown only in figures, and theoretical
-    calculations. Conditions stated once for a whole table apply to every row of it.
-
-    If the paper doesn't report a value, use null. Never use 0 for a missing value.
-    Conversion and selectivity are different fields; never put one in the other.
+    Extract every CO2 hydrogenation experiment this paper reports. One
+    record per catalyst and reaction condition; each row of a results table
+    is one record.
+    
+    Skip values quoted from other papers, values shown only in figures, and
+    theoretical calculations. Conditions stated once for a whole table apply
+    to every row of it.
+    
+    If the paper doesn't report a value, use null. Never use 0 for a missing
+    value. Conversion and selectivity are different fields; never put one in
+    the other.
     ```
 
 4. Click **Save prompt**.
@@ -202,12 +205,13 @@ A second pass with the model checks every record against the paper.
    **Save prompt**:
 
     ```text
-    Check each record against the paper. A record is correct if every value matches the
-    experiment it describes.
-
-    A record is wrong if a value belongs to a different experiment, comes from another paper,
-    or puts conversion where selectivity belongs (or the reverse). For a wrong record, give the
-    correct value and quote the sentence or table row that shows it.
+    Check each record against the paper. A record is correct if every value
+    matches the experiment it describes.
+    
+    A record is wrong if a value belongs to a different experiment, comes
+    from another paper, or puts conversion where selectivity belongs (or the
+    reverse). For a wrong record, give the correct value and quote the
+    sentence or table row that shows it.
     ```
 
 3. Click **Run judge on selected**.
