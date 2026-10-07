@@ -16,7 +16,6 @@ BHET
 DMT
 TPA
 regex
-rubric
 DOI
 DOIs
 PDF
@@ -28,11 +27,6 @@ PyPI
 Markdown
 CSV
 JSON
-chunk
-chunks
-catalyst
-catalysts
-glycol
 uncatalyzed
 preprints
 depolymerization
@@ -45,3 +39,5 @@ Frontiers
 subfolders
 glycolyzis
 Groq
+Python
+MPa

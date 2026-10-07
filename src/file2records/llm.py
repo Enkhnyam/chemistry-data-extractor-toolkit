@@ -81,37 +81,22 @@ def provider_problem(model: str) -> str:
                 f'deployment.')
 
 
-# ---------- from a key to a callable model ----------
+# ---------- from an endpoint, a key and a model name to a callable model ----------
 #
-# A researcher has a key, and for a service like RWTH's KI:connect an endpoint. They should not
-# have to know that litellm wants "openai/" in front of a self-hosted model, nor guess that the
-# server calls its Mistral "mistralai-mistral-small-4-119b". So: ask the endpoint what it serves,
-# drop what cannot extract (embeddings, audio, images), and pick or match a model.
+# A service such as a university's AI platform gives you three things: an endpoint, a key, and
+# a list of models. It names each model differently on its chat page, its overview page and its
+# API (KI:connect's "Mistral Small 4 119b" / "mistral-small-4-119b-2603" /
+# "mistralai-mistral-small-4-119b"). So the model is looked up on the endpoint by any
+# recognizable part of its name, and litellm's "openai/" prefix is added here, not by the user.
 
-# Keys whose first characters say which service issued them. Anything else needs the endpoint.
-# (litellm prefix, model-list URL)
-KEY_PREFIXES = {
-    "sk-ant-": ("anthropic/", "https://api.anthropic.com/v1"),
-    "AIza": ("gemini/", "https://generativelanguage.googleapis.com/v1beta/openai"),
-    "gsk_": ("groq/", "https://api.groq.com/openai/v1"),
-    "xai-": ("xai/", "https://api.x.ai/v1"),
-    "sk-": ("openai/", "https://api.openai.com/v1"),     # last: the others also start "sk-"
-}
 NOT_CHAT = re.compile(r"embed|\be5-|rerank|whisper|tts|transcri|moderation|dall-e|image|"
-                      r"audio|realtime|search|vision-only", re.I)
-# The default when nobody names a model: the first of these the service has. gpt-oss-120b is
-# free on KI:connect and was the most dependable judge on the PET corpus.
-# ponytail: a short hand-kept list; extend it when a service picks badly.
-PREFERRED = ["gpt-oss-120b", "claude-sonnet", "gemini-2.5-flash", "gpt-4.1-mini", "gpt-4o-mini",
-             "llama-3.3-70b", "grok"]
+                      r"audio|realtime", re.I)
 
 
 def list_models(endpoint: str, api_key: str) -> list[str]:
-    """Model ids the endpoint serves that can extract, as the endpoint spells them."""
+    """Model ids the endpoint serves that can extract, as its API spells them."""
     import httpx
     headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
-    if api_key.startswith("sk-ant-"):
-        headers = {"x-api-key": api_key, "anthropic-version": "2023-06-01"}
     try:
         r = httpx.get(endpoint.rstrip("/") + "/models", headers=headers, timeout=30)
     except httpx.HTTPError as e:
@@ -129,38 +114,38 @@ def list_models(endpoint: str, api_key: str) -> list[str]:
     return [i for i in ids if not NOT_CHAT.search(i)]
 
 
-def pick(ids: list[str], wanted: str | None = None) -> str:
-    """`wanted` matched exactly, else as a unique case-insensitive fragment; else the default."""
-    if wanted:
-        if wanted in ids:
-            return wanted
-        hits = [i for i in ids if wanted.lower() in i.lower()]
-        if len(hits) == 1:
-            return hits[0]
-        raise RuntimeError(f'"{wanted}" {"matches several" if hits else "is not one"} of the '
-                           f"models offered: {', '.join(hits or ids)}.")
-    for preferred in PREFERRED:
-        hits = sorted((i for i in ids if preferred in i.lower()), reverse=True)  # newest first
-        if hits:
-            return hits[0]
-    if not ids:
-        raise RuntimeError("The service lists no models that can extract text.")
-    return ids[0]
+def _squash(name: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", name.lower())
+
+
+def pick(ids: list[str], wanted: str | None) -> str:
+    """The model named `wanted`: exactly, or the one model whose name contains it, ignoring
+    case, spaces and punctuation -- so "GPT OSS 120b" from a chat menu finds "gpt-oss-120b"."""
+    if not wanted:
+        raise RuntimeError(f"Choose a model. This service offers: {', '.join(ids)}.")
+    if wanted in ids:
+        return wanted
+    w = _squash(wanted)
+    hits = [i for i in ids if w in _squash(i) or _squash(i) in w]
+    if not hits:   # "mistral-small-4-119b-2603" from an overview page vs the API's own spelling
+        import difflib
+        close = difflib.get_close_matches(w, [_squash(i) for i in ids], n=1, cutoff=0.7)
+        hits = [i for i in ids if close and _squash(i) == close[0]]
+    if len(hits) == 1:
+        return hits[0]
+    raise RuntimeError(f'"{wanted}" {"matches several" if hits else "is not one"} of the models '
+                       f"this service offers: {', '.join(hits or ids)}.")
 
 
 def connect(api_key: str, endpoint: str | None = None, model: str | None = None) -> dict:
-    """Call parameters for litellm from a key, plus the endpoint for services that need one
-    (RWTH KI:connect, self-hosted servers). `model` is optional and may be a fragment
-    of the name ("mistral")."""
+    """Call parameters for litellm. With an endpoint, `model` is looked up there and may be
+    any recognizable part of the name. Without one, `model` is a litellm model string such as
+    "gpt-4o-mini" or "anthropic/claude-sonnet-4-5", passed on as it is."""
     if not api_key:
         raise RuntimeError("No API key.")
-    if endpoint:
-        ids = list_models(endpoint, api_key)
-        return {"model": "openai/" + pick(ids, model), "api_base": endpoint.rstrip("/") + "/",
-                "api_key": api_key}
-    for prefix, (litellm_prefix, url) in KEY_PREFIXES.items():
-        if api_key.startswith(prefix):
-            return {"model": litellm_prefix + pick(list_models(url, api_key), model),
-                    "api_key": api_key}
-    raise RuntimeError("Can't tell which service this key belongs to. Give its endpoint too, "
-                       "e.g. https://chat.kiconnect.nrw/api/v1 for RWTH KI:connect.")
+    if not endpoint:
+        if not model:
+            raise RuntimeError("Give a model name, or the endpoint of your service.")
+        return {"model": model, "api_key": api_key}
+    return {"model": "openai/" + pick(list_models(endpoint, api_key), model),
+            "api_base": endpoint.rstrip("/") + "/", "api_key": api_key}

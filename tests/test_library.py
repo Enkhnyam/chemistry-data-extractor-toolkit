@@ -248,33 +248,36 @@ class ProjectTests(unittest.TestCase):
     def test_stages_refuse_with_reasons_before_calling_anything(self):
         with self.assertRaisesRegex(RuntimeError, "Define the fields"):
             self.project.extract("gpt-4o-mini")
-        os.environ.pop("RWTH_API_KEY", None)
         self.configure()
-        self.assertTrue(any("RWTH_API_KEY" in m for m in self.project.check("extract", fr.rwth())))
+        self.assertTrue(any("No model yet" in m for m in self.project.check("extract")))
 
-    def test_a_key_and_an_endpoint_are_enough(self):
-        """No model name, no provider prefix: the endpoint is asked what it has. The list is
-        what RWTH KI:connect really returned, embeddings and a name with spaces included."""
+    def test_a_model_is_found_however_the_service_spells_it(self):
+        """KI:connect calls one model "Mistral Small 4 119b" in its chat menu,
+        "mistral-small-4-119b-2603" on its overview page and "mistralai-mistral-small-4-119b"
+        in its API. Any of them works, the "openai/" prefix is added, embeddings are dropped."""
         served = ["mistralai-mistral-small-4-119b", "Qwen 3.8 27B", "gpt-oss-120b",
                   "gpt-6-luna", "gpt-6-sol", "e5-mistral-7b-instruct", "qwen3-embedding-8b"]
         real = llm.list_models
         llm.list_models = lambda endpoint, key: [i for i in served if not llm.NOT_CHAT.search(i)]
+        endpoint = "https://chat.kiconnect.nrw/api/v1"
         try:
-            endpoint = "https://chat.kiconnect.nrw/api/v1"
-            self.assertEqual(fr.connect("id:secret", endpoint),
-                             {"model": "openai/gpt-oss-120b", "api_base": endpoint + "/",
-                              "api_key": "id:secret"})
-            self.assertEqual(fr.connect("k", endpoint, "mistral")["model"],
-                             "openai/mistralai-mistral-small-4-119b")
-            self.assertEqual(fr.connect("k", endpoint, "qwen")["model"], "openai/Qwen 3.8 27B")
+            for spelling, api_name in [("Mistral Small 4 119b", "mistralai-mistral-small-4-119b"),
+                                       ("mistral-small-4-119b-2603", "mistralai-mistral-small-4-119b"),
+                                       ("mistral", "mistralai-mistral-small-4-119b"),
+                                       ("OpenAI GPT OSS 120b", "gpt-oss-120b"),
+                                       ("qwen3.8-27b", "Qwen 3.8 27B")]:
+                self.assertEqual(fr.connect("id:secret", endpoint, spelling),
+                                 {"model": "openai/" + api_name, "api_base": endpoint + "/",
+                                  "api_key": "id:secret"}, spelling)
+            with self.assertRaisesRegex(RuntimeError, "Choose a model. This service offers: "
+                                                      "mistralai-mistral-small-4-119b, Qwen"):
+                fr.connect("k", endpoint)
             with self.assertRaisesRegex(RuntimeError, "matches several"):
                 fr.connect("k", endpoint, "gpt-6")
-            self.assertEqual(fr.connect("sk-ant-x")["model"], "anthropic/gpt-oss-120b")
-            with self.assertRaisesRegex(RuntimeError, "Give its endpoint"):
-                fr.connect("6ac63d:no-prefix")
-            from file2records import pipeline
-            self.assertEqual(pipeline.resolve_model(fr.rwth(api_key="k"), "extract")["model"],
-                             "openai/gpt-oss-120b")
+            with self.assertRaisesRegex(RuntimeError, "is not one of"):
+                fr.connect("k", endpoint, "e5-mistral")     # an embedding model, not offered
+            self.assertEqual(fr.connect("sk-x", model="gpt-4o-mini"),
+                             {"model": "gpt-4o-mini", "api_key": "sk-x"})
         finally:
             llm.list_models = real
 

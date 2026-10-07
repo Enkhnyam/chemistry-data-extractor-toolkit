@@ -1,97 +1,105 @@
 # Connect your model
 
-You need an API key. For a service that runs its own server, such as RWTH KI:connect, you
-also need its address, called the endpoint. You don't need to know any model names:
-file2records asks the service which models it has and picks a good one.
+file2records needs three values from your AI service:
 
-## RWTH KI:connect
+Endpoint
+:   The address of the service's API. It usually ends in `/v1`.
 
-1. Log in at [chat.kiconnect.nrw](https://chat.kiconnect.nrw) with your RWTH account.
-2. Click your name in the bottom-left corner, then **API Key Management**, then
-   **Create Key**.
-3. Put the key and the endpoint in a file called `.env`, in the folder you work in:
+API key
+:   A secret that lets file2records use your account.
+
+Model
+:   Which of the service's models to use.
+
+[Steps 2 and 3 of the tutorial](../tutorial.md#2-get-your-endpoint-and-api-key) show
+where to find them, with RWTH KI:connect as the example.
+
+## Where to find them at your organization
+
+Universities and research centers often run their own AI service. Look on its website for a
+page called **API**, **API keys**, or **Developer**. That page shows the endpoint and lets you
+create a key. If you can't find one, ask your IT center whether its language model service
+offers API access. The service must offer an OpenAI-compatible API; most do.
+
+| Service | Endpoint |
+|---|---|
+| RWTH KI:connect | `https://chat.kiconnect.nrw/api/v1` |
+| OpenAI | `https://api.openai.com/v1` |
+| Your organization's service | shown on its API key page |
+
+## Enter them
+
+=== "Browser"
+
+    Go to **Settings**, then **Models**, and click **Add a model**. Fill in **Endpoint** and
+    **API key**, click **List models**, and click the model you want. Click **Save changes**,
+    then **Test connection**.
+
+=== "Command line and Python"
+
+    Put the three values in a file called `.env` in the folder you work in:
 
     ```bash title=".env"
-    FILE2RECORDS_API_KEY=6ac63d...your-whole-key...
     FILE2RECORDS_ENDPOINT=https://chat.kiconnect.nrw/api/v1
+    FILE2RECORDS_API_KEY=paste-your-key-here
+    FILE2RECORDS_MODEL=gpt-oss-120b
     ```
 
-That's all. Check it:
+    In Python you can also pass them directly:
+
+    ```python
+    model = fr.connect(api_key, "https://chat.kiconnect.nrw/api/v1", "gpt-oss-120b")
+    project.extract(model=model)
+    ```
+
+Then check them:
 
 ```console
-$ file2records check my-review
+$ file2records check my-project
 extract: ready
 judge: ready
 ```
 
-On KI:connect, file2records uses `gpt-oss-120b`, which is free for RWTH members.
+## How to write the model name
 
-## Other services
+A service often spells one model differently on different pages. KI:connect, for example,
+calls the same model "Mistral Small 4 119b" in its chat menu, `mistral-small-4-119b-2603` on
+its overview page, and `mistralai-mistral-small-4-119b` in its API. Any of these works, and so
+does part of the name, such as `mistral`. file2records looks up the name on your service and
+uses its API spelling.
 
-Keys from OpenAI, Anthropic, Google Gemini, Groq and xAI are recognized from how they start,
-so you only need the key:
+If the name matches more than one model, or none, file2records lists the models your service
+offers, so you can pick one.
 
-```bash title=".env"
-FILE2RECORDS_API_KEY=sk-ant-...
-```
+## Choose a model
 
-For any other service with an OpenAI-compatible API, such as a server your group runs, add
-its endpoint as `FILE2RECORDS_ENDPOINT`, the same way as for KI:connect.
+Look at the service's model overview for three things:
 
-## In the browser
+- **Message limits.** You send one message per paper, and one more if you check the results.
+- **Where the data is processed.** For papers that aren't public yet, choose a model that
+  processes data in your country or at your institution.
+- **Maximum output.** A paper with a very large table needs a model that can write a long
+  answer.
 
-Go to **Settings**, then **Models**, and click **Add a model**, or **Add RWTH KI:connect** to
-have the endpoint filled in. Paste the key and click **Test connection**. Leave **Model**
-empty and one is picked for you.
-
-## In a script
-
-```python
-import file2records as fr
-
-model = fr.connect("6ac63d...your-whole-key...", "https://chat.kiconnect.nrw/api/v1")
-project.extract(model=model)
-```
-
-With `FILE2RECORDS_API_KEY` set, `project.extract()` with no `model` works too.
-
-## Choose a different model
-
-Give part of its name. The match is case-insensitive.
-
-=== "Command line"
-
-    ```bash
-    file2records extract my-review --model mistral
-    ```
-
-=== "Python"
-
-    ```python
-    fr.connect(key, endpoint, model="mistral")
-    ```
-
-=== "Browser"
-
-    Type `mistral` into the **Model** field, or click **List models** to see them all.
-
-If the part you give matches more than one model, file2records lists them so you can be more
-specific.
+On RWTH KI:connect, `gpt-oss-120b` gave the best results in a benchmark on chemistry
+papers. It has no message limit and processes data in Germany.
 
 ## Troubleshooting
 
 "rejected the API key"
 :   The key is incomplete or belongs to a different service. Copy it again, including
-    everything after the colon.
-
-"Can't tell which service this key belongs to"
-:   Add `FILE2RECORDS_ENDPOINT` with the service's address.
+    everything after a colon.
 
 "answered HTTP 404"
-:   The endpoint is the website address instead of the API address. For KI:connect it's
-    `https://chat.kiconnect.nrw/api/v1`.
+:   The endpoint is the website address instead of the API address.
+
+"is not one of the models this service offers"
+:   Check the spelling, or use one of the names in the list that follows the message.
+
+"Could not reach"
+:   Check your internet connection. Some services only work from your institution's network
+    or VPN.
 
 Rate limit errors
-:   KI:connect accepts a few requests at a time, and file2records sends one at a time. Some
-    models have an hourly limit that a large batch exceeds. For large batches, use
-    `gpt-oss-120b`.
+:   The service accepts only a few requests at a time or per hour. file2records sends one at
+    a time. Choose a model without a message limit for large batches.

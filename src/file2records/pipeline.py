@@ -14,39 +14,29 @@ from .storage import paper_id_for, require, write_json
 
 # RWTH's KI:connect service: OpenAI-compatible, unmetered for its open models. Spelled out once
 # here so a researcher writes "rwth/gpt-oss-120b" instead of an endpoint and a provider prefix.
-RWTH_API_BASE = "https://chat.kiconnect.nrw/api/v1/"
-RWTH_KEY_VAR = "RWTH_API_KEY"
-# The zero-configuration route: a key, plus the endpoint for services that need one. Read from
-# the environment or a .env file, and used whenever no model was chosen in Settings.
-KEY_VAR, ENDPOINT_VAR = "FILE2RECORDS_API_KEY", "FILE2RECORDS_ENDPOINT"
-NO_MODEL = (f"No model yet. Put {KEY_VAR}=<your key> in a .env file (and "
-            f"{ENDPOINT_VAR}=<address> for services like RWTH KI:connect), or choose a model in "
-            f"Settings.")
-
-
-def rwth(name: str | None = None, api_key: str | None = None) -> dict:
-    """A model on RWTH's KI:connect: the free gpt-oss-120b unless `name` (or part of a name)
-    says otherwise. The key comes from RWTH_API_KEY unless given."""
-    return {"api_base": RWTH_API_BASE, "api_key": api_key or os.environ.get(RWTH_KEY_VAR, ""),
-            "model": (name or "").removeprefix("rwth/") or None}
+# The three things an AI service gives you, read from the shell or a .env file whenever no model
+# was chosen in the browser's Settings.
+KEY_VAR, ENDPOINT_VAR, MODEL_VAR = "FILE2RECORDS_API_KEY", "FILE2RECORDS_ENDPOINT", "FILE2RECORDS_MODEL"
+NO_MODEL = (f"No model yet. Add one in Settings, or put {ENDPOINT_VAR}, {KEY_VAR} and "
+            f"{MODEL_VAR} in a .env file.")
 
 
 def connect(api_key: str | None = None, endpoint: str | None = None,
             model: str | None = None) -> dict:
-    """A model from a key alone (OpenAI, Anthropic, Gemini, Groq, xAI) or a key and an endpoint
-    (RWTH KI:connect, any OpenAI-compatible server). Defaults to FILE2RECORDS_API_KEY and
-    FILE2RECORDS_ENDPOINT."""
+    """A model from your service's endpoint, your key and the model's name as any of the
+    service's pages spell it. Each defaults to its FILE2RECORDS_* variable."""
     return llm.connect(api_key or os.environ.get(KEY_VAR, ""),
-                       endpoint or os.environ.get(ENDPOINT_VAR) or None, model)
+                       endpoint or os.environ.get(ENDPOINT_VAR) or None,
+                       model or os.environ.get(MODEL_VAR) or None)
 
 
 def resolve_model(model, stage: str) -> dict:
     """What to hand litellm. May ask the endpoint which models it has, so it can raise
-    RuntimeError with a message for the user (wrong key, unreachable address).
+    RuntimeError with a message for the user (wrong key, unknown model, unreachable address).
 
-    None: the model chosen for this stage in Settings, else FILE2RECORDS_API_KEY/_ENDPOINT.
-    A string: a litellm model string, or "rwth/<name>". A dict: litellm parameters; one with a
-    key but no full model name ("openai/...") is completed by asking the endpoint."""
+    None: the model chosen for this stage in Settings, else the FILE2RECORDS_* variables. A
+    string: a model name, looked up on FILE2RECORDS_ENDPOINT if that is set, else a litellm
+    model string. A dict: litellm parameters, completed by connect() if it has a key."""
     if model is None:
         profile = config.get_settings().get(f"{stage}_model", "")
         if profile:
@@ -63,9 +53,7 @@ def given(model) -> dict | None:
     if model is None or isinstance(model, dict):
         return model and dict(model)
     model = str(model).strip()
-    if model.startswith("rwth/"):
-        return rwth(model)
-    if "/" not in model and os.environ.get(KEY_VAR):         # part of a name: look it up
+    if "/" not in model and os.environ.get(KEY_VAR):         # a name: look it up
         return {k: v for k, v in {"api_key": os.environ[KEY_VAR], "model": model,
                                   "api_base": os.environ.get(ENDPOINT_VAR)}.items() if v}
     return {"model": model}
@@ -73,7 +61,7 @@ def given(model) -> dict | None:
 
 def ready(stage: str, model=None) -> tuple[dict, list[str]]:
     """Call parameters for `stage`, and what is missing. Asks the endpoint only once nothing
-    else is missing, so a wrong key or address is reported here rather than mid-run."""
+    else is missing, so a wrong key or model name is reported here rather than mid-run."""
     missing = blockers(stage, given(model))
     if missing:
         return {}, missing
@@ -97,9 +85,6 @@ def blockers(stage: str, params: dict | None = None) -> list[str]:
             missing += models.blockers(profile, label)
         elif not os.environ.get(KEY_VAR):
             missing.append(NO_MODEL)
-    elif params.get("api_base") == RWTH_API_BASE and not params.get("api_key"):
-        missing.append(f"No RWTH key. Set {RWTH_KEY_VAR}, or create one at "
-                       f"https://chat.kiconnect.nrw under API Key Management.")
     elif not params.get("model") and not params.get("api_key"):
         missing.append(f"No model given for {label}.")
     elif params.get("model") and not params.get("api_key") and \

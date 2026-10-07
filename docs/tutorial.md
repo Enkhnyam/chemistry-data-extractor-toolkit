@@ -1,169 +1,251 @@
-# Tutorial: a PET glycolysis dataset
+# Tutorial: your first dataset
 
-In this tutorial you build a small dataset of PET glycolysis experiments from three
-open-access papers. Each record has a catalyst, a temperature, a reaction time, and a BHET
-yield. It takes about 15 minutes, and most of that is waiting for the model.
+In this tutorial you build a small dataset from three real papers on CO₂ hydrogenation
+catalysts. You do every step in your web browser, and each step shows what you should see.
+It takes about 20 minutes.
 
-You need Python 3.10 or later and an RWTH account.
+The example AI service is RWTH Aachen's KI:connect. If your organization runs a different
+service, the steps are the same: you need an endpoint, an API key, and the name of a model.
+
+## What you need
+
+- A computer with Python 3.10 or later. To check, open a terminal and run
+  `python --version`.
+- An account with an AI service that offers an API. Many universities run one, and your IT
+  center can tell you whether yours does.
 
 ## 1. Install file2records
+
+Open a terminal and run:
 
 ```bash
 pip install file2records
 ```
 
-The papers in this tutorial are XML files, so you don't need the PDF extra.
+To check that it worked, run:
 
-## 2. Get an RWTH key
-
-Log in at [chat.kiconnect.nrw](https://chat.kiconnect.nrw) with your RWTH account. Click
-your name in the bottom-left corner, then **API Key Management**, then **Create Key**.
-
-Make an empty folder for the tutorial and save the key and the KI:connect address in a
-file called `.env`:
-
-```bash title=".env"
-FILE2RECORDS_API_KEY=paste-your-key-here
-FILE2RECORDS_ENDPOINT=https://chat.kiconnect.nrw/api/v1
+```console
+$ file2records --version
+file2records 0.2.1
 ```
 
-file2records reads this file and picks the model for you.
+## 2. Get your endpoint and API key
 
-## 3. Download three papers
+Open your AI service's API key page. On KI:connect, log in at
+[chat.kiconnect.nrw](https://chat.kiconnect.nrw), click your name in the bottom-left corner,
+and click **API Keys Management**.
 
-Europe PMC publishes the full text of open-access papers as XML, and you don't need an
-account to download it:
+![KI:connect's API Keys Management window](img/service/api-keys.png)
+
+1. Next to **Endpoint**, click the copy icon. Paste the endpoint into a text file. On
+   KI:connect it's `https://chat.kiconnect.nrw/api/v1`.
+2. In **Key Name**, type `file2records`, and click **Generate Key**.
+3. Next to your new key, click the copy icon, and paste the key into the same text file.
+
+!!! warning "Copy the key now"
+    The service shows the key only once. If you lose it, delete it and generate a new one.
+
+Other services have a similar page, often called **API**, **API keys**, or **Developer**.
+You always need the same two things from it: the endpoint and the key.
+
+## 3. Choose a model
+
+Your service offers several models. On KI:connect, open the model menu at the top of the
+chat page:
+
+![KI:connect's model menu](img/service/model-menu.png){ width="360" }
+
+Click **Learn more** at the top of the menu to see the details of every model:
+
+![KI:connect's model overview](img/service/model-overview.png)
+
+Look at three things:
+
+Limits
+:   You send one message per paper, and two if you also check the results. A model with
+    **Unlimited messages** is best.
+
+Data processing
+:   A German flag means the data stays in Germany. Choose one of these if your papers
+    aren't public yet.
+
+Max. output
+:   How much the model can write in one answer, in the **API** column. Each record takes some
+    of it. A paper with a very large table needs a model with a large maximum output.
+
+On KI:connect, use **OpenAI GPT OSS 120b**. It has unlimited messages, stays in Germany, and
+gave the best results of KI:connect's models in a benchmark on chemistry papers. Write its name into your text file.
+
+You don't need to copy the name exactly. The service spells each model differently on each
+page, and file2records shows you the correct spelling in step 5.
+
+## 4. Open file2records
+
+In the terminal, run:
+
+```bash
+file2records serve my-project
+```
+
+Your browser opens on a new, empty project called `my-project`. The **Getting started** box
+lists what's still missing:
+
+![A new project with the Getting started box](img/tutorial/01-new-project.png)
+
+Leave the terminal open while you work. To stop file2records later, press ++ctrl+c++ in the
+terminal.
+
+## 5. Connect the model
+
+1. Click **Settings** at the top of the page.
+2. Under **Models**, click **Add a model**.
+3. Type a name, such as `My AI service`.
+4. Paste your endpoint into **Endpoint** and your key into **API key**.
+5. Click **List models**. file2records asks your service which models it has and shows them:
+
+    ![The models the service offers](img/tutorial/02-list-models.png)
+
+6. Click the model you chose in step 3. On KI:connect, that's `gpt-oss-120b`.
+7. At the bottom of the page, click **Save changes**.
+8. Click **Test connection**. After a few seconds you see **It works**:
+
+    ![A successful connection test](img/tutorial/03-test-connection.png)
+
+## 6. Say what one record is
+
+A record is one experiment. You decide which values it has. Each value is a field with a
+name, a type, and a description. The model reads the descriptions, so put the unit there.
+
+1. Still in **Settings**, scroll to **Schema**, and click **Clear all**.
+2. Click **Add field** six times, and fill in the rows:
+
+    <!-- vale Google.Latin = NO -->
+    | Field name | Type | Description |
+    |---|---|---|
+    | `catalyst` | string | Catalyst as the paper names it, e.g. 5Ni5Zn/SiO2 |
+    | `temperature_c` | number | Reaction temperature in °C |
+    | `pressure_bar` | number | Total pressure in bar; convert MPa by multiplying by 10 |
+    | `co2_conversion_percent` | number | CO2 conversion, % |
+    | `main_product` | string | Main product, e.g. CO, CH4, methanol |
+    | `selectivity_percent` | number | Selectivity to the main product, % |
+    <!-- vale Google.Latin = YES -->
+
+3. Click **Save changes**.
+
+![The six fields](img/tutorial/04-fields.png)
+
+## 7. Add the papers
+
+Download three open-access papers from Europe PMC. In the terminal, run:
 
 ```bash
 mkdir papers
-for id in PMC12587479 PMC8877978 PMC13589335; do
-  curl -s -o papers/$id.xml "https://www.ebi.ac.uk/europepmc/webservices/rest/$id/fullTextXML"
-done
+curl -o papers/PMC13614198.xml https://www.ebi.ac.uk/europepmc/webservices/rest/PMC13614198/fullTextXML
+curl -o papers/PMC13631360.xml https://www.ebi.ac.uk/europepmc/webservices/rest/PMC13631360/fullTextXML
+curl -o papers/PMC12631322.xml https://www.ebi.ac.uk/europepmc/webservices/rest/PMC12631322/fullTextXML
 ```
 
-Two of these papers are about PET glycolysis. The third, `PMC13589335`, is a cancer imaging
-study. A search for "PET glycolysis" finds papers like it too, and step 5 shows how to leave
-them out.
+On Windows, type `curl.exe` instead of `curl`. If you have papers of your own, as PDF, XML,
+HTML or Word files, you can use those instead.
 
-## 4. Read the papers into a project
+Then, in the browser:
 
-Create `tutorial.py`:
+1. Click **Parse** at the top of the page.
+2. Click **Choose files** and select the three files in the `papers` folder.
+3. Click **Parse 3 files**.
 
-```python title="tutorial.py"
-import file2records as fr
+After a few seconds the papers appear in the list, each with its DOI:
 
-project = fr.Project("pet-review")
-for paper in project.add("papers"):
-    print(paper["filename"], paper["format"], paper["doi"])
-```
+![The three papers in the project](img/tutorial/05-papers.png)
 
-```console
-$ python tutorial.py
-PMC12587479.xml jats 10.1039/d5ra05618g
-PMC13589335.xml jats 10.1186/s12880-026-02772-8
-PMC8877978.xml jats 10.3390/polym14040656
-```
+## 8. Write the extraction prompt
 
-file2records created the folder `pet-review/` and split each paper into chunks: one per
-paragraph, and one per table. Later, every extracted value records which chunk it came from.
+The prompt tells the model what to extract and what to skip.
 
-In the next steps you add code to the end of `tutorial.py` and run it again. The output shown
-is only what the new code prints. Adding a paper that's already in the project does nothing.
+1. Click **Extract** at the top of the page.
+2. Next to **Extraction prompt**, click **Write**.
+3. Copy this text into the box:
 
-## 5. Choose the papers to send to the model
+    ```text
+    Extract every CO2 hydrogenation experiment this paper reports. One record per catalyst and
+    reaction condition; each row of a results table is one record.
 
-Searching the text you already have costs nothing:
+    Skip values quoted from other papers, values shown only in figures, and theoretical
+    calculations. Conditions stated once for a whole table apply to every row of it.
 
-```python title="tutorial.py"
-for hit in project.search(r"BHET yield"):
-    print(f"{hit['matches']:3} matches  {hit['title'][:60]}")
+    If the paper doesn't report a value, use null. Never use 0 for a missing value.
+    Conversion and selectivity are different fields; never put one in the other.
+    ```
 
-print(project.select(only=r"glycoly[sz]is", exclude=r"tumou?r|positron|tomograph"))
-```
+4. Click **Save prompt**.
 
-```console
- 22 matches  Optimizing PET Glycolysis with an Oyster Shell-Derived Catal
- 16 matches  Magnetically recoverable cobalt oxide nanoparticle catalyst
-['pmc12587479-b8154390', 'pmc8877978-27725354']
-```
+![The extraction prompt](img/tutorial/06-prompt.png)
 
-`select` keeps the papers whose text matches `only` and then removes the ones that match
-`exclude`. The cancer study isn't in the list. For more patterns, see
-[Choose papers with a regex](how-to/choose-papers.md).
+## 9. Extract the records
 
-## 6. Define a record
+On the **Extract** page, all three papers are ticked, and every item under **What this run
+needs** has a green check:
 
-A record is one experiment. Describe each field in plain words, because the model reads these
-descriptions:
+![Ready to extract](img/tutorial/07-extract-ready.png)
 
-```python title="tutorial.py"
-from pydantic import BaseModel, Field
+Click **Run extraction on selected**. Each paper takes between a few seconds and a minute.
+When it's done, each paper shows how many records it gave:
 
-class Experiment(BaseModel):
-    catalyst: str | None = Field(None, description="Catalyst exactly as the paper names it")
-    temperature_c: float | None = Field(None, description="Reaction temperature in °C")
-    time_min: float | None = Field(None, description="Reaction time in minutes")
-    bhet_yield_percent: float | None = Field(None, description="BHET yield, %")
+![Extraction finished](img/tutorial/08-extract-done.png)
 
-project.schema = Experiment
-project.prompt = """Extract every PET glycolysis experiment this paper reports, one record per run.
-Skip values quoted from other papers. Unreported values are null."""
-project.rubric = """Check each record against the paper. A record is wrong if a value does not
-match the run it describes, or if it is not an experiment from this paper."""
-```
+## 10. Check the records
 
-Before you use the model, check that nothing is missing:
+A second pass with the model checks every record against the paper.
 
-```python
-print(project.check("extract"))
-```
+1. Click **Judge** at the top of the page.
+2. Next to **Judge rubric**, click **Write**, copy this text into the box, and click
+   **Save prompt**:
 
-```console
-[]
-```
+    ```text
+    Check each record against the paper. A record is correct if every value matches the
+    experiment it describes.
 
-An empty list means the project is ready, and that the key works: `check` asks KI:connect
-which models it has. With a mistyped key, the list says so:
+    A record is wrong if a value belongs to a different experiment, comes from another paper,
+    or puts conversion where selectivity belongs (or the reverse). For a wrong record, give the
+    correct value and quote the sentence or table row that shows it.
+    ```
 
-```console
-['https://chat.kiconnect.nrw/api/v1 rejected the API key (HTTP 401). Check that the key is complete and belongs to this service.']
-```
+3. Click **Run judge on selected**.
 
-## 7. Extract and check the records
+When it's done, the **Review** section shows a paper on the left and its records on the
+right. Each record says **correct** or **incorrect**, with the reason underneath:
 
-```python title="tutorial.py"
-papers = dict(only=r"glycoly[sz]is", exclude=r"tumou?r|positron|tomograph")
-project.extract(**papers, on_paper=print)
-project.judge(**papers, on_paper=print)
-```
+![Reviewing the records](img/tutorial/09-review.png)
 
-As each paper finishes, the script prints how many records it produced and how long it took.
-If you run the script again, papers that are done are skipped. To run them again, pass
-`redo=True`.
+- Click a record to highlight the passages it came from.
+- If the judge suggests a different value, the field shows it with an **apply** button.
+  Nothing changes until you click it.
+- To change a value yourself, click **Edit** on the record. Then click **Save corrections**.
 
-## 8. Review the records
+## 11. Export the dataset
 
-```bash
-file2records serve pet-review
-```
+Click **Report** at the top of the page, then **Records CSV**:
 
-Open **Judge** and choose a paper. When you click a record, the passages it cites are
-highlighted. Under each record is the judge's reasoning. If the judge thinks a value is
-wrong, the field shows its suggestion and an **apply** button. Values only change when you
-press it.
+![The report page with the export buttons](img/tutorial/10-report.png)
 
-![A record, the judge's reasoning, and a suggested correction](img/review.png)
+The CSV file opens in Excel or any spreadsheet program. It has one row per record, with the
+paper's DOI, the judge's verdict and reasoning, and the model that produced it.
 
-## 9. Export the dataset
+## If something goes wrong
 
-```python
-project.export("pet_glycolysis.csv", **papers)
-```
-
-The CSV file has one row per record. Each row includes the paper's DOI, the judge's verdict
-and reasoning, and the model that produced it.
+| What you see | What to do |
+|---|---|
+| `file2records: command not found` | Close the terminal, open a new one, and try again. If it still fails, run `python -m file2records` instead of `file2records`. |
+| "rejected the API key" | Copy the key again. Include every character, including anything after a colon. |
+| "answered HTTP 404" | The endpoint is the website address, not the API address. On KI:connect it's `https://chat.kiconnect.nrw/api/v1`. |
+| A paper says "did not match the schema" | The answer was too long for the model. Choose a model with a larger maximum output for that paper. |
+| A paper gives 0 records | The paper doesn't report any experiments your prompt asks for, such as a review article. That's expected. |
 
 ## Next steps
 
-You now have a dataset you can check against its sources. The guide to [writing the schema and prompts](how-to/schema-and-prompts.md) shows how to
-improve it, and the guide to [adding papers](how-to/add-papers.md) shows how to use your own.
+- To work with your own papers, start again at step 4 with a new project name, and change
+  the fields and the prompt to fit your chemistry.
+  [Write the schema and prompts](how-to/schema-and-prompts.md) explains what makes a good
+  prompt.
+- To run extraction from a script or the command line instead of the browser, see
+  [Run it from a script](how-to/script.md).

@@ -34,8 +34,8 @@ A project folder, the same one the browser app shows. The folder is created if i
 | `judge(model=None, *, only=None, exclude=None, redo=False, on_paper=None)` | Checks the extracted papers that aren't judged yet. |
 
 `model` is usually left out: then the model chosen in the browser's settings is used, or the
-one `FILE2RECORDS_API_KEY` and `FILE2RECORDS_ENDPOINT` lead to. Otherwise pass `fr.connect(...)`,
-part of a model name such as `"mistral"`, or a full litellm model string. If a stage isn't ready, it raises `RuntimeError` with a list of what's
+one set by `FILE2RECORDS_ENDPOINT`, `FILE2RECORDS_API_KEY` and `FILE2RECORDS_MODEL`. Otherwise
+pass `fr.connect(...)` or a model name. If a stage isn't ready, it raises `RuntimeError` with a list of what's
 missing. If one paper fails, its result has an `error` and the other papers still run.
 
 ### Results
@@ -47,15 +47,10 @@ missing. If one paper fails, its result has an `error` and the other papers stil
 
 ## `fr.connect(api_key=None, endpoint=None, model=None)`
 
-A model from your key, plus the endpoint for services such as RWTH KI:connect. It asks the
-service which models it has and picks one, or the one whose name contains `model`. Without
-arguments it reads `FILE2RECORDS_API_KEY` and `FILE2RECORDS_ENDPOINT`. Raises `RuntimeError`
-if the key is rejected or the endpoint can't be reached.
-
-## `fr.rwth(name=None, api_key=None)`
-
-The same for RWTH KI:connect, with the endpoint filled in. The key comes from `RWTH_API_KEY`
-unless you pass `api_key`.
+A model from your AI service: its endpoint, your key, and the model's name as any of the
+service's pages write it, or part of it. Each argument defaults to its `FILE2RECORDS_*`
+variable. It asks the service for its models and raises `RuntimeError` if the key is rejected,
+the endpoint can't be reached, or the name matches no model or several.
 
 ## Errors
 

@@ -3,11 +3,10 @@
 Every command takes the project folder as its first argument and creates the folder if it
 doesn't exist.
 
-Commands that call a model find it through `FILE2RECORDS_API_KEY`, plus
-`FILE2RECORDS_ENDPOINT` for services such as RWTH KI:connect, or through the model chosen in
-the browser's settings. They read these from your shell, from the `.env` file in the project
-folder, and from the `.env` file in the current folder. The model is picked for you. To choose
-another, pass `--model` with part of its name, such as `mistral`.
+Commands that call a model use the model chosen in the browser's settings, or the one set by
+`FILE2RECORDS_ENDPOINT`, `FILE2RECORDS_API_KEY` and `FILE2RECORDS_MODEL`. They read these from
+your shell, from the `.env` file in the project folder, and from the `.env` file in the
+current folder. To use a different model for one run, pass `--model` with its name.
 
 ## `serve`
 
@@ -17,7 +16,7 @@ Open the browser app on a project.
 file2records serve [folder] [--port 8000] [--host 127.0.0.1] [--no-browser]
 ```
 
-`folder` defaults to `workspace`. A new, empty folder opens with the demo project in it. The
+Without `folder`, it opens the demo project. The
 app has no login, so keep the default host, which only accepts connections from your own
 computer.
 
@@ -86,7 +85,7 @@ Use them only for papers you're allowed to share.
 
 | Option | Meaning |
 |---|---|
-| `--model MODEL` | part of a model name, such as `mistral`, or a full litellm model string |
+| `--model MODEL` | a model name as your service writes it, or part of it |
 | `--only REGEX` | only papers whose full text matches |
 | `--exclude REGEX` | skip papers whose full text matches |
 | `--redo` | also re-run papers already done |

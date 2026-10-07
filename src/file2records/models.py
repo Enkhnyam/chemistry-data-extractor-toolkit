@@ -84,9 +84,9 @@ def call_params(profile_id: str) -> dict:
         params["api_base"] = profile["api_base"]
     if profile.get("api_version"):
         params["api_version"] = profile["api_version"]
-    # No model, or a bare name with an endpoint: ask the service which models it has and add
-    # litellm's prefix, so nobody has to know model ids or that an endpoint means "openai/".
-    if secret and "/" not in params["model"] and (profile.get("api_base") or not params["model"]):
+    # With an endpoint, the model name is looked up there, spelled however the service's pages
+    # spell it, and litellm's "openai/" prefix is added: nobody has to know either.
+    if secret and profile.get("api_base") and "/" not in params["model"]:
         from . import llm
         params.update(llm.connect(secret, profile["api_base"], params["model"] or None))
     return params
@@ -100,6 +100,8 @@ def blockers(profile_id: str, stage_label: str) -> list[str]:
     profile = get(profile_id)
     if not profile:
         return [f"The model chosen for {stage_label} no longer exists. Pick another in Settings."]
+    if not profile.get("model"):
+        return [f"Choose the model for {stage_label} in Settings: click List models."]
     missing = []
     if not os.environ.get(key_var(profile_id)):
         missing.append(f"{profile.get('name') or profile['model'] or profile['api_base']} has no "

@@ -1,6 +1,7 @@
 """The `file2records` command.
 
-    file2records serve my-review                 the web app on that project folder
+    file2records serve                           the demo, in the browser
+    file2records serve my-review                 your project, in the browser
     file2records add my-review papers/           read files and folders into it
     file2records papers my-review                what is in it
     file2records search my-review "glycoly[sz]is"
@@ -9,10 +10,9 @@
     file2records judge my-review
     file2records export my-review dataset.csv    (.csv, .json, or .zip for the full bundle)
 
-Every command takes the project folder first. Model commands use FILE2RECORDS_API_KEY (plus
-FILE2RECORDS_ENDPOINT for services like RWTH KI:connect) from the shell or a .env file, or the
-model chosen in the web app's Settings. The model is picked for you; --model chooses another by
-part of its name.
+Every command takes the project folder first. Model commands use the model chosen in the web
+app's Settings, or FILE2RECORDS_ENDPOINT, FILE2RECORDS_API_KEY and FILE2RECORDS_MODEL from the
+shell or a .env file. --model names a different model, spelled as on any of the service's pages.
 """
 import argparse
 import os
@@ -48,6 +48,12 @@ def _print_result(r):
 
 
 def cmd_serve(args):
+    # `serve` alone opens the demo; `serve my-project` opens your own project, empty, rather
+    # than filling a new folder with somebody else's chemistry.
+    if args.folder is None:
+        args.folder = "file2records-demo"
+    else:
+        os.environ["TOOLKIT_SEED_DEMO"] = "0"
     os.environ["WORKSPACE_DIR"] = str(Path(args.folder).resolve())
     _project(args.folder)                        # creates the folder, opens it
     import uvicorn
@@ -129,14 +135,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="file2records",
         description="Turn papers (PDF, XML, HTML, Word, Markdown) into a structured dataset.",
-        epilog="examples:\n" + "\n".join(__doc__.splitlines()[2:10]) +
+        epilog="examples:\n" + "\n".join(__doc__.splitlines()[2:11]) +
                "\n\ndocs: https://enkhnyam.github.io/chemistry-data-extractor-toolkit/",
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--version", action="version", version=f"file2records {__version__}")
     sub = parser.add_subparsers(dest="command", required=True, metavar="COMMAND")
 
     p = sub.add_parser("serve", help="open the web app on a project folder")
-    p.add_argument("folder", nargs="?", default="workspace", help=FOLDER + " (default: %(default)s)")
+    p.add_argument("folder", nargs="?", help=FOLDER + "; leave out to open the demo")
     p.add_argument("--port", type=int, default=8000)
     p.add_argument("--host", default="127.0.0.1",
                    help="keep the default unless you know why: the app has no login")
@@ -162,15 +168,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("check", help="say what is missing before a run")
     p.add_argument("folder", help=FOLDER)
-    p.add_argument("--model", help="part of a model name to check instead of the default")
+    p.add_argument("--model", help="a model name to check instead of the default")
     p.set_defaults(func=cmd_check)
 
     for stage, text in (("extract", "extract records from papers not extracted yet"),
                         ("judge", "audit extracted records with a second model")):
         p = sub.add_parser(stage, help=text)
         p.add_argument("folder", help=FOLDER)
-        p.add_argument("--model", help="part of a model name, e.g. mistral (default: picked "
-                                       "for you); or a full litellm model string")
+        p.add_argument("--model", help="a model name as your service spells it, or part of "
+                                       "it, e.g. mistral (default: FILE2RECORDS_MODEL or Settings)")
         p.add_argument("--redo", action="store_true", help="also re-run papers already done")
         _filters(p)
         p.set_defaults(func=lambda a, s=stage: _run_stage(a, s))

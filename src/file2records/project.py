@@ -6,7 +6,7 @@
     project.add("papers/")                       # PDF, XML, HTML, Word, Markdown
     project.schema = "schema.json"               # or a list of fields, or a pydantic model
     project.prompt = "Extract every reaction ..."
-    project.extract(model=fr.rwth())
+    project.extract()                            # model from Settings or .env
     project.export("dataset.csv")
 
 A project is the same folder the web app shows (`file2records serve my-review`), so a run
@@ -117,8 +117,8 @@ class Project:
     def extract(self, model=None, *, only: str | None = None, exclude: str | None = None,
                 redo: bool = False, on_paper: Callable[[dict], None] | None = None) -> list[dict]:
         """Extract records from every paper not extracted yet (all of them with `redo`),
-        limited by `only` / `exclude` if given. `model` is fr.connect(...), fr.rwth(...), a
-        litellm model string, or None for the model in Settings or FILE2RECORDS_API_KEY."""
+        limited by `only` / `exclude` if given. `model` is fr.connect(...), a model name, or
+        None for the model in Settings or the FILE2RECORDS_* variables."""
         return self._run("extract", model, only, exclude, redo, on_paper)
 
     def judge(self, model=None, *, only: str | None = None, exclude: str | None = None,
@@ -171,14 +171,9 @@ class Project:
 
 def connect(api_key: str | None = None, endpoint: str | None = None,
             model: str | None = None) -> dict:
-    """A model from your API key, plus the endpoint for services like RWTH KI:connect. The
-    model is chosen for you unless `model` (or part of its name) says otherwise."""
+    """A model from your AI service: its endpoint, your key, and the model's name as any of
+    the service's pages spell it. Each defaults to its FILE2RECORDS_* variable."""
     return pipeline.connect(api_key, endpoint, model)
-
-
-def rwth(name: str | None = None, api_key: str | None = None) -> dict:
-    """A model on RWTH's KI:connect (free for its open models). Key from RWTH_API_KEY."""
-    return pipeline.rwth(name, api_key)
 
 
 def _text(value) -> str:

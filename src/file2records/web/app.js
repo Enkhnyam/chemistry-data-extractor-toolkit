@@ -328,7 +328,7 @@ function guideHTML(status) {
   if (status.is_demo) return demoBannerHTML(status);
   const steps = [
     { done: status.has_model, label: 'Add a model',
-      hint: 'an API key, and an endpoint if needed', href: '#/settings' },
+      hint: 'endpoint, API key and model', href: '#/settings' },
     { done: status.has_schema, label: 'Define the fields',
       hint: 'what one record should contain', href: '#/settings' },
     { done: status.has_extract_prompt, label: 'Write the extraction prompt',
@@ -409,6 +409,13 @@ async function paintChrome() {
     a.querySelector('.navcount')?.remove();
     if (counts[key]) a.insertAdjacentHTML('beforeend', counts[key]);
   });
+  // Refreshed on every page, not once at start: otherwise it still says "no model chosen"
+  // after you have just added one in Settings.
+  get('/api/readiness').then(r => {
+    const m = r.extract.model;
+    document.getElementById('model-badge').textContent =
+      m ? 'extracting with ' + m.name : 'no model chosen';
+  }).catch(() => {});
   return status;
 }
 
@@ -855,7 +862,7 @@ function reviewPanelHTML(title) {
 
 function wireReviewPicker(papers, withJudgment) {
   const pick = document.getElementById('review-pick');
-  pick.innerHTML = papers.map(p => `<option value="${p.id}">${esc(p.filename)}</option>`).join('')
+  pick.innerHTML = papers.map(p => `<option value="${p.id}">${esc(p.filename)} (${p.n_records ?? 0} records)</option>`).join('')
     || `<option value="">(nothing ${withJudgment ? 'judged' : 'extracted'} yet)</option>`;
   pick.addEventListener('change', () => loadReview(pick.value, withJudgment));
   document.getElementById('save-review').addEventListener('click', saveReview);
@@ -882,7 +889,13 @@ function wireReviewPicker(papers, withJudgment) {
     }
   });
 
-  if (papers.length) return loadReview(papers[0].id, withJudgment);
+  // Open on a paper that has records: the first paper may be one that found nothing, and an
+  // empty review is a confusing first sight.
+  const first = papers.find(p => p.n_records) || papers[0];
+  if (first) {
+    pick.value = first.id;
+    return loadReview(first.id, withJudgment);
+  }
 }
 
 // ---------- worked examples ----------
@@ -1995,12 +2008,11 @@ async function renderSettings(gen) {
         <h2>Models${help('One entry per endpoint you call. Extraction and judging pick ' +
           'separately, so you can extract with a strong model and audit with a cheaper or ' +
           'deliberately different one.')}</h2>
-        <p class="lede">Each entry is an API key and, for services such as RWTH KI:connect, the
-          endpoint. The model is picked for you. Keys are written to this project's local
-          <code>.env</code> and never shown again.</p>
+        <p class="lede">Your AI service shows an endpoint and lets you create an API key. Paste
+          both, click <b>List models</b>, choose one, and click <b>Test connection</b>. Keys are
+          written to this project's local <code>.env</code> and never shown again.</p>
         <div id="model-list"></div>
         <button id="add-model" style="margin-top:8px">${icon('plus')}Add a model</button>
-        <button id="add-rwth" style="margin-top:8px" title="RWTH Aachen's KI:connect: OpenAI-compatible, and its open models are free to use. Create a key at chat.kiconnect.nrw under API Key Management.">${icon('plus')}Add RWTH KI:connect</button>
 
         <h3 style="margin-top:22px">Which model each stage uses</h3>
         <div class="stageselect">
@@ -2096,23 +2108,23 @@ async function renderSettings(gen) {
           <button class="m-remove danger iconly" data-i="${i}" title="remove this model">${icon('trash')}</button>
         </div>
         <div class="modelgrid">
+          <label>Endpoint${help('The address your AI service shows on its API key page, ' +
+            'usually ending in /v1. Leave it empty only for a provider litellm knows by name, ' +
+            'such as OpenAI with a model like gpt-4o-mini.')}
+            <input class="m-base" value="${esc(m.api_base || '')}" placeholder="https://…/api/v1"></label>
           <label>API key${help('Stored in .env under this entry\'s own variable, so two ' +
-            'providers never fight over one OPENAI_API_KEY.')}
+            'services never fight over one key.')}
             <input class="m-key" type="password" placeholder="${m.key_set ? '•••••••• saved, type to replace' : 'paste the key'}"></label>
-          <label>Endpoint <span class="muted">if needed</span>${help('Needed for RWTH KI:connect, ' +
-            'Azure, or a server of your own. Not needed for OpenAI, Anthropic, Gemini, Groq or ' +
-            'xAI keys: those are recognized from the key.')}
-            <input class="m-base" value="${esc(m.api_base || '')}" placeholder="https://chat.kiconnect.nrw/api/v1"></label>
-          <label>Model <span class="muted">optional</span>${help('Leave empty and a good model ' +
-            'the service offers is picked for you. To choose, type part of its name, such as ' +
-            'mistral, or use List models.')}
-            <input class="m-model" value="${esc(m.model || '')}" placeholder="picked for you"
+          <label>Model${help('Click List models and choose one. You can also type the name ' +
+            'as your service writes it anywhere, or part of it, such as mistral.')}
+            <input class="m-model" value="${esc(m.model || '')}" placeholder="click List models"
               list="ml-${i}" autocomplete="off">
             <datalist id="ml-${i}"></datalist></label>
-          <label>API version <span class="muted">optional</span>${help('Azure requires this; ' +
-            'almost nothing else does.')}
-            <input class="m-version" value="${esc(m.api_version || '')}" placeholder="2024-12-01-preview"></label>
         </div>
+        <details class="muted" ${m.api_version ? 'open' : ''}><summary>Using Azure?</summary>
+          <label>API version${help('Azure requires this; almost nothing else does.')}
+            <input class="m-version" value="${esc(m.api_version || '')}" placeholder="2024-12-01-preview"></label>
+        </details>
         ${m.provider_problem ? `<div class="warnbox">${esc(m.provider_problem)}</div>` : ''}
         <div class="row" style="margin-top:8px">
           <button class="m-test" data-i="${i}" ${m.id ? '' : 'disabled'}>${icon('bolt')}Test connection</button>
@@ -2153,13 +2165,13 @@ async function renderSettings(gen) {
         return;
       }
       status.className = 'ok-text m-status';
-      status.textContent = `${r.models.length} model(s) available \u2014 click one`;
+      status.textContent = `${r.models.length} models available. Click one:`;
       const box = card.querySelector('.m-model');
       card.querySelector(`#ml-${i}`).innerHTML =
-        r.models.map(m => `<option value="${esc(m.string)}"></option>`).join('');
+        r.models.map(m => `<option value="${esc(m.id)}"></option>`).join('');
       picks.hidden = false;
       picks.innerHTML = r.models
-        .map(m => `<button type="button" class="pick" data-s="${esc(m.string)}">${esc(m.id)}</button>`).join('');
+        .map(m => `<button type="button" class="pick" data-s="${esc(m.id)}">${esc(m.id)}</button>`).join('');
       picks.querySelectorAll('.pick').forEach(pb => pb.addEventListener('click', () => {
         box.value = pb.dataset.s;
         collectModels();
@@ -2177,7 +2189,7 @@ async function renderSettings(gen) {
       try {
         const r = await post(`/api/models/${profiles[Number(b.dataset.i)].id}/test`, {});
         status.className = (r.ok ? 'ok-text' : 'error') + ' m-status';
-        status.textContent = r.ok ? `${r.model} replied in ${r.seconds}s` : r.error;
+        status.textContent = r.ok ? `It works: ${r.model.replace(/^openai\//, '')} replied in ${r.seconds}s.` : r.error;
       } catch (e) { status.className = 'error m-status'; status.textContent = e.message; }
     }));
   }
@@ -2219,13 +2231,6 @@ async function renderSettings(gen) {
   document.getElementById('add-model').addEventListener('click', () => {
     collectModels();
     profiles.push({ id: '', name: '', model: '', api_base: '', api_version: '', key_set: false });
-    paintModels(); paintStageSelects(); markDirty();
-  });
-  // RWTH's endpoint filled in, with its free open model; "List models" shows the rest.
-  document.getElementById('add-rwth').addEventListener('click', () => {
-    collectModels();
-    profiles.push({ id: '', name: 'RWTH KI:connect', model: '',
-                    api_base: 'https://chat.kiconnect.nrw/api/v1/', api_version: '', key_set: false });
     paintModels(); paintStageSelects(); markDirty();
   });
 
@@ -2334,9 +2339,4 @@ async function renderSettings(gen) {
 
 // ---------- boot ----------
 
-get('/api/readiness').then(r => {
-  const m = r.extract.model;
-  document.getElementById('model-badge').textContent =
-    m ? 'extracting with ' + m.name : 'no model chosen';
-});
 router();
