@@ -1,12 +1,13 @@
 # Command line
 
 Every command takes the project folder as its first argument and creates the folder if it
-doesn't exist. Commands that call a model use the model chosen in the browser's settings. To
-use a different one, pass `--model` with a [litellm model
-string](https://docs.litellm.ai/docs/providers) or `rwth/<name>`.
+doesn't exist.
 
-API keys are read from your shell, from the `.env` file in the project folder, and from the
-`.env` file in the current folder.
+Commands that call a model find it through `FILE2RECORDS_API_KEY`, plus
+`FILE2RECORDS_ENDPOINT` for services such as RWTH KI:connect, or through the model chosen in
+the browser's settings. They read these from your shell, from the `.env` file in the project
+folder, and from the `.env` file in the current folder. The model is picked for you. To choose
+another, pass `--model` with part of its name, such as `mistral`.
 
 ## `serve`
 
@@ -85,7 +86,7 @@ Use them only for papers you're allowed to share.
 
 | Option | Meaning |
 |---|---|
-| `--model MODEL` | litellm model string, or `rwth/<name>` |
+| `--model MODEL` | part of a model name, such as `mistral`, or a full litellm model string |
 | `--only REGEX` | only papers whose full text matches |
 | `--exclude REGEX` | skip papers whose full text matches |
 | `--redo` | also re-run papers already done |

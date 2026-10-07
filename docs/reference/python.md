@@ -33,9 +33,9 @@ A project folder, the same one the browser app shows. The folder is created if i
 | `extract(model=None, *, only=None, exclude=None, redo=False, on_paper=None)` | Extracts the papers that aren't done yet and returns one result dict per paper. |
 | `judge(model=None, *, only=None, exclude=None, redo=False, on_paper=None)` | Checks the extracted papers that aren't judged yet. |
 
-`model` can be a litellm model string, `"rwth/<name>"`, `fr.rwth(...)`, a dict of litellm
-parameters such as `model`, `api_key` and `api_base`, or `None` for the model chosen in the
-browser's settings. If a stage isn't ready, it raises `RuntimeError` with a list of what's
+`model` is usually left out: then the model chosen in the browser's settings is used, or the
+one `FILE2RECORDS_API_KEY` and `FILE2RECORDS_ENDPOINT` lead to. Otherwise pass `fr.connect(...)`,
+part of a model name such as `"mistral"`, or a full litellm model string. If a stage isn't ready, it raises `RuntimeError` with a list of what's
 missing. If one paper fails, its result has an `error` and the other papers still run.
 
 ### Results
@@ -45,9 +45,17 @@ missing. If one paper fails, its result has an `error` and the other papers stil
 | `records(*, only=None, exclude=None)` | One dict per record with `doi`, `title`, your fields, `source_chunk_ids`, `judge_verdict`, `judge_critique` and more. |
 | `export(path, *, only=None, exclude=None, include_text=False, include_files=False)` | Writes a `.csv` file, a `.json` file or a `.zip` bundle, and returns its path. |
 
-## `fr.rwth(name="gpt-oss-120b", api_key=None)`
+## `fr.connect(api_key=None, endpoint=None, model=None)`
 
-The settings for a model on RWTH KI:connect. The key comes from `RWTH_API_KEY` unless you pass `api_key`.
+A model from your key, plus the endpoint for services such as RWTH KI:connect. It asks the
+service which models it has and picks one, or the one whose name contains `model`. Without
+arguments it reads `FILE2RECORDS_API_KEY` and `FILE2RECORDS_ENDPOINT`. Raises `RuntimeError`
+if the key is rejected or the endpoint can't be reached.
+
+## `fr.rwth(name=None, api_key=None)`
+
+The same for RWTH KI:connect, with the endpoint filled in. The key comes from `RWTH_API_KEY`
+unless you pass `api_key`.
 
 ## Errors
 

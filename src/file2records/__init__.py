@@ -8,8 +8,8 @@
 
 See project.py for the API, cli.py for the command line, main.py for the web app.
 """
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
-from .project import Project, rwth  # noqa: E402
+from .project import Project, connect, rwth  # noqa: E402
 
-__all__ = ["Project", "rwth", "__version__"]
+__all__ = ["Project", "connect", "rwth", "__version__"]

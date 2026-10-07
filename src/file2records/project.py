@@ -28,6 +28,11 @@ FIELD_TYPES = {str: "string", float: "number", int: "integer", bool: "boolean"}
 class Project:
     def __init__(self, path="workspace"):
         self.path = storage.use(path)
+        # API keys from .env in the project folder and in the current folder, as the command
+        # line and the browser read them. Neither overrides a variable already set.
+        from dotenv import load_dotenv
+        load_dotenv(self.path / ".env")
+        load_dotenv(Path.cwd() / ".env")
 
     def __repr__(self):
         return f"Project({str(self.path)!r})"
@@ -104,16 +109,16 @@ class Project:
     # ---------- the model stages ----------
 
     def check(self, stage: str = "extract", model=None) -> list[str]:
-        """What is missing before `stage` can run. Empty means ready."""
+        """What is missing before `stage` can run; empty means ready. Once the rest is in
+        place this asks the model's endpoint, so it also catches a wrong key or address."""
         self._open()
-        return pipeline.blockers(stage, None if model is None else
-                                 pipeline.resolve_model(model, stage))
+        return pipeline.ready(stage, model)[1]
 
     def extract(self, model=None, *, only: str | None = None, exclude: str | None = None,
                 redo: bool = False, on_paper: Callable[[dict], None] | None = None) -> list[dict]:
         """Extract records from every paper not extracted yet (all of them with `redo`),
-        limited by `only` / `exclude` if given. `model` is a litellm model string,
-        "rwth/<name>", fr.rwth(...), or None for the model chosen in the project's settings."""
+        limited by `only` / `exclude` if given. `model` is fr.connect(...), fr.rwth(...), a
+        litellm model string, or None for the model in Settings or FILE2RECORDS_API_KEY."""
         return self._run("extract", model, only, exclude, redo, on_paper)
 
     def judge(self, model=None, *, only: str | None = None, exclude: str | None = None,
@@ -123,8 +128,7 @@ class Project:
 
     def _run(self, stage, model, only, exclude, redo, on_paper):
         self._open()
-        params = pipeline.resolve_model(model, stage)
-        missing = pipeline.blockers(stage, None if model is None else params)
+        params, missing = pipeline.ready(stage, model)
         if missing:
             raise RuntimeError(" ".join(missing))
         ids = filters.select(pipeline.paper_ids(), only, exclude)
@@ -165,7 +169,14 @@ class Project:
         return filters.select(pipeline.paper_ids(), only, exclude) if (only or exclude) else None
 
 
-def rwth(name: str = pipeline.RWTH_DEFAULT, api_key: str | None = None) -> dict:
+def connect(api_key: str | None = None, endpoint: str | None = None,
+            model: str | None = None) -> dict:
+    """A model from your API key, plus the endpoint for services like RWTH KI:connect. The
+    model is chosen for you unless `model` (or part of its name) says otherwise."""
+    return pipeline.connect(api_key, endpoint, model)
+
+
+def rwth(name: str | None = None, api_key: str | None = None) -> dict:
     """A model on RWTH's KI:connect (free for its open models). Key from RWTH_API_KEY."""
     return pipeline.rwth(name, api_key)
 

@@ -36,7 +36,9 @@ def public(profile: dict, key_is_set) -> dict:
         "key_set": key_is_set(key_var(profile["id"])),
         # Answered by litellm's own router, so the interface can say "this model string will not
         # route" while the model is being configured, instead of at the first paid call.
-        "provider_problem": llm.provider_problem(profile.get("model", "")),
+        # With an endpoint the prefix is added for you, so a bare name is not a problem there.
+        "provider_problem": "" if profile.get("api_base") else
+                            llm.provider_problem(profile.get("model", "")),
     }
 
 
@@ -82,6 +84,11 @@ def call_params(profile_id: str) -> dict:
         params["api_base"] = profile["api_base"]
     if profile.get("api_version"):
         params["api_version"] = profile["api_version"]
+    # No model, or a bare name with an endpoint: ask the service which models it has and add
+    # litellm's prefix, so nobody has to know model ids or that an endpoint means "openai/".
+    if secret and "/" not in params["model"] and (profile.get("api_base") or not params["model"]):
+        from . import llm
+        params.update(llm.connect(secret, profile["api_base"], params["model"] or None))
     return params
 
 
@@ -93,13 +100,12 @@ def blockers(profile_id: str, stage_label: str) -> list[str]:
     profile = get(profile_id)
     if not profile:
         return [f"The model chosen for {stage_label} no longer exists. Pick another in Settings."]
-    if not profile.get("model"):
-        return [f"The model for {stage_label} has no model string. Add one in Settings."]
     missing = []
     if not os.environ.get(key_var(profile_id)):
-        missing.append(f"{profile.get('name') or profile['model']} has no API key. "
-                       f"Add it in Settings.")
+        missing.append(f"{profile.get('name') or profile['model'] or profile['api_base']} has no "
+                       f"API key. Add it in Settings.")
     from . import llm
-    if problem := llm.provider_problem(profile["model"]):
+    if profile.get("model") and not profile.get("api_base") and \
+            (problem := llm.provider_problem(profile["model"])):
         missing.append(problem)
     return missing

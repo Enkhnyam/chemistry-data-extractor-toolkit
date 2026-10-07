@@ -328,7 +328,7 @@ function guideHTML(status) {
   if (status.is_demo) return demoBannerHTML(status);
   const steps = [
     { done: status.has_model, label: 'Add a model',
-      hint: 'a model string and its API key', href: '#/settings' },
+      hint: 'an API key, and an endpoint if needed', href: '#/settings' },
     { done: status.has_schema, label: 'Define the fields',
       hint: 'what one record should contain', href: '#/settings' },
     { done: status.has_extract_prompt, label: 'Write the extraction prompt',
@@ -1995,8 +1995,9 @@ async function renderSettings(gen) {
         <h2>Models${help('One entry per endpoint you call. Extraction and judging pick ' +
           'separately, so you can extract with a strong model and audit with a cheaper or ' +
           'deliberately different one.')}</h2>
-        <p class="lede">Each entry is a model string, a key and, if the provider needs one, an
-          endpoint. Keys are written to this project's local <code>.env</code> and never shown again.</p>
+        <p class="lede">Each entry is an API key and, for services such as RWTH KI:connect, the
+          endpoint. The model is picked for you. Keys are written to this project's local
+          <code>.env</code> and never shown again.</p>
         <div id="model-list"></div>
         <button id="add-model" style="margin-top:8px">${icon('plus')}Add a model</button>
         <button id="add-rwth" style="margin-top:8px" title="RWTH Aachen's KI:connect: OpenAI-compatible, and its open models are free to use. Create a key at chat.kiconnect.nrw under API Key Management.">${icon('plus')}Add RWTH KI:connect</button>
@@ -2095,18 +2096,19 @@ async function renderSettings(gen) {
           <button class="m-remove danger iconly" data-i="${i}" title="remove this model">${icon('trash')}</button>
         </div>
         <div class="modelgrid">
-          <label>Model string${help('litellm format: gpt-4o-mini, anthropic/claude-sonnet-4-5, ' +
-            'ollama/llama3, azure/your-deployment-name. With an endpoint of your own, use ' +
-            'List models below rather than guessing \u2014 the name is often not what you expect.')}
-            <input class="m-model" value="${esc(m.model || '')}" placeholder="${esc(ph.model)}"
-              list="ml-${i}" autocomplete="off">
-            <datalist id="ml-${i}"></datalist></label>
           <label>API key${help('Stored in .env under this entry\'s own variable, so two ' +
             'providers never fight over one OPENAI_API_KEY.')}
-            <input class="m-key" type="password" placeholder="${m.key_set ? '•••••••• saved — type to replace' : 'paste the key'}"></label>
-          <label>Endpoint <span class="muted">optional</span>${help('Only for providers that need ' +
-            'an explicit base URL — Azure, a local server, a proxy. Leave empty otherwise.')}
-            <input class="m-base" value="${esc(m.api_base || '')}" placeholder="https://your-resource.openai.azure.com"></label>
+            <input class="m-key" type="password" placeholder="${m.key_set ? '•••••••• saved, type to replace' : 'paste the key'}"></label>
+          <label>Endpoint <span class="muted">if needed</span>${help('Needed for RWTH KI:connect, ' +
+            'Azure, or a server of your own. Not needed for OpenAI, Anthropic, Gemini, Groq or ' +
+            'xAI keys: those are recognized from the key.')}
+            <input class="m-base" value="${esc(m.api_base || '')}" placeholder="https://chat.kiconnect.nrw/api/v1"></label>
+          <label>Model <span class="muted">optional</span>${help('Leave empty and a good model ' +
+            'the service offers is picked for you. To choose, type part of its name, such as ' +
+            'mistral, or use List models.')}
+            <input class="m-model" value="${esc(m.model || '')}" placeholder="picked for you"
+              list="ml-${i}" autocomplete="off">
+            <datalist id="ml-${i}"></datalist></label>
           <label>API version <span class="muted">optional</span>${help('Azure requires this; ' +
             'almost nothing else does.')}
             <input class="m-version" value="${esc(m.api_version || '')}" placeholder="2024-12-01-preview"></label>
@@ -2222,7 +2224,7 @@ async function renderSettings(gen) {
   // RWTH's endpoint filled in, with its free open model; "List models" shows the rest.
   document.getElementById('add-rwth').addEventListener('click', () => {
     collectModels();
-    profiles.push({ id: '', name: 'RWTH gpt-oss-120b', model: 'openai/gpt-oss-120b',
+    profiles.push({ id: '', name: 'RWTH KI:connect', model: '',
                     api_base: 'https://chat.kiconnect.nrw/api/v1/', api_version: '', key_set: false });
     paintModels(); paintStageSelects(); markDirty();
   });

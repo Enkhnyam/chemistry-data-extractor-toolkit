@@ -14,7 +14,6 @@ import time
 from pathlib import Path
 from typing import Literal
 
-import httpx
 from dotenv import load_dotenv, set_key
 from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse, Response
@@ -147,18 +146,12 @@ def discover_models(profile_id: str, body: Discover):
                                       "(OpenAI, Anthropic) publish their model names instead."}
     key = body.api_key or os.environ.get(models.key_var(profile_id), "")
     try:
-        r = httpx.get(f"{base}/models", timeout=20,
-                      headers={"Authorization": f"Bearer {key}"} if key else {})
-        r.raise_for_status()
-        payload = r.json()
-    except Exception as e:
-        return {"ok": False, "error": f"{type(e).__name__}: {str(e)[:200]}"}
-    entries = payload.get("data", payload) if isinstance(payload, dict) else payload
-    ids = [m.get("id") for m in entries if isinstance(m, dict) and m.get("id")] \
-        if isinstance(entries, list) else []
+        ids = llm.list_models(base, key)
+    except RuntimeError as e:
+        return {"ok": False, "error": str(e)}
     if not ids:
-        return {"ok": False, "error": f"{base}/models answered, but with nothing that looks "
-                                      f"like a model list."}
+        return {"ok": False, "error": f"{base}/models answered, but lists no model that can "
+                                      f"extract text."}
     # Prefixed here, not in the browser: what makes a string callable is litellm's business,
     # and the caller should not have to know that an endpoint implies the openai provider.
     return {"ok": True, "models": [{"id": i, "string": f"openai/{i}"} for i in sorted(ids)]}
@@ -171,9 +164,9 @@ def test_model_profile(profile_id: str):
     blocked = models.blockers(profile_id, "this model")
     if blocked:
         return {"ok": False, "error": " ".join(blocked)}
-    params = models.call_params(profile_id)
     started = time.monotonic()
     try:
+        params = models.call_params(profile_id)        # may ask the endpoint for its models
         resp = llm.complete(params, [{"role": "user", "content": "Reply with OK."}],
                             max_tokens=64)
     except Exception as e:
@@ -526,10 +519,10 @@ def run_extract(body: PaperIds):
 
 
 def _extract(body: PaperIds):
-    blockers = _blockers("extract")
-    if blockers:
-        raise HTTPException(400, " ".join(blockers))
-    return pipeline.extract(body.paper_ids, pipeline.resolve_model(None, "extract"))
+    params, missing = pipeline.ready("extract")
+    if missing:
+        raise HTTPException(400, " ".join(missing))
+    return pipeline.extract(body.paper_ids, params)
 
 
 @app.get("/api/papers/{paper_id}/extraction")
@@ -594,10 +587,10 @@ def run_judge_endpoint(body: PaperIds):
 
 
 def _judge(body: PaperIds):
-    blockers = _blockers("judge")
-    if blockers:
-        raise HTTPException(400, " ".join(blockers))
-    return pipeline.judge_papers(body.paper_ids, pipeline.resolve_model(None, "judge"))
+    params, missing = pipeline.ready("judge")
+    if missing:
+        raise HTTPException(400, " ".join(missing))
+    return pipeline.judge_papers(body.paper_ids, params)
 
 
 @app.get("/api/papers/{paper_id}/judgment")

@@ -19,11 +19,15 @@ The papers in this tutorial are XML files, so you don't need the PDF extra.
 Log in at [chat.kiconnect.nrw](https://chat.kiconnect.nrw) with your RWTH account. Click
 your name in the bottom-left corner, then **API Key Management**, then **Create Key**.
 
-Make an empty folder for the tutorial and save the key in a file called `.env`:
+Make an empty folder for the tutorial and save the key and the KI:connect address in a
+file called `.env`:
 
 ```bash title=".env"
-RWTH_API_KEY=paste-your-key-here
+FILE2RECORDS_API_KEY=paste-your-key-here
+FILE2RECORDS_ENDPOINT=https://chat.kiconnect.nrw/api/v1
 ```
+
+file2records reads this file and picks the model for you.
 
 ## 3. Download three papers
 
@@ -111,28 +115,26 @@ match the run it describes, or if it is not an experiment from this paper."""
 Before you use the model, check that nothing is missing:
 
 ```python
-print(project.check("extract", fr.rwth()))
+print(project.check("extract"))
 ```
 
 ```console
 []
 ```
 
-An empty list means the project is ready. Without a key, the list says so:
+An empty list means the project is ready, and that the key works: `check` asks KI:connect
+which models it has. With a mistyped key, the list says so:
 
 ```console
-['No RWTH key. Set RWTH_API_KEY, or create one at https://chat.kiconnect.nrw under API Key Management.']
+['https://chat.kiconnect.nrw/api/v1 rejected the API key (HTTP 401). Check that the key is complete and belongs to this service.']
 ```
 
 ## 7. Extract and check the records
 
 ```python title="tutorial.py"
-from dotenv import load_dotenv
-load_dotenv()                    # reads RWTH_API_KEY from .env
-
 papers = dict(only=r"glycoly[sz]is", exclude=r"tumou?r|positron|tomograph")
-project.extract(model=fr.rwth(), **papers, on_paper=print)
-project.judge(model=fr.rwth(), **papers, on_paper=print)
+project.extract(**papers, on_paper=print)
+project.judge(**papers, on_paper=print)
 ```
 
 As each paper finishes, the script prints how many records it produced and how long it took.

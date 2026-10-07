@@ -9,28 +9,22 @@
     file2records judge my-review
     file2records export my-review dataset.csv    (.csv, .json, or .zip for the full bundle)
 
-Every command takes the project folder first. Model commands use the model chosen in the web
-app's Settings unless --model is given: any litellm model string, or rwth/<name> for RWTH's
-KI:connect (key from RWTH_API_KEY).
+Every command takes the project folder first. Model commands use FILE2RECORDS_API_KEY (plus
+FILE2RECORDS_ENDPOINT for services like RWTH KI:connect) from the shell or a .env file, or the
+model chosen in the web app's Settings. The model is picked for you; --model chooses another by
+part of its name.
 """
 import argparse
 import os
 import sys
 from pathlib import Path
 
-from dotenv import load_dotenv
-
 from . import __version__
 
 
 def _project(folder):
     from .project import Project
-    project = Project(folder)
-    # Keys saved through the web app live in the project's .env; a .env in the current folder
-    # is read too. Neither overrides a variable already set in the shell.
-    load_dotenv(project.path / ".env")
-    load_dotenv(Path.cwd() / ".env")
-    return project
+    return Project(folder)                       # reads .env from the project and from here
 
 
 def _filters(p):
@@ -105,8 +99,7 @@ def cmd_check(args):
         ok &= stage == "judge" or not missing
         print(f"{stage}: {'ready' if not missing else 'not ready'}")
         for m in missing:
-            hint = " Or pass --model, e.g. rwth/gpt-oss-120b." if m.startswith("Choose a model") else ""
-            print(f"  - {m}{hint}")
+            print(f"  - {m}")
     return 0 if ok else 1
 
 
@@ -169,15 +162,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("check", help="say what is missing before a run")
     p.add_argument("folder", help=FOLDER)
-    p.add_argument("--model")
+    p.add_argument("--model", help="part of a model name to check instead of the default")
     p.set_defaults(func=cmd_check)
 
     for stage, text in (("extract", "extract records from papers not extracted yet"),
                         ("judge", "audit extracted records with a second model")):
         p = sub.add_parser(stage, help=text)
         p.add_argument("folder", help=FOLDER)
-        p.add_argument("--model", help='litellm model string, or rwth/<name> '
-                                       '(default: the model chosen in Settings)')
+        p.add_argument("--model", help="part of a model name, e.g. mistral (default: picked "
+                                       "for you); or a full litellm model string")
         p.add_argument("--redo", action="store_true", help="also re-run papers already done")
         _filters(p)
         p.set_defaults(func=lambda a, s=stage: _run_stage(a, s))

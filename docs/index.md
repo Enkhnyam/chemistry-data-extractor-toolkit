@@ -60,7 +60,7 @@ around.
       ✓ PMC8877978.xml  [jats]  46 chunks  doi:10.3390/polym14040656
     3 added, 0 failed
 
-    $ file2records extract my-review --model rwth/gpt-oss-120b --only "glycoly[sz]is"
+    $ file2records extract my-review --only "glycoly[sz]is"
     $ file2records export my-review dataset.csv
     ```
 
@@ -71,15 +71,26 @@ around.
 
     project = fr.Project("my-review")
     project.add("papers/")
-    project.extract(model=fr.rwth(), only=r"glycoly[sz]is")
+    project.extract(only=r"glycoly[sz]is")
     project.export("dataset.csv")
     ```
 
 All three work on the same project folder. You can run the extraction from a script and
 review it in the browser afterwards.
 
+The command line and Python find your model through two lines in a `.env` file. You don't
+need a model name:
+
+```bash title=".env"
+FILE2RECORDS_API_KEY=your-key
+FILE2RECORDS_ENDPOINT=https://chat.kiconnect.nrw/api/v1
+```
+
+The endpoint line is for services such as RWTH KI:connect. Keys from OpenAI, Anthropic,
+Gemini, Groq and xAI don't need it. See [Connect your model](how-to/connect.md).
+
 ## Next steps
 
 The [tutorial](tutorial.md) builds a small PET glycolysis dataset from three real papers and
-takes about 15 minutes. After that, the how-to guides cover single tasks, starting with
-[using RWTH KI:connect](how-to/rwth.md) and [adding your own papers](how-to/add-papers.md).
+takes about 15 minutes. After that, the how-to guides cover single tasks. Start with
+[Connect your model](how-to/connect.md), then [Add papers in any format](how-to/add-papers.md).

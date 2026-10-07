@@ -15,49 +15,96 @@ from .storage import paper_id_for, require, write_json
 # RWTH's KI:connect service: OpenAI-compatible, unmetered for its open models. Spelled out once
 # here so a researcher writes "rwth/gpt-oss-120b" instead of an endpoint and a provider prefix.
 RWTH_API_BASE = "https://chat.kiconnect.nrw/api/v1/"
-RWTH_DEFAULT = "gpt-oss-120b"
 RWTH_KEY_VAR = "RWTH_API_KEY"
+# The zero-configuration route: a key, plus the endpoint for services that need one. Read from
+# the environment or a .env file, and used whenever no model was chosen in Settings.
+KEY_VAR, ENDPOINT_VAR = "FILE2RECORDS_API_KEY", "FILE2RECORDS_ENDPOINT"
+NO_MODEL = (f"No model yet. Put {KEY_VAR}=<your key> in a .env file (and "
+            f"{ENDPOINT_VAR}=<address> for services like RWTH KI:connect), or choose a model in "
+            f"Settings.")
 
 
-def rwth(name: str = RWTH_DEFAULT, api_key: str | None = None) -> dict:
-    """Call parameters for a model on RWTH's KI:connect. The key comes from RWTH_API_KEY unless
-    given; create one at https://chat.kiconnect.nrw (API Key Management)."""
-    name = name.removeprefix("rwth/").removeprefix("openai/")
-    return {"model": f"openai/{name}", "api_base": RWTH_API_BASE,
-            "api_key": api_key or os.environ.get(RWTH_KEY_VAR, "")}
+def rwth(name: str | None = None, api_key: str | None = None) -> dict:
+    """A model on RWTH's KI:connect: the free gpt-oss-120b unless `name` (or part of a name)
+    says otherwise. The key comes from RWTH_API_KEY unless given."""
+    return {"api_base": RWTH_API_BASE, "api_key": api_key or os.environ.get(RWTH_KEY_VAR, ""),
+            "model": (name or "").removeprefix("rwth/") or None}
+
+
+def connect(api_key: str | None = None, endpoint: str | None = None,
+            model: str | None = None) -> dict:
+    """A model from a key alone (OpenAI, Anthropic, Gemini, Groq, xAI) or a key and an endpoint
+    (RWTH KI:connect, any OpenAI-compatible server). Defaults to FILE2RECORDS_API_KEY and
+    FILE2RECORDS_ENDPOINT."""
+    return llm.connect(api_key or os.environ.get(KEY_VAR, ""),
+                       endpoint or os.environ.get(ENDPOINT_VAR) or None, model)
 
 
 def resolve_model(model, stage: str) -> dict:
-    """What to hand litellm. None means the model chosen for this stage in the project's
-    settings; a string is a litellm model string ("rwth/<name>" is the RWTH shorthand); a dict
-    is taken as it is."""
+    """What to hand litellm. May ask the endpoint which models it has, so it can raise
+    RuntimeError with a message for the user (wrong key, unreachable address).
+
+    None: the model chosen for this stage in Settings, else FILE2RECORDS_API_KEY/_ENDPOINT.
+    A string: a litellm model string, or "rwth/<name>". A dict: litellm parameters; one with a
+    key but no full model name ("openai/...") is completed by asking the endpoint."""
     if model is None:
-        return models.call_params(config.get_settings().get(f"{stage}_model", ""))
-    if isinstance(model, dict):
-        return dict(model)
+        profile = config.get_settings().get(f"{stage}_model", "")
+        if profile:
+            return models.call_params(profile)
+        return connect() if os.environ.get(KEY_VAR) else {}
+    params = given(model)
+    if params.get("api_key") and "/" not in (params.get("model") or ""):
+        params.update(llm.connect(params["api_key"], params.get("api_base"), params.get("model")))
+    return params
+
+
+def given(model) -> dict | None:
+    """The model as the caller gave it, before anything is looked up."""
+    if model is None or isinstance(model, dict):
+        return model and dict(model)
     model = str(model).strip()
     if model.startswith("rwth/"):
         return rwth(model)
+    if "/" not in model and os.environ.get(KEY_VAR):         # part of a name: look it up
+        return {k: v for k, v in {"api_key": os.environ[KEY_VAR], "model": model,
+                                  "api_base": os.environ.get(ENDPOINT_VAR)}.items() if v}
     return {"model": model}
+
+
+def ready(stage: str, model=None) -> tuple[dict, list[str]]:
+    """Call parameters for `stage`, and what is missing. Asks the endpoint only once nothing
+    else is missing, so a wrong key or address is reported here rather than mid-run."""
+    missing = blockers(stage, given(model))
+    if missing:
+        return {}, missing
+    try:
+        return resolve_model(model, stage), []
+    except RuntimeError as e:
+        return {}, [str(e)]
 
 
 def blockers(stage: str, params: dict | None = None) -> list[str]:
     """What is still missing before this stage can run, in the order a person would fix it.
+    Never touches the network: the browser asks this on every page.
 
-    With `params` the model was given directly (command line or Python) rather than chosen in
-    Settings, so the model check is about that string instead of a saved profile."""
+    `params` is the model as given on the command line or in Python, before resolve_model; None
+    means the one chosen in Settings, or the FILE2RECORDS_* environment variables."""
     label = "extraction" if stage == "extract" else "judging"
+    profile = config.get_settings().get(f"{stage}_model", "")
+    missing = []
     if params is None:
-        missing = list(models.blockers(config.get_settings().get(f"{stage}_model", ""), label))
-    else:
-        missing = []
-        if not params.get("model"):
-            missing.append(f"No model given for {label}.")
-        elif problem := llm.provider_problem(params["model"]):
-            missing.append(problem)
-        if params.get("api_base") == RWTH_API_BASE and not params.get("api_key"):
-            missing.append(f"No RWTH key. Set {RWTH_KEY_VAR}, or create one at "
-                           f"https://chat.kiconnect.nrw under API Key Management.")
+        if profile:
+            missing += models.blockers(profile, label)
+        elif not os.environ.get(KEY_VAR):
+            missing.append(NO_MODEL)
+    elif params.get("api_base") == RWTH_API_BASE and not params.get("api_key"):
+        missing.append(f"No RWTH key. Set {RWTH_KEY_VAR}, or create one at "
+                       f"https://chat.kiconnect.nrw under API Key Management.")
+    elif not params.get("model") and not params.get("api_key"):
+        missing.append(f"No model given for {label}.")
+    elif params.get("model") and not params.get("api_key") and \
+            (problem := llm.provider_problem(params["model"])):
+        missing.append(problem)
     if not config.get_schema():
         missing.append("Define the fields a record has: Settings → Schema in the web app, or "
                        "config/schema.json in the project folder.")

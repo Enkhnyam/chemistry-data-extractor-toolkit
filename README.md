@@ -18,9 +18,16 @@ import file2records as fr
 
 project = fr.Project("my-review")
 project.add("papers/")                                   # PDF, XML, HTML, Word, Markdown
-project.extract(model=fr.rwth(), only=r"glycoly[sz]is")  # RWTH_API_KEY from the environment
-project.judge(model=fr.rwth())
+project.extract(only=r"glycoly[sz]is")   # key and endpoint from .env, see below
+project.judge()
 project.export("dataset.csv")                            # one row per record, with its DOI
+```
+
+The model comes from two lines in `.env`; you don't need a model name:
+
+```bash
+FILE2RECORDS_API_KEY=your-key
+FILE2RECORDS_ENDPOINT=https://chat.kiconnect.nrw/api/v1   # only for services like RWTH KI:connect
 ```
 
 Start with the [tutorial](https://enkhnyam.github.io/chemistry-data-extractor-toolkit/tutorial/):

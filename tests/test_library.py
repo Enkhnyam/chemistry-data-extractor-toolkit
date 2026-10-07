@@ -252,13 +252,31 @@ class ProjectTests(unittest.TestCase):
         self.configure()
         self.assertTrue(any("RWTH_API_KEY" in m for m in self.project.check("extract", fr.rwth())))
 
-    def test_rwth_shorthand(self):
-        params = fr.rwth(api_key="k")
-        self.assertEqual(params["model"], "openai/gpt-oss-120b")
-        self.assertIn("kiconnect", params["api_base"])
-        from file2records import pipeline
-        self.assertEqual(pipeline.resolve_model("rwth/mistral-small", "extract")["model"],
-                         "openai/mistral-small")
+    def test_a_key_and_an_endpoint_are_enough(self):
+        """No model name, no provider prefix: the endpoint is asked what it has. The list is
+        what RWTH KI:connect really returned, embeddings and a name with spaces included."""
+        served = ["mistralai-mistral-small-4-119b", "Qwen 3.8 27B", "gpt-oss-120b",
+                  "gpt-6-luna", "gpt-6-sol", "e5-mistral-7b-instruct", "qwen3-embedding-8b"]
+        real = llm.list_models
+        llm.list_models = lambda endpoint, key: [i for i in served if not llm.NOT_CHAT.search(i)]
+        try:
+            endpoint = "https://chat.kiconnect.nrw/api/v1"
+            self.assertEqual(fr.connect("id:secret", endpoint),
+                             {"model": "openai/gpt-oss-120b", "api_base": endpoint + "/",
+                              "api_key": "id:secret"})
+            self.assertEqual(fr.connect("k", endpoint, "mistral")["model"],
+                             "openai/mistralai-mistral-small-4-119b")
+            self.assertEqual(fr.connect("k", endpoint, "qwen")["model"], "openai/Qwen 3.8 27B")
+            with self.assertRaisesRegex(RuntimeError, "matches several"):
+                fr.connect("k", endpoint, "gpt-6")
+            self.assertEqual(fr.connect("sk-ant-x")["model"], "anthropic/gpt-oss-120b")
+            with self.assertRaisesRegex(RuntimeError, "Give its endpoint"):
+                fr.connect("6ac63d:no-prefix")
+            from file2records import pipeline
+            self.assertEqual(pipeline.resolve_model(fr.rwth(api_key="k"), "extract")["model"],
+                             "openai/gpt-oss-120b")
+        finally:
+            llm.list_models = real
 
     def test_schema_from_a_pydantic_model(self):
         from pydantic import BaseModel, Field
@@ -314,7 +332,7 @@ class CliTests(unittest.TestCase):
 
         code, out = self.run_cli("check", self.dir)
         self.assertEqual(code, 1, "nothing is configured, so extraction is not ready")
-        self.assertIn("Choose a model", out)
+        self.assertIn("No model yet", out)
 
         code, out = self.run_cli("export", self.dir, self.dir / "out.json")
         self.assertEqual((code, json.loads((self.dir / "out.json").read_text())), (0, []))
