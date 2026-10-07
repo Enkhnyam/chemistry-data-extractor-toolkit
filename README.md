@@ -9,7 +9,7 @@ and comes set up for RWTH's free KI:connect models.
 Documentation: <https://enkhnyam.github.io/chemistry-data-extractor-toolkit/>
 
 ```bash
-pip install "file2records[pdf]"        # or: pip install file2records   (no PDFs, ~250 MB)
+pip install "file2records[pdf]"        # or: pip install file2records   (no PDFs, ~350 MB)
 file2records serve my-first-project    # opens a finished example in your browser
 ```
 

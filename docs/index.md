@@ -26,7 +26,7 @@ comes set up for RWTH's KI:connect models, which are free for RWTH members.
 
 The `[pdf]` part installs docling, which reads PDFs and needs PyTorch, a download of a few GB.
 If your papers are XML, HTML or Word files, `pip install file2records` is enough and takes
-about 250 MB.
+about 350 MB.
 
 ## Try it
 

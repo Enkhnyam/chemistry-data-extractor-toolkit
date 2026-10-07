@@ -334,7 +334,7 @@ function guideHTML(status) {
     { done: status.has_extract_prompt, label: 'Write the extraction prompt',
       hint: 'what to pull out of each paper', href: '#/settings' },
     { done: status.papers > 0, label: 'Add papers',
-      hint: 'drop in some PDFs', href: '#/parse' },
+      hint: 'drop in PDF, XML, HTML or Word files', href: '#/parse' },
   ];
   const next = steps.find(s => !s.done);
   if (!next) return '';
