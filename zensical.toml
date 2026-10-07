@@ -12,18 +12,28 @@ edit_uri = "edit/main/docs/"
 
 nav = [
   { "Home" = "index.md" },
-  { "Get started" = "tutorial.md" },
-  { "How-to guides" = [
-    { "Set up API access" = "how-to/connect.md" },
-    { "Run it from a script" = "how-to/script.md" },
-    { "Add papers in any format" = "how-to/add-papers.md" },
-    { "Choose papers with a regex" = "how-to/choose-papers.md" },
-    { "Write the schema and prompts" = "how-to/schema-and-prompts.md" },
-    { "Review and export" = "how-to/review-and-export.md" },
+  { "Get started" = [
+    "get-started/index.md",
+    { "1. Install" = "get-started/install.md" },
+    { "2. Set up API access" = "get-started/api-access.md" },
+    { "3. Create a project" = "get-started/project.md" },
+    { "4. Add papers" = "get-started/papers.md" },
+    { "5. Define the fields" = "get-started/fields.md" },
+    { "6. Write the prompt" = "get-started/prompt.md" },
+    { "7. Choose papers" = "get-started/choose.md" },
+    { "8. Extract" = "get-started/extract.md" },
+    { "9. Judge and review" = "get-started/judge.md" },
+    { "10. Export" = "get-started/export.md" },
+    { "All steps in one script" = "get-started/script.md" },
+  ] },
+  { "Going further" = [
+    { "Write better fields and prompts" = "guides/prompts.md" },
+    { "Paper formats" = "guides/formats.md" },
+    { "Use the command line" = "guides/command-line.md" },
   ] },
   { "Reference" = [
-    { "Command line" = "reference/cli.md" },
     { "Python API" = "reference/python.md" },
+    { "Command line" = "reference/cli.md" },
   ] },
   { "Examples" = [
     { "RWTH KI:connect" = "examples/rwth-kiconnect.md" },

@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 620" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif">
+  <title>How file2records works: parse your papers, extract records with a language model, judge them with a second pass, review and export</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#5b6b82"/>
+    </marker>
+    <style>
+      .h   { font-size: 24px; font-weight: 700; fill: #1f2a3a; }
+      .t   { font-size: 15px; fill: #1f2a3a; }
+      .s   { font-size: 13px; fill: #5b6b82; }
+      .m   { font-size: 13px; font-family: ui-monospace, Menlo, Consolas, monospace; fill: #1f2a3a; }
+      .num { font-size: 20px; font-weight: 700; fill: #fff; }
+      .line { stroke: #b9c7d8; stroke-width: 6; stroke-linecap: round; }
+    </style>
+  </defs>
+  <rect width="1280" height="620" rx="18" fill="#f7f9fc"/>
+
+  <!-- papers -->
+  <g transform="translate(24,150)">
+    <rect x="18" y="0" width="82" height="104" rx="8" fill="#fff" stroke="#9fb0c6" stroke-width="2"/>
+    <rect x="9" y="9" width="82" height="104" rx="8" fill="#fff" stroke="#9fb0c6" stroke-width="2"/>
+    <rect x="0" y="18" width="82" height="104" rx="8" fill="#fff" stroke="#7f93ad" stroke-width="2"/>
+    <rect x="10" y="40" width="44" height="20" rx="4" fill="#d6453b"/><text x="32" y="55" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">PDF</text>
+    <rect x="10" y="66" width="44" height="20" rx="4" fill="#2f7d5b"/><text x="32" y="81" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">XML</text>
+    <line x1="10" y1="100" x2="70" y2="100" class="line" stroke-width="4"/>
+    <text x="50" y="160" text-anchor="middle" class="t" font-weight="700">Your papers</text>
+    <text x="50" y="180" text-anchor="middle" class="s">PDF · XML · HTML</text>
+    <text x="50" y="197" text-anchor="middle" class="s">Word · Markdown</text>
+  </g>
+  <line x1="150" y1="240" x2="178" y2="240" stroke="#5b6b82" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- 1 read -->
+  <g transform="translate(184,40)">
+    <rect width="250" height="380" rx="14" fill="#fff" stroke="#6ea8e8" stroke-width="2.5"/>
+    <path d="M0,14 a14,14 0 0 1 14,-14 h222 a14,14 0 0 1 14,14 v52 h-250 z" fill="#e6f0fc"/>
+    <circle cx="36" cy="33" r="19" fill="#2f74d0"/><text x="36" y="40" text-anchor="middle" class="num">1</text>
+    <text x="66" y="41" class="h">Parse</text>
+    <g transform="translate(28,90)">
+      <rect width="194" height="46" rx="7" fill="#f2f7fd" stroke="#a9c8ee"/><line x1="14" y1="17" x2="150" y2="17" class="line" stroke="#a9c8ee"/><line x1="14" y1="31" x2="110" y2="31" class="line" stroke="#a9c8ee"/>
+      <rect y="58" width="194" height="58" rx="7" fill="#f2f7fd" stroke="#a9c8ee"/>
+      <g stroke="#7aa6dd" stroke-width="1.5" fill="none"><rect x="14" y="70" width="166" height="34" rx="3"/><line x1="14" y1="81" x2="180" y2="81"/><line x1="14" y1="92" x2="180" y2="92"/><line x1="70" y1="70" x2="70" y2="104"/><line x1="125" y1="70" x2="125" y2="104"/></g>
+      <rect y="128" width="194" height="46" rx="7" fill="#f2f7fd" stroke="#a9c8ee"/><line x1="14" y1="145" x2="160" y2="145" class="line" stroke="#a9c8ee"/><line x1="14" y1="159" x2="120" y2="159" class="line" stroke="#a9c8ee"/>
+    </g>
+    <text x="125" y="286" text-anchor="middle" class="t">Each paper is split into</text>
+    <text x="125" y="306" text-anchor="middle" class="t">paragraphs and tables,</text>
+    <text x="125" y="326" text-anchor="middle" class="t">each with an ID</text>
+  </g>
+  <line x1="440" y1="230" x2="468" y2="230" stroke="#5b6b82" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- 2 extract -->
+  <g transform="translate(474,40)">
+    <rect width="250" height="380" rx="14" fill="#fff" stroke="#5cbf8c" stroke-width="2.5"/>
+    <path d="M0,14 a14,14 0 0 1 14,-14 h222 a14,14 0 0 1 14,14 v52 h-250 z" fill="#e5f6ec"/>
+    <circle cx="36" cy="33" r="19" fill="#22985b"/><text x="36" y="40" text-anchor="middle" class="num">2</text>
+    <text x="66" y="41" class="h">Extract</text>
+    <g transform="translate(28,96)">
+      <rect width="194" height="150" rx="8" fill="#f3fbf6" stroke="#9fdab9"/>
+      <line x1="104" y1="0" x2="104" y2="150" stroke="#9fdab9"/>
+      <line x1="0" y1="37" x2="194" y2="37" stroke="#9fdab9"/><line x1="0" y1="75" x2="194" y2="75" stroke="#9fdab9"/><line x1="0" y1="112" x2="194" y2="112" stroke="#9fdab9"/>
+      <text x="12" y="24" class="m">catalyst</text><text x="116" y="24" class="m">Ni/Al2O3</text>
+      <text x="12" y="62" class="m">temp_c</text><text x="116" y="62" class="m">450</text>
+      <text x="12" y="99" class="m">conversion</text><text x="116" y="99" class="m">67.9</text>
+      <text x="12" y="137" class="m">selectivity</text><text x="116" y="137" class="m">95.1</text>
+    </g>
+    <text x="125" y="286" text-anchor="middle" class="t">A language model reads</text>
+    <text x="125" y="306" text-anchor="middle" class="t">each paper and fills</text>
+    <text x="125" y="326" text-anchor="middle" class="t">the fields you defined</text>
+  </g>
+  <line x1="730" y1="230" x2="758" y2="230" stroke="#5b6b82" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- 3 check -->
+  <g transform="translate(764,40)">
+    <rect width="250" height="380" rx="14" fill="#fff" stroke="#9b84d9" stroke-width="2.5"/>
+    <path d="M0,14 a14,14 0 0 1 14,-14 h222 a14,14 0 0 1 14,14 v52 h-250 z" fill="#efeafb"/>
+    <circle cx="36" cy="33" r="19" fill="#6c4fc4"/><text x="36" y="40" text-anchor="middle" class="num">3</text>
+    <text x="66" y="41" class="h">Judge</text>
+    <g transform="translate(28,96)">
+      <rect width="194" height="150" rx="8" fill="#f7f4fe" stroke="#cbbdf0"/>
+      <circle cx="24" cy="28" r="12" fill="#22985b"/><path d="M18,28 l4,5 l9,-10" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <text x="44" y="33" class="t" font-weight="700">correct</text>
+      <line x1="14" y1="56" x2="176" y2="56" class="line" stroke="#d9cff5" stroke-width="5"/>
+      <line x1="14" y1="70" x2="130" y2="70" class="line" stroke="#d9cff5" stroke-width="5"/>
+      <circle cx="24" cy="102" r="12" fill="#c98a1c"/><text x="24" y="107" text-anchor="middle" font-size="15" font-weight="700" fill="#fff">!</text>
+      <text x="44" y="107" class="t" font-weight="700">suggested fix</text>
+      <line x1="14" y1="130" x2="160" y2="130" class="line" stroke="#d9cff5" stroke-width="5"/>
+    </g>
+    <text x="125" y="286" text-anchor="middle" class="t">A second pass checks</text>
+    <text x="125" y="306" text-anchor="middle" class="t">every record against</text>
+    <text x="125" y="326" text-anchor="middle" class="t">the paper</text>
+  </g>
+  <line x1="1020" y1="230" x2="1048" y2="230" stroke="#5b6b82" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- 4 review & export -->
+  <g transform="translate(1054,40)">
+    <rect width="206" height="380" rx="14" fill="#fff" stroke="#4fb3c4" stroke-width="2.5"/>
+    <path d="M0,14 a14,14 0 0 1 14,-14 h178 a14,14 0 0 1 14,14 v52 h-206 z" fill="#e3f4f7"/>
+    <circle cx="36" cy="33" r="19" fill="#1d8fa3"/><text x="36" y="40" text-anchor="middle" class="num">4</text>
+    <text x="64" y="41" class="h">Review</text>
+    <g transform="translate(22,96)">
+      <rect width="76" height="100" rx="6" fill="#f2fafb" stroke="#a7dbe3"/>
+      <line x1="10" y1="16" x2="64" y2="16" class="line" stroke="#c7e7ec" stroke-width="5"/><rect x="8" y="30" width="60" height="14" rx="3" fill="#bfe3ff"/><line x1="10" y1="58" x2="56" y2="58" class="line" stroke="#c7e7ec" stroke-width="5"/><line x1="10" y1="72" x2="64" y2="72" class="line" stroke="#c7e7ec" stroke-width="5"/>
+      <rect x="86" width="76" height="100" rx="6" fill="#f2fafb" stroke="#a7dbe3"/>
+      <line x1="96" y1="16" x2="150" y2="16" class="line" stroke="#c7e7ec" stroke-width="5"/><rect x="94" y="30" width="60" height="14" rx="3" fill="#bfe3ff"/><line x1="96" y1="58" x2="150" y2="58" class="line" stroke="#c7e7ec" stroke-width="5"/><line x1="96" y1="72" x2="140" y2="72" class="line" stroke="#c7e7ec" stroke-width="5"/>
+      <rect x="10" y="118" width="64" height="30" rx="6" fill="#2f74d0"/><text x="42" y="138" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">CSV</text>
+      <rect x="90" y="118" width="64" height="30" rx="6" fill="#1f2a3a"/><text x="122" y="138" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">JSON</text>
+    </g>
+    <text x="103" y="286" text-anchor="middle" class="t">You review each value</text>
+    <text x="103" y="306" text-anchor="middle" class="t">next to its source,</text>
+    <text x="103" y="326" text-anchor="middle" class="t">then export</text>
+  </g>
+
+  <!-- where things run -->
+  <g transform="translate(24,450)">
+    <rect width="1232" height="146" rx="14" fill="#fff" stroke="#d5dde8" stroke-width="2"/>
+    <text x="28" y="40" class="t" font-weight="700">On your machine</text>
+    <text x="28" y="64" class="s">Your project folder: papers, fields, prompts, records. No database.</text>
+    <g transform="translate(28,82)" class="s">
+      <rect width="150" height="40" rx="8" fill="#f2f5f9"/><text x="75" y="25" text-anchor="middle" class="t">project folder</text>
+      <rect x="166" width="150" height="40" rx="8" fill="#f2f5f9"/><text x="241" y="25" text-anchor="middle" class="t">your fields</text>
+      <rect x="332" width="150" height="40" rx="8" fill="#f2f5f9"/><text x="407" y="25" text-anchor="middle" class="t">your prompts</text>
+      <rect x="498" width="150" height="40" rx="8" fill="#f2f5f9"/><text x="573" y="25" text-anchor="middle" class="t">browser app</text>
+    </g>
+    <line x1="720" y1="22" x2="720" y2="124" stroke="#d5dde8" stroke-width="2"/>
+    <text x="756" y="40" class="t" font-weight="700">Your AI service</text>
+    <text x="756" y="64" class="s">Receives the paper text in steps 2 and 3, nothing else.</text>
+    <text x="756" y="84" class="s">For example your university's service, such as</text>
+    <text x="756" y="104" class="s">RWTH KI:connect, or any OpenAI-compatible API.</text>
+    <g transform="translate(1150,40)">
+      <path d="M10,40 a18,18 0 0 1 4,-35 a24,24 0 0 1 44,6 a16,16 0 0 1 4,29 z" fill="#e6f0fc" stroke="#6ea8e8" stroke-width="2"/>
+    </g>
+  </g>
+</svg>

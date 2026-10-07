@@ -1,14 +1,8 @@
-# Add papers in any format
-
-To add papers, give `add` files or folders. It searches folders, including subfolders, for
-files it can read.
-
-```bash
-file2records add my-review papers/
-```
+# Paper formats
 
 file2records works out a file's format from its contents, so a file with the wrong extension
-still reads correctly.
+still reads correctly. In Python, `project.add` takes files and folders, and searches
+folders, including subfolders, for files it can read.
 
 | Format | Typical source | Notes |
 |---|---|---|
@@ -48,7 +42,7 @@ curl -H "X-ELS-APIKey: $ELSEVIER_KEY" -H "Accept: text/xml" -o paper.xml \
 ```
 
 Elsevier's terms let you mine these papers but not share them. See
-[Share a dataset](review-and-export.md#share-a-dataset).
+[Share a dataset](../get-started/export.md#share-a-dataset).
 
 ## Troubleshooting
 

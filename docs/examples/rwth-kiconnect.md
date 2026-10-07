@@ -2,7 +2,7 @@
 
 This page shows how to get API access from RWTH Aachen's KI:connect and connect it to
 file2records. Other organizations' services work the same way; see
-[Set up API access](../how-to/connect.md) for the general steps.
+[Set up API access](../get-started/api-access.md) for the general steps.
 
 ## 1. Get the endpoint and an API key
 

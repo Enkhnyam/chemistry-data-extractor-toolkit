@@ -41,3 +41,6 @@ glycolyzis
 Groq
 Python
 MPa
+methanation
+photothermal
+photocatalytic

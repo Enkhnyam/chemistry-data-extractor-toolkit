@@ -91,14 +91,14 @@ def blockers(stage: str, params: dict | None = None) -> list[str]:
             (problem := llm.provider_problem(params["model"])):
         missing.append(problem)
     if not config.get_schema():
-        missing.append("Define the fields a record has: Settings → Schema in the web app, or "
-                       "config/schema.json in the project folder.")
+        missing.append("Define the fields a record has: Settings → Schema in the browser, or "
+                       "project.schema in Python.")
     if stage == "extract" and not config.get_extract_prompt().strip():
-        missing.append("Write an extraction prompt (in the web app, or config/extract_prompt.txt). "
-                       "Until you do, nothing tells the model what to pull out.")
+        missing.append("Write the extraction prompt: on the Extract page in the browser, or "
+                       "project.prompt in Python.")
     if stage == "judge" and not config.get_judge_prompt().strip():
-        missing.append("Write a judge rubric (in the web app, or config/judge_prompt.txt). "
-                       "Until you do, nothing tells the model what counts as a good record.")
+        missing.append("Write the judge rubric: on the Judge page in the browser, or "
+                       "project.rubric in Python.")
     return missing
 
 
