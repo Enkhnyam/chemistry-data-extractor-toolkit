@@ -76,6 +76,21 @@ class Project:
         self._open()
         config.save_judge_prompt(_text(text))
 
+    @property
+    def examples(self) -> list[dict]:
+        """Worked examples: [{"text": a piece of a paper, "records": the records it should
+        give}, ...]. Each one is shown to the model before every paper."""
+        self._open()
+        return config.get_few_shot()
+
+    @examples.setter
+    def examples(self, value: list[dict]):
+        self._open()
+        for i, example in enumerate(value, 1):
+            if not str(example.get("text", "")).strip() or not isinstance(example.get("records"), list):
+                raise ValueError(f"Example {i} needs a 'text' and a list of 'records'.")
+        config.save_few_shot([{"text": e["text"], "records": e["records"]} for e in value])
+
     # ---------- papers ----------
 
     def add(self, *paths, source_tracking: bool = True,
@@ -185,7 +200,14 @@ def _text(value) -> str:
 
 
 def _fields(value) -> list[dict]:
-    """A schema given as a list of fields, a JSON file, or a pydantic model class."""
+    """A schema given as a dict, a list of fields, a JSON file, or a pydantic model class.
+
+    The dict is the readable form: {"temperature_c": ("number", "Reaction temperature in °C")},
+    or {"catalyst": "Catalyst as the paper names it"} for a text field."""
+    if isinstance(value, dict):
+        value = [{"name": name, **({"type": spec[0], "description": spec[1]}
+                                   if isinstance(spec, (tuple, list)) else {"description": spec})}
+                 for name, spec in value.items()]
     if isinstance(value, (str, Path)):
         data = json.loads(Path(value).read_text(encoding="utf-8"))
         value = data["fields"] if isinstance(data, dict) else data

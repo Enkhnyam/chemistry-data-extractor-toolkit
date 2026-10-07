@@ -18,7 +18,7 @@ pip install file2records
 ```
 
 To read PDF files too, install `"file2records[pdf]"` instead. See
-[Install file2records](get-started/install.md).
+[Install](setup/install.md).
 
 ## Look at a finished example
 
@@ -47,17 +47,21 @@ Both work on the same project folder, and you can switch between them at any tim
 === "Python"
 
     ```python
+    from pathlib import Path
     import file2records as fr
 
     project = fr.Project("my-project")
     project.add("papers")
-    project.schema = Experiment          # your fields, as a class
-    project.prompt = "Extract every ..."
+    project.schema = {
+        "catalyst": ("string", "Catalyst as the paper names it"),
+        "temperature_c": ("number", "Reaction temperature in °C"),
+    }
+    project.prompt = Path("prompt.txt")
     project.extract()
     project.export("dataset.csv")
     ```
 
 ## Next steps
 
-[Get started](get-started/index.md) walks you through the whole pipeline once, step by step,
+[Get started](get-started.md) walks you through the whole pipeline once, step by step,
 with three real papers on CO₂ hydrogenation catalysts. It takes about 20 minutes.

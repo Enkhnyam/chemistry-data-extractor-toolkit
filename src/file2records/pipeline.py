@@ -17,6 +17,7 @@ from .storage import paper_id_for, require, write_json
 # The three things an AI service gives you, read from the shell or a .env file whenever no model
 # was chosen in the browser's Settings.
 KEY_VAR, ENDPOINT_VAR, MODEL_VAR = "FILE2RECORDS_API_KEY", "FILE2RECORDS_ENDPOINT", "FILE2RECORDS_MODEL"
+JUDGE_MODEL_VAR = "FILE2RECORDS_JUDGE_MODEL"     # optional: judge with a different model
 NO_MODEL = (f"No model yet. Add one in Settings, or put {ENDPOINT_VAR}, {KEY_VAR} and "
             f"{MODEL_VAR} in a .env file.")
 
@@ -41,7 +42,9 @@ def resolve_model(model, stage: str) -> dict:
         profile = config.get_settings().get(f"{stage}_model", "")
         if profile:
             return models.call_params(profile)
-        return connect() if os.environ.get(KEY_VAR) else {}
+        if not os.environ.get(KEY_VAR):
+            return {}
+        return connect(model=os.environ.get(JUDGE_MODEL_VAR) if stage == "judge" else None)
     params = given(model)
     if params.get("api_key") and "/" not in (params.get("model") or ""):
         params.update(llm.connect(params["api_key"], params.get("api_base"), params.get("model")))

@@ -30,15 +30,21 @@ file2records serve my-project       # your own project
 ## Use it from Python
 
 ```python
+from pathlib import Path
 import file2records as fr
 
 project = fr.Project("my-project")
-project.add("papers")                              # PDF, XML, HTML, Word, Markdown
-project.schema = Experiment                        # your fields, as a pydantic class
-project.prompt = "Extract every ..."               # what counts as one record
-project.extract(only=r"hydrogenation")             # only papers whose text matches
-project.judge()                                    # a second pass checks every record
-project.export("dataset.csv")                      # one row per record, with its DOI
+project.add("papers")                    # PDF, XML, HTML, Word, Markdown
+
+project.schema = {                       # the columns of your dataset
+    "catalyst": ("string", "Catalyst as the paper names it"),
+    "temperature_c": ("number", "Reaction temperature in °C"),
+}
+project.prompt = Path("prompt.txt")      # what counts as one record
+
+project.extract(only=r"hydrogenation")   # only papers whose text matches
+project.judge()                          # a second pass checks every record
+project.export("dataset.csv")            # one row per record, with its DOI
 ```
 
 The model comes from a `.env` file with three values from your AI service:

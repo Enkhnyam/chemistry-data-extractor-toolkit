@@ -5,7 +5,7 @@ project's fields and prompts in the browser or in Python. It's useful for long r
 or in a scheduled job.
 
 It reads the model settings from the same `.env` file as Python
-([step 3](../get-started/project.md)).
+([step 3](../setup/models.md)).
 
 ```bash
 file2records add my-project papers/       # add papers

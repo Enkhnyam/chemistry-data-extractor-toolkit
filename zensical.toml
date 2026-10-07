@@ -12,21 +12,28 @@ edit_uri = "edit/main/docs/"
 
 nav = [
   { "Home" = "index.md" },
-  { "Get started" = [
-    "get-started/index.md",
-    { "1. Install" = "get-started/install.md" },
-    { "2. Set up API access" = "get-started/api-access.md" },
-    { "3. Create a project" = "get-started/project.md" },
-    { "4. Add papers" = "get-started/papers.md" },
-    { "5. Define the fields" = "get-started/fields.md" },
-    { "6. Write the prompt" = "get-started/prompt.md" },
-    { "7. Choose papers" = "get-started/choose.md" },
-    { "8. Extract" = "get-started/extract.md" },
-    { "9. Judge and review" = "get-started/judge.md" },
-    { "10. Export" = "get-started/export.md" },
-    { "All steps in one script" = "get-started/script.md" },
+  { "Get started" = "get-started.md" },
+  { "Set up" = [
+    { "Install" = "setup/install.md" },
+    { "API key and endpoint" = "setup/api-key.md" },
+    { "Extraction and judge models" = "setup/models.md" },
+    { "Papers and the parser" = "setup/papers.md" },
+  ] },
+  { "Define what to extract" = [
+    { "Fields" = "define/fields.md" },
+    { "Extraction prompt" = "define/prompt.md" },
+    { "Worked examples" = "define/examples.md" },
+    { "Judge rubric" = "define/rubric.md" },
+  ] },
+  { "Run and review" = [
+    { "Choose papers" = "run/choose.md" },
+    { "Extract" = "run/extract.md" },
+    { "Judge" = "run/judge.md" },
+    { "Review" = "run/review.md" },
+    { "Export" = "run/export.md" },
   ] },
   { "Going further" = [
+    { "All steps in one script" = "guides/script.md" },
     { "Write better fields and prompts" = "guides/prompts.md" },
     { "Paper formats" = "guides/formats.md" },
     { "Use the command line" = "guides/command-line.md" },

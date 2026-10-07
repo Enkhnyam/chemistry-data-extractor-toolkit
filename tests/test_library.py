@@ -295,6 +295,32 @@ class ProjectTests(unittest.TestCase):
             {"name": "yield_percent", "type": "number", "description": ""},
             {"name": "repeats", "type": "integer", "description": ""}])
 
+    def test_schema_as_a_dict_and_examples(self):
+        self.project.schema = {"catalyst": "Catalyst as the paper names it",
+                               "temperature_c": ("number", "Reaction temperature in °C")}
+        self.assertEqual(self.project.schema, [
+            {"name": "catalyst", "description": "Catalyst as the paper names it", "type": "string"},
+            {"name": "temperature_c", "type": "number", "description": "Reaction temperature in °C"}])
+        self.project.examples = [{"text": "Run 1: Zn(OAc)2 at 196 °C.",
+                                  "records": [{"catalyst": "Zn(OAc)2", "temperature_c": 196}]}]
+        self.assertEqual(self.project.examples[0]["records"][0]["catalyst"], "Zn(OAc)2")
+        with self.assertRaisesRegex(ValueError, "needs a 'text'"):
+            self.project.examples = [{"text": "", "records": []}]
+
+    def test_the_judge_can_use_its_own_model(self):
+        from file2records import pipeline
+        real, calls = pipeline.connect, []
+        pipeline.connect = lambda api_key=None, endpoint=None, model=None: calls.append(model) or {}
+        os.environ.update(FILE2RECORDS_API_KEY="k", FILE2RECORDS_JUDGE_MODEL="mistral")
+        try:
+            pipeline.resolve_model(None, "extract")
+            pipeline.resolve_model(None, "judge")
+        finally:
+            pipeline.connect = real
+            for var in ("FILE2RECORDS_API_KEY", "FILE2RECORDS_JUDGE_MODEL"):
+                os.environ.pop(var, None)
+        self.assertEqual(calls, [None, "mistral"])
+
     def test_search_and_select(self):
         self.project.add(self.files.dir)
         hits = self.project.search(r"glycoly[sz]is")

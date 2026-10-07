@@ -1,4 +1,4 @@
-# 10. Export the dataset
+# Export
 
 === "Browser"
 
@@ -15,13 +15,14 @@
     project.export("co2_hydrogenation.csv")
     ```
 
-    If you use pandas, the records go straight into a data frame:
+    ??? note "Using pandas?"
+        The records go straight into a data frame:
 
-    ```python
-    import pandas as pd
+        ```python
+        import pandas as pd
 
-    df = pd.DataFrame(project.records())
-    ```
+        df = pd.DataFrame(project.records())
+        ```
 
 The CSV file has one row per record: your fields, the paper's DOI and title, the judge's
 verdict and reasoning, and the model that produced it. It opens in Excel or any spreadsheet
@@ -29,23 +30,31 @@ program.
 
 ## Export only some papers
 
-Use the same patterns as in [step 7](choose.md):
-
-=== "Browser"
-
-    Type the patterns into the two boxes under the export buttons on the **Report** page.
-
 === "Python"
 
     ```python
     project.export("methanation.csv", only=r"methanation")
     ```
 
+=== "Browser"
+
+    On the **Report** page, type the patterns into the two boxes under the export buttons.
+
 ## Share a dataset
 
-**Full bundle** in the browser, or a `.zip` filename in Python, exports the records
-together with what produced them: the fields, both prompts, the model settings without
-keys, and the version of file2records.
+The **full bundle** is a `.zip` file with the records and everything that produced them:
+the fields, both prompts, the worked examples, the model settings without keys, and the
+version of file2records.
+
+=== "Python"
+
+    ```python
+    project.export("co2_hydrogenation.zip")
+    ```
+
+=== "Browser"
+
+    On the **Report** page, click **Full bundle**.
 
 !!! warning "Paper text stays out unless you ask for it"
     Many publishers let institutions analyze their papers but not share the text. The bundle
@@ -53,8 +62,7 @@ keys, and the version of file2records.
     text. Include the text only if every paper is open access: tick **bundle includes paper
     text** in the browser, or pass `include_text=True` in Python.
 
-The extracted values are facts, and you can share them. Cite the papers by their DOIs.
-
-That's the whole pipeline. [All steps in one script](script.md) shows the Python parts
-together, and [Write better fields and prompts](../guides/prompts.md) helps you adapt them to
-your own chemistry.
+!!! success "Done"
+    That's the whole pipeline. [All steps in one script](../guides/script.md) puts the
+    Python parts together, and [Write better fields and prompts](../guides/prompts.md) helps
+    you adapt them to your own chemistry.

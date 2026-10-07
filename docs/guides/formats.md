@@ -42,7 +42,7 @@ curl -H "X-ELS-APIKey: $ELSEVIER_KEY" -H "Accept: text/xml" -o paper.xml \
 ```
 
 Elsevier's terms let you mine these papers but not share them. See
-[Share a dataset](../get-started/export.md#share-a-dataset).
+[Share a dataset](../run/export.md#share-a-dataset).
 
 ## Troubleshooting
 

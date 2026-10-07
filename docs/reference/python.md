@@ -12,8 +12,9 @@ A project folder, the same one the browser app shows. The folder is created if i
 
 | Attribute | Get / set |
 |---|---|
-| `project.schema` | A list of `{"name", "type", "description"}`. Set it to a list, a path to a JSON file, or a pydantic model class. |
+| `project.schema` | The fields. Set it to a dict `{name: (type, description)}`, a list of `{"name", "type", "description"}`, a path to a JSON file, or a pydantic model class. Reads back as a list. |
 | `project.prompt` | The extraction prompt. Set it to text, or to a `Path` to a text file. |
+| `project.examples` | Worked examples: a list of `{"text": ..., "records": [...]}`. |
 | `project.rubric` | The judge rubric. Set it the same way as `prompt`. |
 
 ### Papers
@@ -34,7 +35,8 @@ A project folder, the same one the browser app shows. The folder is created if i
 | `judge(model=None, *, only=None, exclude=None, redo=False, on_paper=None)` | Checks the extracted papers that aren't judged yet. |
 
 `model` is usually left out: then the model chosen in the browser's settings is used, or the
-one set by `FILE2RECORDS_ENDPOINT`, `FILE2RECORDS_API_KEY` and `FILE2RECORDS_MODEL`. Otherwise
+one set by `FILE2RECORDS_ENDPOINT`, `FILE2RECORDS_API_KEY` and `FILE2RECORDS_MODEL`
+(`FILE2RECORDS_JUDGE_MODEL`, if set, for `judge`). Otherwise
 pass `fr.connect(...)` or a model name. If a stage isn't ready, it raises `RuntimeError` with a list of what's
 missing. If one paper fails, its result has an `error` and the other papers still run.
 
