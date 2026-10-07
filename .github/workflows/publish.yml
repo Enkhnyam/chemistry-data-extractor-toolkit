@@ -1,10 +1,10 @@
 name: publish
 
-# Publishing a GitHub release (tag vX.Y.Z) uploads that version to PyPI. Authentication is PyPI's
-# trusted publishing: no token is stored anywhere. One-time setup is in RELEASING.md.
+# Pushing a version tag (vX.Y.Z) uploads that version to PyPI. Authentication is PyPI's trusted
+# publishing: no token is stored anywhere. One-time setup is in RELEASING.md.
 on:
-  release:
-    types: [published]
+  push:
+    tags: ["v*"]
 
 jobs:
   build:
@@ -15,8 +15,8 @@ jobs:
       - name: The tag must match the version being published
         run: |
           version=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
-          test "v$version" = "${{ github.event.release.tag_name }}" || {
-            echo "pyproject.toml says $version but the release is ${{ github.event.release.tag_name }}"; exit 1; }
+          test "v$version" = "${{ github.ref_name }}" || {
+            echo "pyproject.toml says $version but the tag is ${{ github.ref_name }}"; exit 1; }
       - run: uv build
       - run: uvx twine check --strict dist/*
       - uses: actions/upload-artifact@v4

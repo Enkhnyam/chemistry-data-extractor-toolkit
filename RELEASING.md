@@ -24,8 +24,13 @@ No token is created or stored: PyPI trusts that one workflow in that one reposit
    rm -rf dist && uv build && uvx twine check --strict dist/*
    ```
 
-3. Commit, push, and on GitHub **Releases → Draft a new release** with tag `vX.Y.Z` (it must
-   match the version). Publishing the release runs `publish.yml`, which uploads to PyPI.
+3. Commit, push, then tag and push the tag. The tag must match the version:
+
+   ```bash
+   git tag v0.2.0 && git push origin v0.2.0
+   ```
+
+   The tag runs `publish.yml`, which uploads to PyPI.
 
 A version number can be uploaded to PyPI only once, ever — a mistake is fixed by releasing the
 next version, not by re-uploading.
