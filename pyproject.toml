@@ -47,6 +47,7 @@ dependencies = [
 # PDF reading: docling and its layout/table models, via PyTorch -- a download of several GB.
 # Kept out of the base install so the structured formats work everywhere in seconds.
 pdf = ["docling>=2.110.0"]
+grounding = ["pyobo[gilda]"]
 
 [project.scripts]
 file2records = "file2records.cli:main"
