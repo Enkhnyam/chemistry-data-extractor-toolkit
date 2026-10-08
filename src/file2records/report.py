@@ -145,10 +145,23 @@ def build() -> dict:
     }
 
 
-def flat_records(paper_ids: list[str] | None = None) -> tuple[list[str], list[dict]]:
-    """Every record across every paper (or only `paper_ids`), one row each, for export."""
+def flat_records(
+    paper_ids: list[str] | None = None,
+    *,
+    grounding_config: dict[str, str] | None = None,
+) -> tuple[list[str], list[dict]]:
+    """Every record across every paper (or only `paper_ids`), one row each, for export.
+
+    :param paper_ids: A list of paper IDs
+    :param grounding_config: A mapping from keys (i.e., output columns) to the
+        Bioregistry prefix for the ontology against which it should be grounded.
+        For example, if you want to ground a `catalyst` column against the
+        Chemical Entities of Biomedical Interest (ChEBI) ontology, then
+        pass ``{"catalyst": "chebi"}``
+    """
     columns, rows = ["paper_id", "paper", "doi", "title", "record_index"], []
     wanted = None if paper_ids is None else set(paper_ids)
+    grounders = {}
     for path in sorted(storage.EXTRACTED.glob("*.json")):
         pid = path.stem
         if wanted is not None and pid not in wanted:
@@ -169,7 +182,6 @@ def flat_records(paper_ids: list[str] | None = None) -> tuple[list[str], list[di
             meta = paper.get("meta") or {}
             row = {"paper_id": pid, "paper": paper.get("filename", pid),
                    "doi": meta.get("doi", ""), "title": meta.get("title", ""), "record_index": i,
-                   **{k: v for k, v in record.items() if k != "source_chunk_ids"},
                    "source_chunk_ids": " ".join(record.get("source_chunk_ids") or []),
                    "judge_verdict": verdict.get("verdict", ""),
                    "judge_bad_fields": " ".join(verdict.get("bad_fields") or []),
@@ -189,6 +201,19 @@ def flat_records(paper_ids: list[str] | None = None) -> tuple[list[str], list[di
                    "reviewer_note": note.get("note") or "",
                    "extract_model": extract_model,
                    "judge_model": judge_model}
+
+            for key, value in record.items():
+                if key == "source_chunk_ids":
+                    continue
+                row[key] = value
+                if grounding_config is not None and key in grounding_config:
+                    if key not in grounders:
+                        import pyobo
+
+                        grounders[key] = pyobo.get_grounder(grounding_config[key])
+                    if match := grounders[key].get_best_match(value):
+                        row[f"{key}_curie"] = match.reference.curie
+
             for key in row:
                 if key not in columns:
                     columns.append(key)
