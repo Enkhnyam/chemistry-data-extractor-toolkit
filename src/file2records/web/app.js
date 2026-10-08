@@ -626,6 +626,11 @@ function recordCardHTML(rec, i) {
       return `<div class="cell editing"><k>${esc(f)}</k>${input}</div>`;
     }
     const fix = fixes.get(f);
+    const term = (review.identifiers[i] || {})[f];
+    const aka = typeof val === 'string' ? ((review.synonyms[f] || {})[val.trim()] || []) : [];
+    const idLine = term
+      ? `<a class="termid" href="${esc(term.url)}" target="_blank" rel="noopener"
+           title="${esc(aka.length ? 'Also known as: ' + aka.join('; ') : term.name)}">${esc(term.id)} &middot; ${esc(term.name)}</a>` : '';
     // "Already applied" is read off the data, not off a flag we set when the button was
     // pressed: that way it still reads correctly after a save and a reload, and undo works in
     // a later session too.
@@ -651,7 +656,7 @@ function recordCardHTML(rec, i) {
     return `<div class="cell${bad.has(f) ? ' bad' : ''}${fix ? (applied ? ' applied' : ' proposed') : ''}"
        data-field="${esc(f)}"
        title="click to find this value in the text, click again for the next match">
-       <k>${esc(f)}</k>${body}</div>`;
+       <k>${esc(f)}</k>${body}${idLine}</div>`;
   }).join('');
 
   const badge = v ? `<span class="badge ${v.verdict}">${v.verdict}</span>` : '';
@@ -730,7 +735,7 @@ function wireRecords(host) {
     card.querySelectorAll('.cell[data-field]').forEach(cell => {
       const field = cell.dataset.field;
       cell.addEventListener('click', (e) => {
-        if (e.target.closest('button, .to')) return;   // those have their own meaning
+        if (e.target.closest('button, .to, a')) return;   // those have their own meaning
         const value = review.records[i][field];
         if (blank(value)) { flashNote(`${field} is empty in this record`); return; }
         cycleField(i, field, value);
@@ -802,6 +807,7 @@ async function saveReview() {
     review.dirty = false;
     review.version = saved.version;
     review.modelRecords = saved.model_records;   // what the model said, pinned on first edit
+    review.identifiers = saved.identifiers || [];
     status.textContent = 'Saved.';
     paintRecords();
   } catch (e) { status.textContent = 'Error: ' + e.message; }
@@ -820,6 +826,8 @@ async function loadReview(paperId, withJudgment) {
     sourceTracking: paper.source_tracking,
     schema: schema.fields,
     records: extraction.records,
+    identifiers: extraction.identifiers || [],
+    synonyms: extraction.synonyms || {},
     version: extraction.version,
     modelRecords: extraction.model_records || extraction.records,
     notes: extraction.notes || {},
@@ -2031,8 +2039,12 @@ async function renderSettings(gen) {
         <p class="lede">Grey rows are an example. Type over them, delete them, or press
           <b>Use the example</b> to keep them.</p>
         <table class="schema-table"><thead><tr>
-          <th style="width:26%">Field name</th><th style="width:15%">Type</th>
-          <th>Description <span class="muted" style="text-transform:none">the model reads this</span></th><th></th>
+          <th style="width:22%">Field name</th><th style="width:13%">Type</th>
+          <th>Description <span class="muted" style="text-transform:none">the model reads this</span></th>
+          <th style="width:16%">Identifiers${help('For a text field that names a chemical, such as a solvent ' +
+            'or catalyst: the export gets its ChEBI identifier, its name and the value\'s synonyms in three extra columns, and ' +
+            'the review shows them. Looked up online in EBI\'s Ontology Lookup Service; names ' +
+            'with no exact match, such as Ni/Al2O3, stay empty.')}</th><th></th>
         </tr></thead><tbody id="schema-rows"></tbody></table>
         <div class="row" style="margin-top:10px">
           <button id="add-field">${icon('plus')}Add field</button>
@@ -2244,6 +2256,8 @@ async function renderSettings(gen) {
         `<option ${f && f.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select></td>
       <td><input class="f-desc" value="${f && !grey ? esc(f.description || '') : ''}"
           placeholder="${grey && f ? esc(f.description || '') : 'what the model should put here'}"></td>
+      <td><select class="f-ids" ${f && f.type && f.type !== 'string' ? 'disabled' : ''}><option value="">none</option>${Object.entries(schema.ontologies).map(([id, label]) =>
+        `<option value="${id}" ${f && !grey && schema.identifiers[f.name] === id ? 'selected' : ''}>${esc(label)}</option>`).join('')}</select></td>
       <td><button class="f-del danger iconly" title="remove this field">${icon('trash')}</button></td>
     </tr>`));
   const paintSchema = () => {
@@ -2260,6 +2274,13 @@ async function renderSettings(gen) {
     const tr = e.target.closest('tr');
     if (tr) tr.classList.remove('ghost');
     markDirty();
+  });
+  // Identifiers are for names, so only a text field can have them.
+  rows.addEventListener('change', e => {
+    if (!e.target.matches('.f-type')) return;
+    const ids = e.target.closest('tr').querySelector('.f-ids');
+    ids.disabled = e.target.value !== 'string';
+    if (ids.disabled) ids.value = '';
   });
   document.getElementById('add-field').addEventListener('click', () => { addRow(); markDirty(); });
   document.getElementById('use-example-schema').addEventListener('click', () => {
@@ -2307,8 +2328,12 @@ async function renderSettings(gen) {
         name: tr.querySelector('.f-name').value.trim(),
         type: tr.querySelector('.f-type').value,
         description: tr.querySelector('.f-desc').value.trim(),
+        ids: tr.querySelector('.f-ids').value,
       })).filter(f => f.name);
-      await put('/api/schema', { fields });
+      await put('/api/schema', {
+        fields: fields.map(({ ids, ...f }) => f),
+        identifiers: Object.fromEntries(fields.filter(f => f.ids).map(f => [f.name, f.ids])),
+      });
       await put('/api/prompts', { extract: document.getElementById('extract-prompt').value,
                                   judge: document.getElementById('judge-prompt').value });
       await put('/api/settings', {

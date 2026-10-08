@@ -25,21 +25,19 @@ def with_html(chunks: list[dict]) -> list[dict]:
 
 _converter = None
 
-PDF_EXTRA_MISSING = ("Reading PDFs needs the PDF extra, which installs docling and its layout "
-                     "models (a large download):  pip install \"file2records[pdf]\"   "
-                     "XML, HTML, Word and Markdown files work without it.")
+PDF_READER_MISSING = ("Reading PDFs needs docling, which didn't install completely. Run:  "
+                     "pip install --force-reinstall file2records")
 
 
 def _get_converter():
-    """docling is imported here, on the first PDF, rather than at the top of the module. It is
-    the one heavy dependency -- PyTorch and layout models -- and every other format, and every
-    other stage, works without it."""
+    """docling is imported here, on the first PDF, rather than at the top of the module: it
+    loads PyTorch and layout models, which takes seconds, and most runs read no PDF at all."""
     global _converter
     if _converter is None:
         try:
             from docling.document_converter import DocumentConverter
         except ImportError as e:
-            raise RuntimeError(PDF_EXTRA_MISSING) from e
+            raise RuntimeError(PDF_READER_MISSING) from e
         _converter = DocumentConverter()
     return _converter
 

@@ -1,0 +1,38 @@
+{
+  "chebi": {
+    "1,2-ethanediol": {
+      "id": "CHEBI:30742",
+      "name": "ethylene glycol"
+    },
+    "1-butyl-3-methyl-1H-imidazol-3-ium chloride": null,
+    "1-butyl-3-methylimidazolium chloride": null,
+    "1-butyl-3-methylimidazolium trichloromanganate": null,
+    "1-butyl-3-methylimidazolium trichlorozincate": null,
+    "1-methyl-3-butylimidazolium chloride": null,
+    "1-methyl-3-butylimidazolium trichloromanganate": null,
+    "1-methyl-3-butylimidazolium trichlorozincate": null,
+    "ZnCl2": {
+      "id": "CHEBI:49976",
+      "name": "zinc dichloride"
+    },
+    "[Bmim]Cl": null,
+    "[Bmim]MnCl3": null,
+    "[Bmim]ZnCl3": null,
+    "ethane-1,2-diol": {
+      "id": "CHEBI:30742",
+      "name": "ethylene glycol"
+    },
+    "ethylene glycol": {
+      "id": "CHEBI:30742",
+      "name": "ethylene glycol"
+    },
+    "zinc chloride": {
+      "id": "CHEBI:49976",
+      "name": "zinc dichloride"
+    },
+    "zinc(II) chloride": {
+      "id": "CHEBI:49976",
+      "name": "zinc dichloride"
+    }
+  }
+}

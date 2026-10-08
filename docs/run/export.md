@@ -25,7 +25,9 @@
         ```
 
 The CSV file has one row per record: your fields, the paper's DOI and title, the judge's
-verdict and reasoning, and the model that produced it. It opens in Excel or any spreadsheet
+verdict and reasoning, and the model that produced it. Fields with
+[identifiers](../define/fields.md#add-identifiers-for-chemicals) have their identifier, such as
+`CHEBI:16183`, its name, and the value's synonyms next to them. It opens in Excel or any spreadsheet
 program.
 
 ## Export only some papers

@@ -58,7 +58,7 @@ file2records recognizes each format from the file's contents, not its name.
 | HTML | An article page saved from the browser | Text and tables; DOI from the page's tags |
 | Word (`.docx`) | Theses and preprints | Headings, paragraphs, and tables |
 | Markdown, text | Anything you converted yourself | As written |
-| PDF | Everything else | Layout recognition; needs `file2records[pdf]` |
+| PDF | Everything else | Layout recognition, tables included |
 
 !!! tip "XML gives the best tables"
     If a publisher offers XML and PDF, use the XML. Its tables are already rows and
@@ -66,8 +66,9 @@ file2records recognizes each format from the file's contents, not its name.
     [Paper formats](../guides/formats.md) shows how to download XML from Europe PMC and
     Elsevier.
 
-!!! warning "Reading PDFs needs the PDF extra"
-    Without it, adding a PDF gives an error that starts with *Reading PDFs needs the PDF
-    extra*. Install it with `pip install "file2records[pdf]"`. The other files are still added.
+!!! info "The first PDF takes longer"
+    The PDF reader downloads its layout models the first time it reads a PDF, which takes a
+    minute or two and needs an internet connection. After that, a PDF takes between a few
+    seconds and a minute, depending on its length.
 
 Continue with [Fields](../define/fields.md).

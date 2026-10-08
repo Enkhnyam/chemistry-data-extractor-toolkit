@@ -16,6 +16,7 @@ A project folder, the same one the browser app shows. The folder is created if i
 | `project.prompt` | The extraction prompt. Set it to text, or to a `Path` to a text file. |
 | `project.examples` | Worked examples: a list of `{"text": ..., "records": [...]}`. |
 | `project.rubric` | The judge rubric. Set it the same way as `prompt`. |
+| `project.identifiers` | Fields whose values get an ontology identifier in the export: `{"main_product": "chebi"}` adds `main_product_curie` (such as `CHEBI:16183`), `main_product_curie_name` and `main_product_synonyms`. Any ontology in EBI's Ontology Lookup Service works. |
 
 ### Papers
 

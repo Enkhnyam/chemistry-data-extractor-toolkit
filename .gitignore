@@ -2,26 +2,12 @@
 __pycache__/
 *.pyc
 .env
-workspace/pdfs/*
-workspace/parsed/*
-workspace/extracted/*
-workspace/judged/*
-!workspace/pdfs/.gitkeep
-!workspace/parsed/.gitkeep
-!workspace/extracted/.gitkeep
-!workspace/judged/.gitkeep
+dist/
 
-# the Docker workspace volume
-data/*
-!data/.gitkeep
-
-# user config is local: prompts, schema and model choice are per-project, and timings are
-# measurements of one machine
-workspace/config/*
-!workspace/config/.gitkeep
-
-# the verification run's console log; its report (artifacts/overnight-report.md) is worth keeping
-artifacts/overnight.log
+# local projects and notes, never published
+workspace/
+data/
+artifacts/
 
 # built docs site (zensical build)
 site/

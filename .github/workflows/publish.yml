@@ -1,7 +1,8 @@
 name: publish
 
 # Pushing a version tag (vX.Y.Z) uploads that version to PyPI. Authentication is PyPI's trusted
-# publishing: no token is stored anywhere. One-time setup is in RELEASING.md.
+# publishing: PyPI trusts this workflow in this repository (set up once on pypi.org, with a GitHub
+# environment named "pypi"), so no token is stored anywhere.
 on:
   push:
     tags: ["v*"]

@@ -35,7 +35,7 @@ def use(path) -> Path:
 
 
 def default_workspace() -> Path:
-    """WORKSPACE_DIR if set (Docker, tests), otherwise ./workspace."""
+    """WORKSPACE_DIR if set (the tests use it), otherwise ./workspace."""
     return Path(os.environ.get("WORKSPACE_DIR") or Path.cwd() / "workspace")
 
 

@@ -17,8 +17,8 @@ except the paper text sent to that service.
 pip install file2records
 ```
 
-To read PDF files too, install `"file2records[pdf]"` instead. See
-[Install](setup/install.md).
+See [Install](setup/install.md) for a virtual environment and the smaller version for
+computers without a graphics card.
 
 ## Look at a finished example
 

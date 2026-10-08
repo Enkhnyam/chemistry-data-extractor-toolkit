@@ -80,6 +80,57 @@ For the example papers, use these six fields:
         And a JSON file: `project.schema = "schema.json"`.
 <!-- vale Google.Latin = YES -->
 
+## Add identifiers for chemicals
+
+A text field that names a chemical can also get the chemical's
+[ChEBI](https://www.ebi.ac.uk/chebi/) identifier. Papers write the same compound in different
+ways, such as `CH4` and `methane`, and the identifier is the same for both, so you can group,
+count, and combine records by compound.
+
+=== "Browser"
+
+    In **Settings → Schema**, choose **ChEBI: chemicals** under **Identifiers** for the
+    field, and click **Save changes**. Only text fields can have identifiers.
+
+    ![Identifiers chosen for the catalyst and main product](../img/tutorial/14-identifiers.png)
+
+=== "Python"
+
+    ```python
+    project.identifiers = {"main_product": "chebi"}
+    ```
+
+The export then has three more columns after the field: the identifier, the name it stands
+for, and the other names the model gave for the value, separated by semicolons:
+
+| `solvent` | `solvent_curie` | `solvent_curie_name` | `solvent_synonyms` |
+|---|---|---|---|
+| `EG` | CHEBI:30742 | ethylene glycol | ethylene glycol; ethane-1,2-diol; 1,2-ethanediol |
+| `ZnCl2` | CHEBI:49976 | zinc dichloride | zinc chloride; zinc(II) chloride |
+| `[Bmim]Cl` | | | 1-butyl-3-methylimidazolium chloride; 1-butyl-3-methyl-1H-imidazol-3-ium chloride |
+
+In **Review**, the identifier appears under the value and links to the compound's page:
+
+![A record whose main product has a ChEBI identifier](../img/tutorial/15-identifier-review.png){ width="560" }
+
+!!! info "Abbreviations work too"
+    For a field with identifiers, the model also lists the other names each value goes by:
+    written out in full, its systematic name, and common synonyms. file2records tries them
+    in order until one is in ChEBI. Your dataset keeps the value as the paper wrote it, so
+    `EG` stays `EG` and gets the identifier of ethylene glycol.
+
+!!! info "How names are looked up"
+    Each name is looked up in EBI's [Ontology Lookup Service](https://www.ebi.ac.uk/ols4/),
+    which needs an internet connection. A name gets an identifier only if it's exactly the
+    name or a synonym of a ChEBI entry, ignoring case. Many catalysts have no entry under any
+    name, such as supported metals like 5Ni5Zn/SiO2 and most ionic liquids, so they stay
+    empty. Their synonyms are still in the export. Each name is
+    looked up once, right after extraction, and remembered in the project.
+
+!!! warning "Look through the name column once"
+    Now and then a name matches a different compound with the same synonym. The name column
+    shows what each identifier stands for, so a wrong match is easy to spot.
+
 ## Tips
 
 !!! tip "Good fields"

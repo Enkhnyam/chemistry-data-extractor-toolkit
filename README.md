@@ -16,8 +16,7 @@ except the paper text sent to that service.
 ## Install
 
 ```bash
-pip install file2records            # XML, HTML, Word, Markdown (about 350 MB)
-pip install "file2records[pdf]"     # also PDF (adds PyTorch, a few GB)
+pip install file2records            # reads PDF, XML, HTML, Word, Markdown (2–6 GB, with PyTorch)
 ```
 
 ## Try it
@@ -41,6 +40,7 @@ project.schema = {                       # the columns of your dataset
     "temperature_c": ("number", "Reaction temperature in °C"),
 }
 project.prompt = Path("prompt.txt")      # what counts as one record
+project.identifiers = {"catalyst": "chebi"}   # optional: ChEBI IDs next to chemical names
 
 project.extract(only=r"hydrogenation")   # only papers whose text matches
 project.judge()                          # a second pass checks every record
@@ -61,10 +61,13 @@ through the whole pipeline once, in the browser and in Python, with three real p
 ## Development
 
 ```bash
-uv sync                                       # includes docling for PDF tests
+uv sync                                       # installs the package and its dependencies
 uv run python -m unittest discover -s tests   # no network, no key
 uvx zensical serve                            # the docs, at http://localhost:8000
 ```
 
-Releasing: [RELEASING.md](RELEASING.md). Licence: the code is MIT; the demo paper is CC BY
+To release, set the version in `pyproject.toml`, `src/file2records/__init__.py` and
+`CITATION.cff`, then push a tag such as `v0.3.0`. GitHub Actions then publishes it to PyPI.
+
+Licence: the code is MIT; the demo paper is CC BY
 ([NOTICE](src/file2records/demo/NOTICE.md)). Please cite: [CITATION.cff](CITATION.cff).

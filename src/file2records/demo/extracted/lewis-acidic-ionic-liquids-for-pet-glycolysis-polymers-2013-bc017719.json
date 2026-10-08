@@ -264,5 +264,33 @@
     "completion_tokens": 2992,
     "cost_usd": 0.0
   },
-  "model": "azure/gpt-5.6-luna"
+  "model": "azure/gpt-5.6-luna",
+  "synonyms": {
+    "catalyst": {
+      "[Bmim]Cl": [
+        "1-methyl-3-butylimidazolium chloride",
+        "1-butyl-3-methylimidazolium chloride",
+        "1-butyl-3-methyl-1H-imidazol-3-ium chloride"
+      ],
+      "[Bmim]ZnCl3": [
+        "1-butyl-3-methylimidazolium trichlorozincate",
+        "1-methyl-3-butylimidazolium trichlorozincate"
+      ],
+      "ZnCl2": [
+        "zinc chloride",
+        "zinc(II) chloride"
+      ],
+      "[Bmim]MnCl3": [
+        "1-butyl-3-methylimidazolium trichloromanganate",
+        "1-methyl-3-butylimidazolium trichloromanganate"
+      ]
+    },
+    "solvent": {
+      "EG": [
+        "ethylene glycol",
+        "ethane-1,2-diol",
+        "1,2-ethanediol"
+      ]
+    }
+  }
 }

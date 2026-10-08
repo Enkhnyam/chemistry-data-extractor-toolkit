@@ -191,6 +191,9 @@ mark.current{background:var(--cur);color:#3a1c00;box-shadow:0 0 0 2px var(--cur)
 .cell k{display:block;font-size:.5625rem;color:var(--dim);text-transform:uppercase;
   letter-spacing:.05em;font-weight:600;margin-bottom:1px}
 .cell v{font-size:.8125rem;font-variant-numeric:tabular-nums;color:var(--ink)}
+.cell .termid{display:block;margin-top:2px;font-size:.6875rem;color:var(--accent);text-decoration:none;
+  font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.cell .termid:hover{text-decoration:underline}
 .cell input,.cell select{width:100%;padding:2px 5px;font-size:.78rem;margin-top:2px}
 .null{color:var(--dim);font-style:italic}
 .fixline{display:flex;gap:5px;align-items:center;flex-wrap:wrap;font-size:.8125rem}

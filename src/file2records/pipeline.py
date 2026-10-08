@@ -9,7 +9,8 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
-from . import config, extraction, judge, llm, models, parsing, readers, storage, timings
+from . import (config, extraction, identifiers, judge, llm, models, parsing, readers,
+               storage, timings)
 from .storage import paper_id_for, require, write_json
 
 # RWTH's KI:connect service: OpenAI-compatible, unmetered for its open models. Spelled out once
@@ -180,8 +181,9 @@ def _extract_one(pid, params, prompt, schema_fields, few_shot) -> dict:
     text = parsing.chunks_to_text(paper["chunks"], with_source)
     started = time.monotonic()
     try:
-        records, usage = extraction.run_extraction(params, prompt, schema_fields,
-                                                   few_shot, text, with_source)
+        records, usage, synonyms = extraction.run_extraction(
+            params, prompt, schema_fields, few_shot, text, with_source,
+            spell_out=list(identifiers.chosen()))
     except Exception as e:
         return {"id": pid, "error": f"{type(e).__name__}: {e}"}
     seconds = time.monotonic() - started
@@ -193,7 +195,9 @@ def _extract_one(pid, params, prompt, schema_fields, few_shot) -> dict:
                 record.get("source_chunk_ids"), paper["chunks"])
     timings.record("extract", seconds, len(paper["chunks"]), unit="chunks")
     write_json(storage.EXTRACTED / f"{pid}.json",
-               {"id": pid, "records": records, "usage": usage, "model": params.get("model")})
+               {"id": pid, "records": records, "usage": usage, "model": params.get("model"),
+                "synonyms": synonyms})
+    identifiers.for_records(records, synonyms)     # looked up now, so review and export don't wait
     return {"id": pid, "n_records": len(records), "seconds": round(seconds, 1), "usage": usage}
 
 

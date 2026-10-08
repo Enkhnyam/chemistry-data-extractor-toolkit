@@ -20,7 +20,7 @@ import json
 from collections.abc import Callable
 from pathlib import Path
 
-from . import bundle, config, filters, pipeline, report, storage
+from . import bundle, config, filters, identifiers, pipeline, report, storage
 
 FIELD_TYPES = {str: "string", float: "number", int: "integer", bool: "boolean"}
 
@@ -90,6 +90,27 @@ class Project:
             if not str(example.get("text", "")).strip() or not isinstance(example.get("records"), list):
                 raise ValueError(f"Example {i} needs a 'text' and a list of 'records'.")
         config.save_few_shot([{"text": e["text"], "records": e["records"]} for e in value])
+
+    @property
+    def identifiers(self) -> dict[str, str]:
+        """Fields whose values get an ontology identifier in the export:
+        {"solvent": "chebi"} adds solvent_curie (CHEBI:30742) and solvent_curie_name."""
+        self._open()
+        return identifiers.chosen()
+
+    @identifiers.setter
+    def identifiers(self, value: dict[str, str]):
+        self._open()
+        types = {f["name"]: f.get("type", "string") for f in config.get_schema()}
+        unknown = sorted(set(value) - set(types))
+        if unknown:
+            raise ValueError(f"No field named {', '.join(unknown)}. Set project.schema first; "
+                             f"its fields are: {', '.join(types) or 'none yet'}.")
+        not_text = sorted(f for f in value if types[f] != "string")
+        if not_text:
+            raise ValueError(f"Only text fields can have identifiers, and {', '.join(not_text)} "
+                             f"is not one. Identifiers are for names, such as a solvent.")
+        config.save_settings({"identifiers": {k: v.lower() for k, v in value.items() if v}})
 
     # ---------- papers ----------
 

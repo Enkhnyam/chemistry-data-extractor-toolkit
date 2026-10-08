@@ -258,6 +258,96 @@ class ProjectTests(unittest.TestCase):
         self.assertIn('runs = "2.5" is not an integer', fixed["critique"])
         self.assertIn('solvent = "EG" is not one of your fields', fixed["critique"])
 
+    def test_identifiers_are_looked_up_once_and_exported_next_to_the_field(self):
+        from file2records import identifiers
+        self.configure()
+        with self.assertRaisesRegex(ValueError, "No field named solvent"):
+            self.project.identifiers = {"solvent": "chebi"}
+        with self.assertRaisesRegex(ValueError, "Only text fields"):
+            self.project.identifiers = {"temperature_c": "chebi"}
+        self.project.identifiers = {"catalyst": "ChEBI"}
+        self.assertEqual(self.project.identifiers, {"catalyst": "chebi"})
+
+        asked = []
+        def fake_lookup(name, ontology):
+            asked.append(name)
+            return {"id": "CHEBI:62984", "name": "zinc acetate"} if name == "Zn(OAc)2" else None
+        real, identifiers.lookup = identifiers.lookup, fake_lookup
+        try:
+            self.project.add(self.files["jats-no-doctype.xml"])
+            self.project.extract("gpt-4o-mini")   # looks the catalyst up right away
+            self.assertEqual(asked, ["Zn(OAc)2"])
+            row = self.project.records()[0]
+            self.assertEqual((row["catalyst_curie"], row["catalyst_curie_name"]),
+                             ("CHEBI:62984", "zinc acetate"))
+            keys = list(row)
+            self.assertEqual(keys[keys.index("catalyst") + 1], "catalyst_curie")
+            self.project.export(self.dir / "out.csv")
+            self.assertEqual(asked, ["Zn(OAc)2"], "an answer is remembered, not asked again")
+        finally:
+            identifiers.lookup = real
+
+    def test_an_identifier_lookup_that_fails_is_tried_again(self):
+        """No connection is not the same as no match: it must not be remembered as one."""
+        import httpx
+        from file2records import identifiers
+        self.configure()
+        self.project.identifiers = {"catalyst": "chebi"}
+        records = [{"catalyst": "Zn(OAc)2"}, {"catalyst": "EG"}]
+        def offline(name, ontology):
+            raise httpx.ConnectError("no network")
+        real, identifiers.lookup = identifiers.lookup, offline
+        try:
+            self.assertEqual(identifiers.for_records(records), [{}, {}])
+        finally:
+            identifiers.lookup = real
+        self.assertEqual(identifiers.find([]), {}, "nothing cached, so it is asked again later")
+        self.assertEqual([identifiers.candidates(r, "catalyst", {}) for r in records],
+                         [["Zn(OAc)2"], []], "two-letter names are too ambiguous to look up")
+
+    def test_an_abbreviation_is_looked_up_by_its_synonyms(self):
+        """Seen for real: every "EG" solvent went without an identifier."""
+        from file2records import extraction, identifiers, report
+        records = [{"solvent": "EG", "solvent_synonyms": ["EG", "glycol", "ethane-1,2-diol"]},
+                   {"solvent": "DMSO", "solvent_synonyms": []}]
+        synonyms = extraction._synonyms(records, ["solvent"])
+        self.assertEqual(records, [{"solvent": "EG"}, {"solvent": "DMSO"}],
+                         "the helper field never reaches the dataset")
+        self.assertEqual(synonyms, {"solvent": {"EG": ["glycol", "ethane-1,2-diol"]}})
+
+        self.project.schema = {"solvent": "Solvent as written"}
+        self.project.identifiers = {"solvent": "chebi"}
+        known = {"ethane-1,2-diol": {"id": "CHEBI:30742", "name": "ethylene glycol"},
+                 "DMSO": {"id": "CHEBI:28262", "name": "dimethyl sulfoxide"}}
+        real, identifiers.lookup = identifiers.lookup, lambda name, onto: known.get(name)
+        try:
+            found = identifiers.for_records(records, synonyms)
+            row = report._with_identifiers([dict(records[0])], [synonyms])[0]
+        finally:
+            identifiers.lookup = real
+        self.assertEqual([f["solvent"]["id"] for f in found], ["CHEBI:30742", "CHEBI:28262"],
+                         "the first synonym in the ontology wins")
+        self.assertEqual(row["solvent_synonyms"], "glycol; ethane-1,2-diol",
+                         "semicolons, because chemical names contain commas")
+        # an edited value has no synonyms, so it is looked up as written
+        self.assertEqual(identifiers.candidates({"solvent": "toluene"}, "solvent", synonyms),
+                         ["toluene"])
+
+    def test_the_best_identifier_match_is_the_same_case_then_the_name(self):
+        from file2records import identifiers
+        docs = [{"obo_id": "CHEBI:141421", "label": "Asn-Ile", "synonym": ["NI"]},
+                {"obo_id": "CHEBI:1", "label": "old nickel", "synonym": ["Ni"], "is_obsolete": True},
+                {"obo_id": "CHEBI:28112", "label": "nickel atom", "synonym": ["Ni", "nickel"]}]
+        response = SimpleNamespace(raise_for_status=lambda: None,
+                                   json=lambda: {"response": {"docs": docs}})
+        real, identifiers.httpx.get = identifiers.httpx.get, lambda *a, **k: response
+        try:
+            self.assertEqual(identifiers.lookup("Ni", "chebi")["id"], "CHEBI:28112")
+            self.assertEqual(identifiers.lookup("NI", "chebi")["id"], "CHEBI:141421")
+            self.assertIsNone(identifiers.lookup("Ni/Al2O3", "chebi"))
+        finally:
+            identifiers.httpx.get = real
+
     def test_a_bundle_carries_no_paper_text_unless_asked(self):
         self.configure()
         self.project.add(self.files["jats-no-doctype.xml"])

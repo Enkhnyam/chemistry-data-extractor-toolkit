@@ -15,6 +15,9 @@ passages it came from, with the judge's verdict and suggestions.
     - **Click apply** to accept a value the judge suggests. Nothing changes until you do.
       A suggestion that doesn't fit the field, such as a range for a number field, isn't
       offered to apply; the judge's reasoning mentions it instead.
+    - **Click an identifier**, such as *CHEBI:16183 · methane*, to open the compound's
+      page. Fields with [identifiers](../define/fields.md#add-identifiers-for-chemicals)
+      show one under each value that has a match.
     - **Click Edit** to change a value yourself.
     - **Click looks right or looks wrong**, and add a note, to mark records you checked.
 

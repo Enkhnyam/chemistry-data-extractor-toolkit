@@ -151,5 +151,11 @@ def clear() -> dict:
             target.unlink()
             if stage == "pdfs":
                 removed["papers"] += 1
+    # The demo's identifier choices live in settings.json, which stays; drop them unless edited.
+    settings = read_json(storage.CONFIG / "settings.json", {})
+    demo_ids = read_json(DEMO / "config" / "settings.json", {}).get("identifiers")
+    if demo_ids and settings.get("identifiers") == demo_ids:
+        del settings["identifiers"]
+        write_json(storage.CONFIG / "settings.json", settings)
     marker().unlink(missing_ok=True)
     return removed

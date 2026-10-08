@@ -20,16 +20,15 @@ from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import (__version__, bundle, config, demo, filters, llm, models, parsing,  # noqa: E402
-               pipeline, report, storage, timings)
+from . import (__version__, bundle, config, demo, filters, identifiers, llm, models,  # noqa: E402
+               parsing, pipeline, report, storage, timings)
 from .storage import list_papers, read_json, require, version_of, write_json  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent
 if storage.WORKSPACE == Path():
     storage.use(storage.default_workspace())
 # Keys live in the project folder, beside the work they pay for, so they travel with it and
-# survive a reinstall -- and under Docker the folder is the mounted volume, which is the only
-# place that outlives the container. ENV_FILE overrides. A .env in the current directory is also
+# survive a reinstall. ENV_FILE overrides. A .env in the current directory is also
 # read (never written), for anyone who keeps keys there.
 ENV_FILE = Path(os.environ.get("ENV_FILE") or storage.WORKSPACE / ".env")
 load_dotenv(ENV_FILE)
@@ -185,13 +184,15 @@ class SchemaField(BaseModel):
 
 class SchemaBody(BaseModel):
     fields: list[SchemaField]
+    identifiers: dict[str, str] | None = None   # {field: ontology}; None leaves them as they are
 
 
 @app.get("/api/schema")
 def get_schema():
     fields = config.get_schema()
     return {"fields": fields, "set": bool(fields),
-            "placeholder": config.placeholders()["schema"]}
+            "placeholder": config.placeholders()["schema"],
+            "identifiers": identifiers.chosen(), "ontologies": identifiers.ONTOLOGIES}
 
 
 @app.put("/api/schema")
@@ -202,7 +203,9 @@ def put_schema(body: SchemaBody):
         raise HTTPException(400, f"duplicate field name(s): {', '.join(sorted(dupes))}")
     fields = [f.model_dump() for f in body.fields]
     config.save_schema(fields)
-    return {"fields": fields}
+    if body.identifiers is not None:
+        config.save_settings({"identifiers": {k: v for k, v in body.identifiers.items() if v}})
+    return {"fields": fields, "identifiers": identifiers.chosen()}
 
 
 @app.get("/api/prompts")
@@ -297,9 +300,8 @@ def put_api_key(body: ApiKey):
     so a freshly-entered key works without a server restart."""
     import os
     ENV_FILE.touch(exist_ok=True)
-    # quote_mode="never": python-dotenv defaults to writing KEY='value' and strips the quotes
-    # again on load -- but Docker's env_file does not. A quoted api_base reached the container
-    # as "'https://...'" and every call failed on a URL nobody could see was wrong.
+    # quote_mode="never": python-dotenv defaults to writing KEY='value', and tools that read
+    # .env files literally then see the quotes as part of the URL or key.
     set_key(str(ENV_FILE), body.name, body.value, quote_mode="never")
     os.environ[body.name] = body.value
     return {"saved": body.name}
@@ -529,9 +531,12 @@ def _extract(body: PaperIds):
 def get_extraction(paper_id: str):
     path = storage.EXTRACTED / f"{paper_id}.json"
     try:
-        return {**require(path, "extraction"), "version": version_of(path)}
+        extraction = require(path, "extraction")
     except FileNotFoundError as e:
         raise HTTPException(404, str(e)) from e
+    return {**extraction, "version": version_of(path),
+            "identifiers": identifiers.for_records(extraction["records"],
+                                                   extraction.get("synonyms"))}
 
 
 class ReviewedExtraction(BaseModel):
@@ -569,10 +574,12 @@ def put_extraction(paper_id: str, body: ReviewedExtraction):
         "model_records": current.get("model_records", current["records"]),
         "usage": current.get("usage", {}),
         "model": current.get("model"),
+        "synonyms": current.get("synonyms", {}),
         "edited_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
     write_json(path, saved)
-    return {**saved, "version": version_of(path)}
+    return {**saved, "version": version_of(path),
+            "identifiers": identifiers.for_records(saved["records"], saved["synonyms"])}
 
 
 # ---------- judge ----------

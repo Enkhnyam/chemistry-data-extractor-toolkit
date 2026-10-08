@@ -44,3 +44,5 @@ MPa
 methanation
 photothermal
 photocatalytic
+EBI
+diaminobutyric

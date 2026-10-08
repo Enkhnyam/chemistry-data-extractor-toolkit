@@ -5,7 +5,8 @@ Experiment model, `source_chunk_ids` added only when source tracking is on) but 
 field list from data instead of hardcoding it."""
 from pydantic import BaseModel, ConfigDict, Field, create_model
 
-TYPE_MAP = {"string": str, "number": float, "integer": int, "boolean": bool}
+TYPE_MAP = {"string": str, "number": float, "integer": int, "boolean": bool,
+            "list": list[str]}       # only for the synonyms extraction.py asks for, not a field type
 
 # Never returned as a value. Shown as grey placeholder rows in the schema editor so the shape
 # of a good field list is visible before you have written one.

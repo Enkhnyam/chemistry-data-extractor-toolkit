@@ -9,7 +9,7 @@ so the same report describes an ionic-liquid corpus and a metal-salt one without
 import json
 from collections import Counter, defaultdict
 
-from . import config
+from . import config, identifiers
 from . import storage
 from .storage import read_json
 
@@ -148,6 +148,7 @@ def build() -> dict:
 def flat_records(paper_ids: list[str] | None = None) -> tuple[list[str], list[dict]]:
     """Every record across every paper (or only `paper_ids`), one row each, for export."""
     columns, rows = ["paper_id", "paper", "doi", "title", "record_index"], []
+    synonyms = []            # one per row: the names the model gave, used for identifiers
     wanted = None if paper_ids is None else set(paper_ids)
     for path in sorted(storage.EXTRACTED.glob("*.json")):
         pid = path.stem
@@ -189,11 +190,37 @@ def flat_records(paper_ids: list[str] | None = None) -> tuple[list[str], list[di
                    "reviewer_note": note.get("note") or "",
                    "extract_model": extract_model,
                    "judge_model": judge_model}
-            for key in row:
-                if key not in columns:
-                    columns.append(key)
             rows.append(row)
+            synonyms.append(extraction.get("synonyms") or {})
+    rows = _with_identifiers(rows, synonyms)
+    for row in rows:
+        for key in row:
+            if key not in columns:
+                columns.append(key)
     return columns, rows
+
+
+def _with_identifiers(rows: list[dict], synonyms: list[dict]) -> list[dict]:
+    """Each row with three columns after every field that gets identifiers: solvent,
+    solvent_curie (CHEBI:30742), solvent_curie_name (ethylene glycol), and solvent_synonyms,
+    the names the model gave, separated by semicolons because chemical names contain commas."""
+    fields = identifiers.chosen()
+    if not fields:
+        return rows
+    found = identifiers.for_records(rows, synonyms)
+    result = []
+    for row, terms, known in zip(rows, found, synonyms):
+        out = {}
+        for key, value in row.items():
+            out[key] = value
+            if key in fields:
+                term = terms.get(key, {})
+                names = known.get(key, {}).get(value.strip(), []) if isinstance(value, str) else []
+                out[f"{key}_curie"] = term.get("id", "")
+                out[f"{key}_curie_name"] = term.get("name", "")
+                out[f"{key}_synonyms"] = "; ".join(names)
+        result.append(out)
+    return result
 
 
 def papers_table(paper_ids: list[str] | None = None) -> tuple[list[str], list[dict]]:

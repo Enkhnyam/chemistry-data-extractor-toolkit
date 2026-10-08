@@ -1,3 +1,7 @@
 {
-  "source_tracking_default": true
+  "source_tracking_default": true,
+  "identifiers": {
+    "catalyst": "chebi",
+    "solvent": "chebi"
+  }
 }

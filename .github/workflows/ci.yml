@@ -6,8 +6,9 @@ on:
 
 jobs:
   test:
-    # The base install only: the tests need no PDF reader, no network and no API key, and
-    # leaving docling out keeps each job to a minute instead of a multi-GB download.
+    # The tests need no network and no API key. docling is part of every install, so the
+    # Linux jobs take the CPU build of PyTorch first, as the install docs suggest, to skip
+    # NVIDIA's libraries; macOS and Windows get the CPU build anyway.
     strategy:
       fail-fast: false
       matrix:
@@ -22,6 +23,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+      - if: runner.os == 'Linux'
+        run: python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
       - run: python -m pip install .
       - run: python -m unittest discover -s tests -v
       - run: file2records --version

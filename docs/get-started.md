@@ -22,7 +22,7 @@ them. Each card links to a page with screenshots and code.
 
     ---
 
-    One `pip install`. Add the PDF reader only if you need it.
+    One `pip install`, PDF reader included.
 
 -   :lucide-key-round:{ .lg .middle } **[API key and endpoint](setup/api-key.md)**
 
@@ -52,7 +52,8 @@ them. Each card links to a page with screenshots and code.
 
     ---
 
-    The columns of your dataset: name, type, and description.
+    The columns of your dataset: name, type, and description. Chemicals can get ChEBI
+    identifiers.
 
 -   :lucide-message-square-text:{ .lg .middle } **[Extraction prompt](define/prompt.md)**
 

@@ -11,7 +11,7 @@ folders, including subfolders, for files it can read.
 | HTML | An article page saved from a browser | The page's citation tags supply the DOI and title. |
 | Word (`.docx`) | Theses and preprints | Headings, paragraphs, and tables. |
 | Markdown, text | Anything you converted yourself | |
-| PDF | Everything else | Needs `pip install "file2records[pdf]"`. |
+| PDF | Everything else | Pages are read by layout recognition, tables included. |
 | Other XML | | Read by a general reader and labeled as general XML. |
 
 If a publisher offers both XML and PDF, use the XML. Its tables are already rows and
@@ -46,8 +46,12 @@ Elsevier's terms let you mine these papers but not share them. See
 
 ## Troubleshooting
 
-"Reading PDFs needs the PDF extra"
-:   Run `pip install "file2records[pdf]"`.
+"Reading PDFs needs docling"
+:   The PDF reader didn't install completely. Run `pip install --force-reinstall file2records`.
+
+The first PDF fails with a connection error
+:   The PDF reader downloads its layout models the first time it reads a PDF. Connect to the
+    internet, or a network without a firewall in the way, and add the PDF again.
 
 "no article body, probably an abstract-only record"
 :   Europe PMC only has the abstract for this paper, because it isn't open access there.
