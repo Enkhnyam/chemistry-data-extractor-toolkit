@@ -4,9 +4,13 @@ Extraction and judging had identical copies of the same retry-and-translate-the-
 which is how two copies drift. It also answers "what did that cost", because a tool that
 spends money per paper should not make you read a provider dashboard to find out.
 """
+import os
 import re
 
-import litellm
+# litellm downloads its model price list from GitHub on import unless told to use the copy it
+# ships with. file2records contacts only the services the user chose, so it uses the local copy.
+os.environ.setdefault("LITELLM_LOCAL_MODEL_COST_MAP", "True")
+import litellm  # noqa: E402
 
 # A single call's ceiling. Generous, because a reasoning model on a long paper genuinely takes
 # minutes -- but it is a ceiling, and the retries below are few, because the failure mode being

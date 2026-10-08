@@ -9,7 +9,8 @@ value.
 
 It reads PDF, JATS XML, Elsevier XML, HTML, and Word files, and works with any
 OpenAI-compatible AI service, such as your university's. Everything stays on your computer
-except the paper text sent to that service.
+except the paper text, which goes to that service, and, if you turn on identifiers, the
+chemical names looked up in EBI's [Ontology Lookup Service](https://www.ebi.ac.uk/ols4/).
 
 ## Install
 

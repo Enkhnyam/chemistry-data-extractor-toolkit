@@ -13,6 +13,10 @@ The row above is the attribution the licence requires: creator, title, source an
 with a link. CC BY 3.0 requires attribution and nothing else: you may redistribute and adapt,
 including commercially, provided the creators are credited as above.
 
+`config/identifiers.json` holds a few identifiers and names from
+[ChEBI](https://www.ebi.ac.uk/chebi/) (EMBL-EBI), which is available under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
 The rest of this repository is MIT (see `LICENSE`). This PDF is not MIT; it stays under CC BY,
 and the MIT licence does not extend to it.
 

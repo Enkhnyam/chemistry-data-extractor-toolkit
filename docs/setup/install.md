@@ -52,7 +52,7 @@ can take half an hour. On macOS and Windows it's about 2 GB.
 !!! success "You should see"
     ```console
     $ file2records --version
-    file2records 0.3.0
+    file2records 0.3.1
     ```
 
 ## Look around before you set anything up

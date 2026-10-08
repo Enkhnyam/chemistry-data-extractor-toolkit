@@ -9,7 +9,8 @@ value.
 
 It reads PDF, JATS XML, Elsevier XML, HTML, and Word files, and works with any
 OpenAI-compatible AI service, such as your university's. Everything stays on your computer
-except the paper text sent to that service.
+except the paper text, which goes to that service, and, if you turn on identifiers, the
+chemical names looked up in EBI's [Ontology Lookup Service](https://www.ebi.ac.uk/ols4/).
 
 **Documentation: <https://enkhnyam.github.io/chemistry-data-extractor-toolkit/>**
 
@@ -69,5 +70,6 @@ uvx zensical serve                            # the docs, at http://localhost:80
 To release, set the version in `pyproject.toml`, `src/file2records/__init__.py` and
 `CITATION.cff`, then push a tag such as `v0.3.0`. GitHub Actions then publishes it to PyPI.
 
-Licence: the code is MIT; the demo paper is CC BY
-([NOTICE](src/file2records/demo/NOTICE.md)). Please cite: [CITATION.cff](CITATION.cff).
+Licence: the code is MIT; the demo paper is CC BY 3.0
+([NOTICE](https://github.com/Enkhnyam/chemistry-data-extractor-toolkit/blob/main/src/file2records/demo/NOTICE.md)).
+To cite file2records, use [CITATION.cff](https://github.com/Enkhnyam/chemistry-data-extractor-toolkit/blob/main/CITATION.cff).
